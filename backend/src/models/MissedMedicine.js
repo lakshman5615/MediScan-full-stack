@@ -8,7 +8,7 @@ const missedMedicineSchema = new mongoose.Schema({
   reason: { 
     type: String, 
     enum: ["no-response", "reject"], 
-    default: "reject"  // ✅ default value
+    default: "reject"  
   },
   createdAt: { type: Date, default: Date.now }
 });
