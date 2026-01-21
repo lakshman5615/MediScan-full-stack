@@ -12,4 +12,4 @@ app.get("/", (req, res) => {
   res.send("Mediscan backend running 🚀");
 });
 
-module.exports = app; // <-- THIS LINE IS VERY IMPORTANT
+module.exports = app;

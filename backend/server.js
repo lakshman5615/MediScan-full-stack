@@ -2,7 +2,9 @@ const express = require("express");
 const dotenv = require("dotenv");
 const cors = require("cors");
 const connectDB = require("./src/config/db");
-const User = require("./src/models/User");
+
+// Import routes
+const medicineRoutes = require("./src/routes/medicine.routes");
 
 dotenv.config();
 
@@ -15,26 +17,23 @@ app.use(express.json());
 // connect DB
 connectDB();
 
+// routes
+app.use("/api/medicine", medicineRoutes);
+
 // root test
 app.get("/", (req, res) => {
-  res.send("Mediscan Backend is running 🚀");
+  res.send("Mediscan Backend is running");
 });
 
-//  test user route (listen se pehle)
-app.get("/test-user", async (req, res) => {
-  try {
-    const user = await User.create({
-      name: "Laxman",
-      email: "laxman@gmail.com",
-      password: "test123",
-      phone: "9876543210"
-    });
-
-    res.json(user);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+// Test token route
+app.get("/token", (req, res) => {
+  const jwt = require('jsonwebtoken');
+  const token = jwt.sign({ id: "675a1234567890abcdef1234" }, process.env.JWT_SECRET);
+  res.json({ token });
 });
+
+// Start cron jobs
+require("./src/cron/reminder.cron");
 
 const PORT = process.env.PORT || 5000;
 

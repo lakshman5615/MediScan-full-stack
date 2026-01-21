@@ -24,7 +24,12 @@ const medicineSchema = new mongoose.Schema({
     min: 0
   },
 
-  schedule: [{ type: String }] 
+   schedule: [
+  {
+    time: { type: String, required: true },   // "09:00"
+    period: { type: String, required: true }  // "Morning", "Afternoon", "Evening"
+  }
+]
 ,
   aiExplanation: {
     usage: {
