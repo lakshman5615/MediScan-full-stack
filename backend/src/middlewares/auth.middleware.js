@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+const joi = require('joi');
 const jwt = require('jsonwebtoken');
 
 const authMiddleware = async (req, res, next) => {
@@ -11,10 +11,9 @@ const authMiddleware = async (req, res, next) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
-    // For testing - skip user lookup
     req.user = {
-      _id: decoded.id,
-      userId: decoded.id
+      _id: decoded._id,
+      userId: decoded._id
     };
     
     next();
@@ -22,10 +21,6 @@ const authMiddleware = async (req, res, next) => {
     res.status(401).json({ error: 'Invalid token.' });
   }
 };
-
-module.exports = authMiddleware;
-=======
-const joi = require('joi');
 
 const signupValidation = (req, resp, next) => {
 
@@ -59,5 +54,9 @@ const loginValidation = (req, resp, next) => {
     }
     next();
 }
-module.exports = { signupValidation, loginValidation };
->>>>>>> origin/auth
+
+module.exports = { 
+    authMiddleware,
+    signupValidation, 
+    loginValidation 
+};

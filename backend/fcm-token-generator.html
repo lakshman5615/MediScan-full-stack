@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>FCM Token Generator</title>
+</head>
+<body>
+    <h1>Generate FCM Token</h1>
+    <button onclick="generateToken()">Get FCM Token</button>
+    <div id="token"></div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js';
+        import { getMessaging, getToken } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBvOh7CsKp8F5RjRqNzQzv4o4fZ2Y8nQ1A",
+            authDomain: "mediscan-notifications.firebaseapp.com",
+            projectId: "mediscan-notifications",
+            storageBucket: "mediscan-notifications.appspot.com",
+            messagingSenderId: "117338481200527144276",
+            appId: "1:117338481200527144276:web:abc123def456"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const messaging = getMessaging(app);
+
+        window.generateToken = async function() {
+            try {
+                const token = await getToken(messaging, {
+                    vapidKey: 'YOUR_VAPID_KEY' // Get from Firebase Console
+                });
+                
+                document.getElementById('token').innerHTML = `
+                    <h3>Your FCM Token:</h3>
+                    <textarea rows="5" cols="80">${token}</textarea>
+                    <br><br>
+                    <button onclick="copyToken('${token}')">Copy Token</button>
+                `;
+                
+                console.log('FCM Token:', token);
+            } catch (error) {
+                console.error('Error getting token:', error);
+                document.getElementById('token').innerHTML = `Error: ${error.message}`;
+            }
+        }
+
+        window.copyToken = function(token) {
+            navigator.clipboard.writeText(token);
+            alert('Token copied to clipboard!');
+        }
+    </script>
+</body>
+</html>

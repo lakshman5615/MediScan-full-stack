@@ -9,7 +9,7 @@ app.use(express.json());
 
 // Test route
 app.get("/", (req, res) => {
-  res.send("Mediscan backend running 🚀");
+  res.send("Mediscan backend running ");
 });
 
 module.exports = app;
