@@ -528,12 +528,15 @@ const MedicineCabinet = () => {
                 INVENTORY VIEW
               </h2>
               <nav className="space-y-2">
-                <button className="flex items-center gap-3 w-full p-2 rounded-lg bg-blue-50 text-blue-700">
-                  <Package size={18} />
-                  <button onClick={() => setSelectedFilter('all')}
-                   className="font-medium">All Medicines</button>
-                  <ChevronRight className="ml-auto" size={16} />
-                </button>
+              <button
+  onClick={() => setSelectedFilter('all')}
+  className="flex items-center gap-3 w-full p-2 rounded-lg bg-blue-50 text-blue-700"
+>
+  <Package size={18} />
+  <span className="font-medium">All Medicines</span>
+  <ChevronRight className="ml-auto" size={16} />
+</button>
+
                 <button className="flex items-center gap-3 w-full p-2 rounded-lg text-gray-700 hover:bg-gray-100">
                   <History size={18} />
                   <span>Dose History</span>
