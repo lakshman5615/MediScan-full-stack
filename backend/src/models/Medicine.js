@@ -6,6 +6,12 @@ const medicineSchema = new mongoose.Schema({
     ref: "User",
     required: true
   },
+  //for string miss match
+  scanMedicineId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "ScanMedicine",
+    required: true
+  },
 
   medicineName: {
     type: String,
@@ -24,19 +30,22 @@ const medicineSchema = new mongoose.Schema({
     min: 0
   },
 
-  schedule: [{ type: String }] 
-,
-  aiExplanation: {
-    usage: {
-      type: String
-    },
-    dosage: {
-      type: String
-    },
-    warnings: {
-      type: String
-    }
-  },
+  schedule: [{ type: String }]
+  ,
+  // aiExplanation: {
+  //   usage: {
+  //     type: String
+  //   },
+  //   dosage: {
+  //     type: String
+  //   },
+  //   warnings: {
+  //     type: String
+  //   },
+  //   sideEffects: {
+  //     type: String
+  //   }
+  // },
 
   missedCount: {
     type: Number,

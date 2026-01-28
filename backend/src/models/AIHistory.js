@@ -13,20 +13,51 @@ const aiHistorySchema = new mongoose.Schema({
     default: null
   },
 
-  question: {
+  inputText: {
     type: String,
     required: true
   },
-
-  aiResponse: {
+  normalizedQuery: {
     type: String,
+    default: null // only manual
+  },
+  aiSnapshot: {
+    medicineName: String,
+    usage: String,
+    dosage: String,
+    warnings: String,
+    sideEffects: String,
+    expirydate: String
+
+  },
+  queryType:
+  {
+    type: String,
+    enum: ["text", "scan"],
     required: true
   },
+  imageUrl: {
+    type: String,
+    required: function () {
+      return this.queryType === "scan";
+    }
+  },
+  status: {
+    type: String,
+    enum: ["success", "failed"],
+    required: true
 
-  createdAt: {
-    type: Date,
-    default: Date.now
+  },
+  resultRef: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "ScanMedicine",
+    default: null
+  },
+
+},
+  {
+    timestamps: true
   }
-});
+);
 
 module.exports = mongoose.model("AIHistory", aiHistorySchema);
