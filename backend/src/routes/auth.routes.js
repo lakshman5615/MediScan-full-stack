@@ -12,7 +12,7 @@ const router = require("express").Router();
 router.post('/login', loginValidation, login);
 router.post('/signup', signupValidation, signup);
 
-
+// Get profile
 router.get("/profile", authMiddleware, (req, res) => {
     res.json({
         message: "Profile data",

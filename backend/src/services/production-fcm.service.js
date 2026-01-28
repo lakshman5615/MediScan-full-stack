@@ -54,6 +54,8 @@ class ProductionFCMService {
         data: {
           medicineId: String(medicineData.medicineId || ''),
           userId: String(medicineData.userId || ''),
+        scheduledAt: String(medicineData.scheduledAt || ''), // ADD scheduled time
+        token: String(medicineData.token || ''),  
           type: 'medicine_reminder',
           timestamp: new Date().toISOString()
         },

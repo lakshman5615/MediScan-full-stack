@@ -1,21 +1,10 @@
 const admin = require('firebase-admin');
+const serviceAccount = require('../../fcmServiceAccountKey.json');
 
-// Initialize Firebase Admin SDK
-try {
-  const serviceAccount = require('../../fcmServiceAccountKey.json');
-  
-  if (!admin.apps.length) {
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-    });
-  }
-  
-  console.log('🔥 Firebase Admin initialized successfully');
-} catch (error) {
-  console.log('⚠️ Firebase Admin initialization failed:', error.message);
-  console.log('📄 Please add fcmServiceAccountKey.json file to project root');
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+  });
 }
 
-const messaging = admin.messaging();
-
-module.exports = messaging;
+module.exports = admin.messaging();

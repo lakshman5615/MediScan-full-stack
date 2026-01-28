@@ -1,0 +1,39 @@
+{
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "firebase": "^12.8.0",
+    "firebase-admin": "^13.6.0",
+    "joi": "^18.0.2",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.1.5",
+    "multer": "^2.0.2",
+    "node-cron": "^4.2.1",
+    "tesseract.js": "^7.0.0",
+    "twilio": "^5.11.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
+  },
+  "name": "mediscan-full-stack",
+  "version": "1.0.0",
+  "description": "Mediscan is a full‑stack AI application that helps users safely understand and manage household medicines. It uses OCR to scan medicine labels, AI (Gemini) to provide simple multilingual explanations, tracks expiry dates with alerts, and offers emergency assistance through a panic button.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lakshman5615/MediScan-full-stack.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/lakshman5615/MediScan-full-stack/issues"
+  },
+  "homepage": "https://github.com/lakshman5615/MediScan-full-stack#readme"
+}

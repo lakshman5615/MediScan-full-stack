@@ -1,4 +1,4 @@
-// Professional English Notification Messages
+
 // src/config/notification-messages.js
 
 const NotificationMessages = {
