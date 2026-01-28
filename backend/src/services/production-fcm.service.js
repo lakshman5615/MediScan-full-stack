@@ -176,4 +176,4 @@ class ProductionFCMService {
   }
 }
 
-module.exports = new ProductionFCMService();
+module.exports = new ProductionFCMService(); 

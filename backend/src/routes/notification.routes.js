@@ -1,3 +1,7 @@
+
+// Notification Routes for Frontend Integration
+// src/routes/notification.routes.js
+
 const express = require('express');
 const authMiddleware = require('../middlewares/auth.jwt');
 const Notification = require('../models/Notification');
@@ -82,8 +86,6 @@ router.put('/read-all', authMiddleware, async (req, res) => {
 });
 
 // Test notification (for development)
-if (process.env.NODE_ENV !== 'production') {
-  
 router.post('/test', authMiddleware, async (req, res) => {
   try {
     const { _id: userId } = req.user;
@@ -97,8 +99,6 @@ router.post('/test', authMiddleware, async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 });
-}
-
 
 // System health check
 router.get('/health', async (req, res) => {
@@ -129,4 +129,4 @@ router.delete('/:id', authMiddleware, async (req, res) => {
   }
 });
 
-module.exports = router;
+module.exports = router; 

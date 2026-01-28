@@ -1,4 +1,4 @@
-const DoseHistory = require('../models/DoseHistory');
+const DoseHistory = require('../models/doseHistory');
 
 exports.markDose = async (req, res) => {
   try {
@@ -36,25 +36,12 @@ exports.markDose = async (req, res) => {
   }
 };
 
-
-
 exports.getDoseHistory = async (req, res) => {
   try {
     const userId = req.user._id;
-
-    const history = await DoseHistory
-      .find({ userId })
-      .populate('medicineId', 'medicineName')
-      .sort({ scheduledAt: -1 });
-
-    res.json({
-      success: true,
-      data: history
-    });
+    const history = await DoseHistory.find({ userId }).sort({ scheduledAt: -1 });
+    res.json({ success: true, data: history });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
+    res.status(500).json({ success: false, error: error.message });
   }
 };

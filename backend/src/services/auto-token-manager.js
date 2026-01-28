@@ -1,4 +1,4 @@
-// Automatic FCM Token Pool Manager
+ // Automatic FCM Token Pool Manager
 // src/services/auto-token-manager.js
 
 const User = require('../models/User');

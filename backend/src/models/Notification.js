@@ -1,5 +1,3 @@
-// Notification Model for Database Storage
-// src/models/Notification.js
 
 const mongoose = require('mongoose');
 
@@ -65,3 +63,4 @@ notificationSchema.index({ userId: 1, createdAt: -1 });
 notificationSchema.index({ userId: 1, isRead: 1 });
 
 module.exports = mongoose.model('Notification', notificationSchema);
+ 
