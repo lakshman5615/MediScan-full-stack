@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+ const mongoose = require('mongoose');
 
 const medicineSchema = new mongoose.Schema({
   userId: {
@@ -30,8 +30,12 @@ const medicineSchema = new mongoose.Schema({
     min: 0
   },
 
-  schedule: [{ type: String }]
+
+    schedule: {
+        time: { type: String, required: true },
+        frequency: { type: String, enum: ['daily','weekly','monthly'], default: 'daily' } }
   ,
+      status: { type: String, enum: ['pending','accepted','rejected'], default: 'pending' },
   // aiExplanation: {
   //   usage: {
   //     type: String
@@ -46,7 +50,6 @@ const medicineSchema = new mongoose.Schema({
   //     type: String
   //   }
   // },
-
   missedCount: {
     type: Number,
     default: 0
@@ -58,4 +61,4 @@ const medicineSchema = new mongoose.Schema({
   }
 });
 
-module.exports = mongoose.model("Medicine", medicineSchema);
+module.exports = mongoose.model('Medicine', medicineSchema);
