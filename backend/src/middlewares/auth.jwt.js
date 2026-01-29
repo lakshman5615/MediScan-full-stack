@@ -1,5 +1,4 @@
-
-module.exports = authMiddleware;
+//module.exports = authMiddleware;
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
@@ -19,10 +18,12 @@ const authMiddleware = (req, res, next) => {
         // req.user = decoded; // {_id, email}
         req.user = {
             id: decoded._id,
-            email: decoded.email
+            // email: decoded.email
         };
         next();
     } catch (err) {
         return res.status(401).json({ message: "Invalid or expired token" });
     }
 };
+
+module.exports = authMiddleware;

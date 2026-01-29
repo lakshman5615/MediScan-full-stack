@@ -33,7 +33,7 @@ app.use("/api/ai", aiRoutes);
 
 
 // Import routes
-const authRoutes = require('./src/routes/auth.routes');
+// const authRoutes = require('./src/routes/auth.routes');
 const medicineRoutes = require('./src/routes/medicine.routes');
 const medicineActionRoutes = require('./src/routes/medicine-actions.routes');
 const doseRoutes = require('./src/routes/dose.routes');

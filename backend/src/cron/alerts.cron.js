@@ -2,69 +2,69 @@ const cron = require('node-cron');
 const Medicine = require('../models/Medicine');
 const ProductionFCMService = require('../services/production-fcm.service');
 
-// Medicine reminder notifications (every minute)
-cron.schedule('* * * * *', async () => {
-  try {
-    const now = new Date();
-    const currentTime = now.toTimeString().slice(0, 5);
-    const currentDay = now.getDay();
-    const currentDate = now.getDate();
+// // Medicine reminder notifications (every minute)
+// cron.schedule('* * * * *', async () => {
+//   try {
+//     const now = new Date();
+//     const currentTime = now.toTimeString().slice(0, 5);
+//     const currentDay = now.getDay();
+//     const currentDate = now.getDate();
 
-    const medicines = await Medicine.find({
-      quantity: { $gt: 0 },
-      'schedule.time': currentTime
-    }).populate('userId');
+//     const medicines = await Medicine.find({
+//       quantity: { $gt: 0 },
+//       'schedule.time': currentTime
+//     }).populate('userId');
 
-    for (const med of medicines) {
-      const { schedule, medicineName, userId, _id } = med;
-      if (!userId) continue;
+//     for (const med of medicines) {
+//       const { schedule, medicineName, userId, _id } = med;
+//       if (!userId) continue;
 
-      // DAILY
-      if (schedule.frequency === 'daily') {
-        await ProductionFCMService.sendNotification(
-          userId._id,
-          '💊 Medicine Reminder',
-          `${medicineName} lene ka time ho gaya`,
-          { medicineId: _id }
-        );
-      }
+//       // DAILY
+//       if (schedule.frequency === 'daily') {
+//         await ProductionFCMService.sendNotification(
+//           userId._id,
+//           '💊 Medicine Reminder',
+//           `${medicineName} lene ka time ho gaya`,
+//           { medicineId: _id }
+//         );
+//       }
 
-      // WEEKLY
-      if (
-        schedule.frequency === 'weekly' &&
-        schedule.day === currentDay
-      ) {
-        await ProductionFCMService.sendNotification(
-          userId._id,
-          '💊 Weekly Reminder',
-          `${medicineName} ka weekly dose time`,
-          { medicineId: _id }
-        );
-      }
+//       // WEEKLY
+//       if (
+//         schedule.frequency === 'weekly' &&
+//         schedule.day === currentDay
+//       ) {
+//         await ProductionFCMService.sendNotification(
+//           userId._id,
+//           '💊 Weekly Reminder',
+//           `${medicineName} ka weekly dose time`,
+//           { medicineId: _id }
+//         );
+//       }
 
-      // MONTHLY
-      if (
-        schedule.frequency === 'monthly' &&
-        schedule.date === currentDate
-      ) {
-        await ProductionFCMService.sendNotification(
-          userId._id,
-          '💊 Monthly Reminder',
-          `${medicineName} ka monthly dose time`,
-          { medicineId: _id }
-        );
-      }
-    }
+//       // MONTHLY
+//       if (
+//         schedule.frequency === 'monthly' &&
+//         schedule.date === currentDate
+//       ) {
+//         await ProductionFCMService.sendNotification(
+//           userId._id,
+//           '💊 Monthly Reminder',
+//           `${medicineName} ka monthly dose time`,
+//           { medicineId: _id }
+//         );
+//       }
+//     }
 
-    console.log('✅ Medicine reminders checked at', currentTime);
+//     console.log('✅ Medicine reminders checked at', currentTime);
 
-  } catch (err) {
-    console.error('❌ Medicine reminder cron error:', err);
-  }
-});
+//   } catch (err) {
+//     console.error('❌ Medicine reminder cron error:', err);
+//   }
+// });
 
 // Low quantity and expiry alerts (every hour)
-cron.schedule('0 * * * *', async () => {
+cron.schedule('0 9 * * *', async () => {
   try {
     const now = new Date();
     const sevenDaysFromNow = new Date(now.getTime() + (7 * 24 * 60 * 60 * 1000));

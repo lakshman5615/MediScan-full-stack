@@ -2,26 +2,26 @@
  const joi = require('joi');
 const jwt = require('jsonwebtoken');
 
-const authMiddleware = async (req, res, next) => {
-  try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
+// const authMiddleware = async (req, res, next) => {
+//   try {
+//     const token = req.header('Authorization')?.replace('Bearer ', '');
     
-    if (!token) {
-      return res.status(401).json({ error: 'Access denied. No token provided.' });
-    }
+//     if (!token) {
+//       return res.status(401).json({ error: 'Access denied. No token provided.' });
+//     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+//     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
-    req.user = {
-      _id: decoded._id,
-      userId: decoded._id
-    };
+//     req.user = {
+//       _id: decoded._id,
+//       userId: decoded._id
+//     };
     
-    next();
-  } catch (error) {
-    res.status(401).json({ error: 'Invalid token.' });
-  }
-};
+//     next();
+//   } catch (error) {
+//     res.status(401).json({ error: 'Invalid token.' });
+//   }
+// };
 
 const signupValidation = (req, resp, next) => {
 

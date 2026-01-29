@@ -1,8 +1,7 @@
-
- const cron = require('node-cron');
+const cron = require('node-cron');
 const Medicine = require('../models/Medicine');
 const ProductionFCMService = require('../services/production-fcm.service');
-
+const NotificationMessages = require('../config/notification-messages');
 
 cron.schedule('* * * * *', async () => {
   try {
@@ -20,41 +19,31 @@ cron.schedule('* * * * *', async () => {
       const { schedule, medicineName, userId, _id } = med;
       if (!userId) continue;
 
-      // DAILY
-      if (schedule.frequency === 'daily') {
-        await ProductionFCMService.sendNotification(
-          userId._id,
-          '💊 Medicine Reminder',
-          `${medicineName} lene ka time ho gaya`,
-          { medicineId: _id }
-        );
+      let title, message;
+
+      switch (schedule.frequency) {
+        case 'daily':
+          title = NotificationMessages.medicineReminder.title;
+          message = NotificationMessages.medicineReminder.getMessage(medicineName, currentTime);
+          break;
+
+        case 'weekly':
+          if (schedule.day !== currentDay) continue;
+          title = NotificationMessages.weeklyReminder.title;
+          message = NotificationMessages.weeklyReminder.getMessage(medicineName, currentTime);
+          break;
+
+        case 'monthly':
+          if (schedule.date !== currentDate) continue;
+          title = NotificationMessages.monthlyReminder.title;
+          message = NotificationMessages.monthlyReminder.getMessage(medicineName, currentTime);
+          break;
+
+        default:
+          continue;
       }
 
-      // WEEKLY
-      if (
-        schedule.frequency === 'weekly' &&
-        schedule.day === currentDay
-      ) {
-        await ProductionFCMService.sendNotification(
-          userId._id,
-          '💊 Weekly Reminder',
-          `${medicineName} ka weekly dose time`,
-          { medicineId: _id }
-        );
-      }
-
-      // MONTHLY
-      if (
-        schedule.frequency === 'monthly' &&
-        schedule.date === currentDate
-      ) {
-        await ProductionFCMService.sendNotification(
-          userId._id,
-          '💊 Monthly Reminder',
-          `${medicineName} ka monthly dose time`,
-          { medicineId: _id }
-        );
-      }
+      await ProductionFCMService.sendNotification(userId._id, title, message, { medicineId: _id });
     }
 
     console.log('✅ Notifications checked at', currentTime);
