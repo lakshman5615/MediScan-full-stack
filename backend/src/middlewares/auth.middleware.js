@@ -33,3 +33,5 @@ const loginValidation = (req, resp, next) => {
     next();
 }
 module.exports = { signupValidation, loginValidation };
+
+
