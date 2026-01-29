@@ -75,7 +75,7 @@
 
 import { Routes, Route } from "react-router-dom";
 
-import LandingPage from "../pages/Landing/LandingPage";
+import LandingPage from "../pages/Landing/LandingPage"; 
 import Login from "../pages/Auth/Login";
 import Signup from "../pages/Auth/Signup";
 
