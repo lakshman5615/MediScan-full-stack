@@ -10,16 +10,23 @@
 // }
 
 // export default App;
-import MedicineCabinet from "./pages/Dashboard/Cabinet";
-import AlertScreen from  "./pages/Dashboard/Alerts";
- function App() {
+// import MedicineCabinet from "./pages/Dashboard/Cabinet";
+// import AlertScreen from  "./pages/Dashboard/Alerts";
+//  function App() {
 
-return (
-<MedicineCabinet />
-   );
-  }
-  export default App;
-//  return (
+// return (
 // <MedicineCabinet />
 //    );
-// return <AlertScreen />
+//   }
+//   export default App;
+// //  return (
+// // <MedicineCabinet />
+// //    );
+// // return <AlertScreen />
+
+
+import AppRoutes from "./routes/AppRoutes";
+
+export default function App() {
+  return <AppRoutes />;
+}
