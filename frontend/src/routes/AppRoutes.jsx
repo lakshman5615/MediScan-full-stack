@@ -10,6 +10,7 @@ import DashboardLayout from "../pages/Dashboard/DashboardLayout";
 // import Home from "../pages/Dashboard/Home";
 // import Scan from "../pages/Dashboard/Scan";
 import Cabinet from "../pages/Dashboard/Cabinet";
+import AlertScreen from "../pages/Dashboard/Alerts";
 
 
 
@@ -24,6 +25,7 @@ export default function AppRoutes() {
         {/* <Route index element={<Home />} /> */}
         {/* <Route path="scan" element={<Scan />} /> */}
          <Route path="cabinet" element={<Cabinet />} />
+          <Route path="alerts" element={<AlertScreen />} />
       </Route>
     </Routes>
   );
