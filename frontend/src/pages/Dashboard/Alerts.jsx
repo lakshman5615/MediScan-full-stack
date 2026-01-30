@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-
+import {Pill} from 'lucide-react';
 const AlertScreen = () => {
   const [activeTab, setActiveTab] = useState('alerts');
   const [medications, setMedications] = useState({
@@ -252,18 +252,19 @@ const AlertScreen = () => {
       {/* Main Container */}
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-2xl shadow-lg p-6 mb-6">
+        <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-2xl shadow-lg p-6 mb-6">
           <div className="flex justify-between items-center mb-4">
             <div className="flex items-center gap-4">
-              <div className="bg-white/20 p-3 rounded-xl">
+              {/* <div className="bg-white/20 p-3 rounded-xl">
                 <i className="fas fa-pills text-2xl"></i>
-              </div>
+              </div> */}
+              
+               <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+              <Pill className="text-white" size={22} />
+            </div>
               <div>
                 <h1 className="text-3xl font-bold">MediScan</h1>
-                <div className="flex items-center gap-2">
-                  <span className="bg-white/20 text-xs px-3 py-1 rounded-full font-medium">STITCH BETA</span>
-                  <span className="text-blue-100">• Real-time medication management</span>
-                </div>
+               
               </div>
             </div>
             <div className="flex items-center gap-4">

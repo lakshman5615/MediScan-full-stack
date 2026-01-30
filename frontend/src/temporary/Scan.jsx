@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Camera, Upload, Sparkles, Info, X, CheckCircle, AlertCircle, Calendar, Pill, Database, Edit, Save } from "lucide-react";
-import ScanModeToggle from "../../components/ScanModeToggle";
+import ScanModeToggle from "../components/ScanModeToggle";
 // import Navbar from "../../components/Navbar";
-import Sidebar from "../../components/dashboard/Sidebar";
-import ScanOptionCard from "../../components/ScanOptionCard";
+import Sidebar from "../components/dashboard/Sidebar";
+import ScanOptionCard from "../components/ScanOptionCard";
 
 const Scan = () => {
   const [mode, setMode] = useState("scan");
