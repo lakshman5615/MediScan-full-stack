@@ -1,68 +1,94 @@
-const bcrypt = require('bcrypt');
-const UserModel = require('../models/User');
+
+const User = require('../models/User');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-//  SIGNUP/ REGISTER
-const signup = async (req, resp) => {
+exports.signup = async (req, res) => {
+  try {
+    const { name, email, phone, password, age } = req.body;
 
-    try {
-        const { name, email, password, phone, age } = req.body;
-        const user = await UserModel.findOne({ email });
-
-        if (user) return resp.status(400).json({ message: "User already exists , you can login ", success: false });
-
-
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const userModel = new UserModel({ name, email, password: hashedPassword, phone, age });
-
-        await userModel.save();
-        resp.status(201).json({ message: "User created successfully", success: true })
-
+    // check user exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'User already exists'
+      });
     }
-    catch (error) {
-        // console.log("Signup error", error);
-        resp.status(500).json({ message: "Internal server error", error, success: false })
+
+    // hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // create user
+    const user = await User.create({
+      name,
+      email,
+      phone,
+      age,
+      password: hashedPassword
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Signup successful ✅',
+      userId: user._id
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+exports.login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
     }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid password'
+      });
+    }
+
+    // const token = jwt.sign(
+    //   { _id: user._id },
+    //  process.env.JWT_SECRET || 'secretkey',
+  
+    //   { expiresIn: '7d' }
+    // );
+if (!process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET not defined');
 }
 
+const token = jwt.sign(
+  { _id: user._id },
+  process.env.JWT_SECRET,
+  { expiresIn: '7d' }
+);
 
-// +++++++++++++++++++++++++++++++++++++++++++++++
-//  LOGIN 
+    res.status(200).json({
+      success: true,
+      message: 'Login successful ✅',
+      token,
+      user
+    });
 
-
-const login = async (req, resp) => {
-
-    try {
-        const { email, password } = req.body;
-        const user = await UserModel.findOne({ email });
-        const errormsg = "Authentication failed email or password is  wrong "
-
-        if (!user) return resp.status(403).json({ message: errormsg, success: false });
-
-        const isPasswordEqual = await bcrypt.compare(password, user.password);
-
-        if (!isPasswordEqual) {
-            return resp.status(403).json({ message: errormsg, success: false });
-        }
-
-        const jwtToken = jwt.sign(
-            { email: user.email, _id: user._id },
-            process.env.JWT_SECRET,
-            { expiresIn: '7d' }
-        )
-        resp.status(200)
-            .json({
-                message: " Login successfully",
-                success: true,
-                jwtToken,
-                email,
-                name: user.name
-            })
-    }
-    catch (error) {
-        // console.log("Signup error", error);
-        resp.status(500).json({ message: "Internal server error", error, success: false })
-    }
-}
-
-module.exports = { signup, login }
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+}; 

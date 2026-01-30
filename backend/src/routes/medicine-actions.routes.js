@@ -1,11 +1,21 @@
 const express = require('express');
 const authMiddleware = require('../middlewares/auth.jwt');
 const Medicine = require('../models/Medicine');
+<<<<<<< HEAD
+=======
+const DoseHistory = require('../models/doseHistory');
+>>>>>>> origin/cabinet-feature-bk
 const ProductionFCMService = require('../services/production-fcm.service');
 
 const router = express.Router();
 
+<<<<<<< HEAD
 // Medicine Taken
+=======
+// ----------------------
+// Medicine Taken
+// ----------------------
+>>>>>>> origin/cabinet-feature-bk
 router.post('/taken/:medicineId', authMiddleware, async (req, res) => {
     try {
         const { _id: userId } = req.user;
@@ -17,6 +27,10 @@ router.post('/taken/:medicineId', authMiddleware, async (req, res) => {
         medicine.quantity -= 1;
         await medicine.save();
 
+<<<<<<< HEAD
+=======
+        // FCM Notification
+>>>>>>> origin/cabinet-feature-bk
         await ProductionFCMService.sendNotification(userId, '✅ Medicine Taken',
             `${medicine.medicineName} marked as taken. Remaining: ${medicine.quantity} doses`,
             { medicineId, userId });
@@ -35,6 +49,19 @@ router.post('/taken/:medicineId', authMiddleware, async (req, res) => {
                 { medicineId, userId });
         }
 
+<<<<<<< HEAD
+=======
+        // ---- Save to DoseHistory ----
+        await DoseHistory.create({
+            userId,
+            medicineId,
+            medicineName: medicine.medicineName,
+            scheduledTime: medicine.schedule.time,
+            scheduledAt: new Date(),
+            status: 'TAKEN'
+        });
+
+>>>>>>> origin/cabinet-feature-bk
         res.json({
             success: true,
             message: 'Medicine marked as taken',
@@ -51,7 +78,13 @@ router.post('/taken/:medicineId', authMiddleware, async (req, res) => {
     }
 });
 
+<<<<<<< HEAD
 // Medicine Missed
+=======
+// ----------------------
+// Medicine Missed
+// ----------------------
+>>>>>>> origin/cabinet-feature-bk
 router.post('/missed/:medicineId', authMiddleware, async (req, res) => {
     try {
         const { _id: userId } = req.user;
@@ -60,10 +93,27 @@ router.post('/missed/:medicineId', authMiddleware, async (req, res) => {
         const medicine = await Medicine.findOne({ _id: medicineId, userId });
         if (!medicine) return res.status(404).json({ success: false, error: 'Medicine not found' });
 
+<<<<<<< HEAD
+=======
+        // FCM Notification
+>>>>>>> origin/cabinet-feature-bk
         await ProductionFCMService.sendNotification(userId, '⏭️ Dose Missed',
             `${medicine.medicineName} dose missed. Don't forget next scheduled time: ${medicine.schedule.time}`,
             { medicineId, userId });
 
+<<<<<<< HEAD
+=======
+        // ---- Save to DoseHistory ----
+        await DoseHistory.create({
+            userId,
+            medicineId,
+            medicineName: medicine.medicineName,
+            scheduledTime: medicine.schedule.time,
+            scheduledAt: new Date(),
+            status: 'MISSED'
+        });
+
+>>>>>>> origin/cabinet-feature-bk
         res.json({
             success: true,
             message: 'Medicine marked as missed',
@@ -80,7 +130,13 @@ router.post('/missed/:medicineId', authMiddleware, async (req, res) => {
     }
 });
 
+<<<<<<< HEAD
 // Get medicine status
+=======
+// ----------------------
+// Get medicine status
+// ----------------------
+>>>>>>> origin/cabinet-feature-bk
 router.get('/status/:medicineId', authMiddleware, async (req, res) => {
     try {
         const { _id: userId } = req.user;
