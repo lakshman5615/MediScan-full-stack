@@ -704,3 +704,6 @@ const Scan = () => {
 };
 
 export default Scan;
+export default function Scan() {
+  return <div>Scan Page Working ✅</div>;
+}
