@@ -21,6 +21,7 @@ const app = initializeApp(firebaseConfig);
 const messaging = getMessaging(app);
 
 class FCMService {
+<<<<<<< HEAD
 
 
   async requestPermissionAndGetToken() {
@@ -56,6 +57,31 @@ class FCMService {
 }
 
 
+=======
+  async requestPermissionAndGetToken() {
+    try {
+      const permission = await Notification.requestPermission();
+
+      if (permission !== "granted") {
+        console.log("❌ Notification permission denied");
+        return null;
+      }
+
+      const token = await getToken(messaging, { vapidKey: VAPID_KEY });
+
+      if (!token) {
+        console.log("❌ No FCM token received");
+        return null;
+      }
+
+      console.log("✅ FCM Token:", token);
+      return token;
+    } catch (error) {
+      console.error("❌ FCM error:", error);
+      return null;
+    }
+  }
+>>>>>>> d637b79a2160b37a5134a5e60c0f52cd95df72c3
 
   async registerTokenWithBackend(token) {
     try {
