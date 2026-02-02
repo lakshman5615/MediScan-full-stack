@@ -122,6 +122,7 @@ export default function AppRoutes() {
           {/* Pages WITHOUT sidebar */}
           <Route element={<BlankLayout />}>
             <Route path="/dashboard/schedule" element={<Schedule />} />
+           
             <Route
               path="/dashboard/ai-explanation"
               element={<AIExplanation />}
