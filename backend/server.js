@@ -6,31 +6,32 @@ const User = require("./src/models/User");
 dotenv.config();
 const authRoutes = require("./src/routes/auth.routes");
 const aiRoutes = require("./src/routes/ai.routes");
+const helmet = require('helmet');
 
-
-require('dotenv').config();
-
-
+// Cron jobs
 require('./src/cron/medicine-reminder.cron');
 require('./src/cron/alerts.cron');
 
-const app = express();
-app.use(express.json());
-app
-// app.use(express.urlencoded({ extended: true }));
+// Import routes
 
-// app.use(express.urlencoded({ extended: true }));
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const connectDB = require('./src/config/db');
-// require('./src/cron/medicine-reminder.cron');
-require('./src/cron/alerts.cron');
+const medicineRoutes = require('./src/routes/medicine.routes');
+const medicineActionRoutes = require('./src/routes/medicine-actions.routes');
+const doseRoutes = require('./src/routes/dose.routes');
+const notificationRoutes = require('./src/routes/notification.routes');
+const phoneUserRoutes = require('./src/routes/phone-user.routes');
+const cabinetRoutes = require('./src/routes/cabinet.routes');
+const reminderRoutes = require('./src/routes/reminder.routes');
 
 
 const app = express();
 app.use(express.json());
+
+// app.use(express.urlencoded({ extended: true }));
+
+// app.use(express.urlencoded({ extended: true }));
+
+
+
 
 // 🔐 SECURITY FIRST
 app.use(helmet());
@@ -45,22 +46,13 @@ app.get('/', (req, res) => res.send('Cabinet API is running 🚀'));
 // Connect MongoDB
 connectDB();
 
-// Import routes
-const authRoutes = require('./src/routes/auth.routes');
-const medicineRoutes = require('./src/routes/medicine.routes');
-const medicineActionRoutes = require('./src/routes/medicine-actions.routes');
-const doseRoutes = require('./src/routes/dose.routes');
-const notificationRoutes = require('./src/routes/notification.routes');
-const phoneUserRoutes = require('./src/routes/phone-user.routes');
-const cabinetRoutes = require('./src/routes/cabinet.routes');
-const reminderRoutes = require('./src/routes/reminder.routes');
 
 app.use('/api/cabinet', cabinetRoutes);
 app.use('/api/reminder', reminderRoutes);
 
 // Use routes
 app.use('/api/auth', authRoutes);
-
+app.use('/api/ai', aiRoutes);
 app.use('/api/medicine', medicineRoutes);
 app.use('/api/medicine-action', medicineActionRoutes);
 app.use('/api/dose', doseRoutes);

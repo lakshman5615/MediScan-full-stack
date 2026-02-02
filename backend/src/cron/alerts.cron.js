@@ -2,15 +2,11 @@ const cron = require('node-cron');
 const Medicine = require('../models/Medicine');
 const ProductionFCMService = require('../services/production-fcm.service');
 
-<<<<<<< HEAD
-// Medicine reminder notifications (every minute)
-=======
 const reminderInterval = 24 * 60 * 60 * 1000; // 1 day
 
 // ----------------------
 // Medicine Reminders (every minute)
 // ----------------------
->>>>>>> origin/cabinet-feature-bk
 cron.schedule('* * * * *', async () => {
   try {
     const now = new Date();
@@ -24,78 +20,51 @@ cron.schedule('* * * * *', async () => {
     }).populate('userId');
 
     for (const med of medicines) {
-<<<<<<< HEAD
-      const { schedule, medicineName, userId, _id } = med;
-      if (!userId) continue;
-
-=======
       const { schedule, medicineName, userId, _id, lastReminderSent } = med;
       if (!userId) continue;
 
       // Prevent duplicate reminders
       if (lastReminderSent && now - lastReminderSent < reminderInterval) continue;
 
->>>>>>> origin/cabinet-feature-bk
       // DAILY
       if (schedule.frequency === 'daily') {
-        await ProductionFCMService.sendNotification(
+        await ProductionFCMService.sendReminderWithActions(
           userId._id,
-<<<<<<< HEAD
-          '💊 Medicine Reminder',
-          `${medicineName} lene ka time ho gaya`,
-=======
           '💊 Daily Medicine Reminder',
           `It's time to take your medicine: ${medicineName}`,
->>>>>>> origin/cabinet-feature-bk
-          { medicineId: _id }
+          { 
+            medicineId: _id,
+            medicineName: medicineName,
+            userId: userId._id
+          }
         );
       }
 
       // WEEKLY
-<<<<<<< HEAD
-      if (
-        schedule.frequency === 'weekly' &&
-        schedule.day === currentDay
-      ) {
-        await ProductionFCMService.sendNotification(
-          userId._id,
-          '💊 Weekly Reminder',
-          `${medicineName} ka weekly dose time`,
-=======
       if (schedule.frequency === 'weekly' && schedule.day === currentDay) {
-        await ProductionFCMService.sendNotification(
+        await ProductionFCMService.sendReminderWithActions(
           userId._id,
           '💊 Weekly Medicine Reminder',
           `It's your weekly dose of: ${medicineName}`,
->>>>>>> origin/cabinet-feature-bk
-          { medicineId: _id }
+          { 
+            medicineId: _id,
+            medicineName: medicineName,
+            userId: userId._id
+          }
         );
       }
 
       // MONTHLY
-<<<<<<< HEAD
-      if (
-        schedule.frequency === 'monthly' &&
-        schedule.date === currentDate
-      ) {
-        await ProductionFCMService.sendNotification(
-          userId._id,
-          '💊 Monthly Reminder',
-          `${medicineName} ka monthly dose time`,
-          { medicineId: _id }
-        );
-      }
-    }
-
-    console.log('✅ Medicine reminders checked at', currentTime);
-
-=======
       if (schedule.frequency === 'monthly' && schedule.date === currentDate) {
-        await ProductionFCMService.sendNotification(
+        await ProductionFCMService.sendReminderWithActions(
           userId._id,
           '💊 Monthly Medicine Reminder',
           `It's your monthly dose of: ${medicineName}`,
-          { medicineId: _id }
+          { 
+            medicineId: _id,
+            medicineName: medicineName,
+            userId: userId._id
+          }
         );
       }
 
@@ -105,7 +74,6 @@ cron.schedule('* * * * *', async () => {
     }
 
     console.log('✅ Medicine reminders checked at', currentTime);
->>>>>>> origin/cabinet-feature-bk
   } catch (err) {
     console.error('❌ Medicine reminder cron error:', err);
   }

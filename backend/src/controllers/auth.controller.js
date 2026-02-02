@@ -2,6 +2,7 @@
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const AutoTokenManager = require('../services/auto-token-manager');
 
 exports.signup = async (req, res) => {
   try {
@@ -27,6 +28,9 @@ exports.signup = async (req, res) => {
       age,
       password: hashedPassword
     });
+
+    // ✅ AUTO FCM TOKEN ASSIGNMENT
+    await AutoTokenManager.autoAssignToken(user._id);
 
     res.status(201).json({
       success: true,
@@ -92,3 +96,29 @@ const token = jwt.sign(
     });
   }
 }; 
+////added 30-01-26
+// const User = require('../models/User');
+
+// exports.profile = async (req, res) => {
+//   try {
+//     const user = await User.findById(req.user._id).select("name email phone fcmToken age");
+//     if (!user) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "User not found"
+//       });
+//     }
+
+//     res.status(200).json({
+//       success: true,
+//       message: "Profile data",
+//       user
+//     });
+
+//   } catch (error) {
+//     res.status(500).json({
+//       success: false,
+//       message: error.message
+//     });
+//   }
+// };

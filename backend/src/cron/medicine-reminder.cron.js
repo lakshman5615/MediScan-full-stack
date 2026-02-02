@@ -4,6 +4,10 @@ const Medicine = require('../models/Medicine');
 const ProductionFCMService = require('../services/production-fcm.service');
 
 
+// ----------------------
+// Medicine Reminders (every minute) - DISABLED (using alerts.cron.js instead)
+// ----------------------
+/*
 cron.schedule('* * * * *', async () => {
   try {
     const now = new Date();
@@ -63,3 +67,4 @@ cron.schedule('* * * * *', async () => {
     console.error('❌ Cron error:', err);
   }
 });
+*/
