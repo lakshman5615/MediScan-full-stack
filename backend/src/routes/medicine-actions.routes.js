@@ -14,11 +14,20 @@ router.post('/taken/:medicineId', authMiddleware, async (req, res) => {
         const { _id: userId } = req.user;
         const { medicineId } = req.params;
 
-        const medicine = await Medicine.findOne({ _id: medicineId, userId });
-        if (!medicine) return res.status(404).json({ success: false, error: 'Medicine not found' });
+        console.log('🎯 Medicine taken request:', { userId, medicineId });
 
+        const medicine = await Medicine.findOne({ _id: medicineId, userId });
+        if (!medicine) {
+            console.log('❌ Medicine not found:', medicineId);
+            return res.status(404).json({ success: false, error: 'Medicine not found' });
+        }
+
+        console.log('💊 Found medicine:', medicine.medicineName, 'Quantity:', medicine.quantity);
+
+        // Update quantity
         medicine.quantity -= 1;
         await medicine.save();
+        console.log('✅ Medicine quantity updated to:', medicine.quantity);
 
         // FCM Notification
         await ProductionFCMService.sendNotification(userId, '✅ Medicine Taken',
@@ -40,14 +49,29 @@ router.post('/taken/:medicineId', authMiddleware, async (req, res) => {
         }
 
         // ---- Save to DoseHistory ----
-        await DoseHistory.create({
-            userId,
-            medicineId,
+        console.log('💾 Saving to DoseHistory:', {
+            userId: userId.toString(),
+            medicineId: medicineId.toString(),
             medicineName: medicine.medicineName,
             scheduledTime: medicine.schedule.time,
-            scheduledAt: new Date(),
             status: 'TAKEN'
         });
+        
+        try {
+            const doseRecord = await DoseHistory.create({
+                userId,
+                medicineId,
+                medicineName: medicine.medicineName,
+                scheduledTime: medicine.schedule.time,
+                scheduledAt: new Date(),
+                status: 'TAKEN'
+            });
+            
+            console.log('✅ DoseHistory saved successfully:', doseRecord._id);
+        } catch (doseError) {
+            console.error('❌ DoseHistory save error:', doseError);
+            // Don't fail the whole request if dose history fails
+        }
 
         res.json({
             success: true,
@@ -61,6 +85,7 @@ router.post('/taken/:medicineId', authMiddleware, async (req, res) => {
         });
 
     } catch (error) {
+        console.error('❌ Medicine taken error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -73,8 +98,15 @@ router.post('/missed/:medicineId', authMiddleware, async (req, res) => {
         const { _id: userId } = req.user;
         const { medicineId } = req.params;
 
+        console.log('🎯 Medicine missed request:', { userId, medicineId });
+
         const medicine = await Medicine.findOne({ _id: medicineId, userId });
-        if (!medicine) return res.status(404).json({ success: false, error: 'Medicine not found' });
+        if (!medicine) {
+            console.log('❌ Medicine not found:', medicineId);
+            return res.status(404).json({ success: false, error: 'Medicine not found' });
+        }
+
+        console.log('💊 Found medicine for missed:', medicine.medicineName);
 
         // FCM Notification
         await ProductionFCMService.sendNotification(userId, '⏭️ Dose Missed',
@@ -82,14 +114,29 @@ router.post('/missed/:medicineId', authMiddleware, async (req, res) => {
             { medicineId, userId });
 
         // ---- Save to DoseHistory ----
-        await DoseHistory.create({
-            userId,
-            medicineId,
+        console.log('💾 Saving MISSED to DoseHistory:', {
+            userId: userId.toString(),
+            medicineId: medicineId.toString(),
             medicineName: medicine.medicineName,
             scheduledTime: medicine.schedule.time,
-            scheduledAt: new Date(),
             status: 'MISSED'
         });
+        
+        try {
+            const doseRecord = await DoseHistory.create({
+                userId,
+                medicineId,
+                medicineName: medicine.medicineName,
+                scheduledTime: medicine.schedule.time,
+                scheduledAt: new Date(),
+                status: 'MISSED'
+            });
+            
+            console.log('✅ MISSED DoseHistory saved successfully:', doseRecord._id);
+        } catch (doseError) {
+            console.error('❌ MISSED DoseHistory save error:', doseError);
+            // Don't fail the whole request if dose history fails
+        }
 
         res.json({
             success: true,
@@ -103,6 +150,7 @@ router.post('/missed/:medicineId', authMiddleware, async (req, res) => {
         });
 
     } catch (error) {
+        console.error('❌ Medicine missed error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -145,6 +193,38 @@ router.get('/status/:medicineId', authMiddleware, async (req, res) => {
         });
 
     } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ----------------------
+// Test DoseHistory (for debugging)
+// ----------------------
+router.post('/test-dose-history', authMiddleware, async (req, res) => {
+    try {
+        const { _id: userId } = req.user;
+        
+        console.log('🧪 Testing DoseHistory creation for user:', userId);
+        
+        const testRecord = await DoseHistory.create({
+            userId,
+            medicineId: new require('mongoose').Types.ObjectId(),
+            medicineName: 'Test Medicine',
+            scheduledTime: '08:00',
+            scheduledAt: new Date(),
+            status: 'TAKEN'
+        });
+        
+        console.log('✅ Test DoseHistory created:', testRecord);
+        
+        res.json({
+            success: true,
+            message: 'Test dose history created',
+            record: testRecord
+        });
+        
+    } catch (error) {
+        console.error('❌ Test DoseHistory error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });

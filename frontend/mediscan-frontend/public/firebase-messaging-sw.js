@@ -6,6 +6,7 @@ importScripts(
 importScripts(
   "https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js"
 );
+importScripts('/notification-handler.js');
 
 firebase.initializeApp({
   apiKey: "AIzaSyAX3A-Vc102Xx-uoAvIyh3sX4gzfGojXD4",
@@ -18,13 +19,10 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
-  self.registration.showNotification(
-    payload.notification?.title || "💊 MediScan Reminder",
-    {
-      body: payload.notification?.body || "Time to take medicine",
-      icon: "/mediscan-icon.png",
-      badge: "/mediscan-badge.png",
-      requireInteraction: true
-    }
-  );
+  console.log('Background Message received:', payload);
+  
+  // CRITICAL FIX: Disable all background notifications to prevent duplicates
+  // Frontend will handle all notifications
+  console.log('Background notification disabled - preventing duplicates');
+  return; // Don't show any background notifications
 });

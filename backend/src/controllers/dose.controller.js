@@ -39,9 +39,27 @@ exports.markDose = async (req, res) => {
 exports.getDoseHistory = async (req, res) => {
   try {
     const userId = req.user._id;
-    const history = await DoseHistory.find({ userId }).sort({ scheduledAt: -1 });
-    res.json({ success: true, data: history });
+    console.log('🔍 Getting dose history for user:', userId);
+    
+    const history = await DoseHistory.find({ userId })
+      .populate('medicineId', 'medicineName')
+      .sort({ scheduledAt: -1 });
+    
+    console.log('📊 Found dose history records:', history.length);
+    console.log('📝 Records:', history.map(h => ({
+      id: h._id,
+      medicine: h.medicineName,
+      status: h.status,
+      time: h.scheduledAt
+    })));
+    
+    res.json({ 
+      success: true, 
+      data: history,
+      count: history.length
+    });
   } catch (error) {
+    console.error('❌ Dose history error:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 };

@@ -10,14 +10,26 @@ const reminderInterval = 24 * 60 * 60 * 1000; // 1 day
 cron.schedule('* * * * *', async () => {
   try {
     const now = new Date();
-    const currentTime = now.toTimeString().slice(0, 5);
+    const currentTime = now.toTimeString().slice(0, 5); // HH:MM format
     const currentDay = now.getDay();
     const currentDate = now.getDate();
+
+    console.log(`🔍 Checking reminders at ${currentTime}`);
 
     const medicines = await Medicine.find({
       quantity: { $gt: 0 },
       'schedule.time': currentTime
     }).populate('userId');
+
+    console.log(`💊 Found ${medicines.length} medicines scheduled for ${currentTime}`);
+    
+    if (medicines.length > 0) {
+      console.log('Medicines:', medicines.map(m => ({ 
+        name: m.medicineName, 
+        time: m.schedule.time,
+        user: m.userId?.name 
+      })));
+    }
 
     for (const med of medicines) {
       const { schedule, medicineName, userId, _id, lastReminderSent } = med;

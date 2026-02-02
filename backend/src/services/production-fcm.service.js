@@ -21,14 +21,16 @@ class ProductionFCMService {
         const fcmResult = await this.sendReminderFCM(user.fcmToken, title, message, medicineData);
         if (fcmResult.success) {
           console.log(`✅ Reminder FCM with actions sent to ${user.name}: ${title}`);
-          return fcmResult;
+          // Save to database
+          await this.saveNotificationToDatabase(userId, title, message, medicineData);
+          return fcmResult;  // ✅ SUCCESS - Return here, no fallback
         }
       }
       
-      // Method 2: Console notification with action info
+      // Method 2: Fallback - Console notification (only if FCM fails)
       this.logReminderNotification(user, title, message, medicineData);
       
-      // Method 3: Database logging
+      // Method 3: Database logging (only if FCM fails)
       await this.saveNotificationToDatabase(userId, title, message, medicineData);
       
       return { 
@@ -46,6 +48,8 @@ class ProductionFCMService {
   // Real FCM with action buttons for reminders
   async sendReminderFCM(fcmToken, title, message, medicineData) {
     try {
+      console.log(`📱 Attempting FCM send to token: ${fcmToken.substring(0, 20)}...`);
+      
       const payload = {
         notification: {
           title: title,
@@ -57,61 +61,16 @@ class ProductionFCMService {
           userId: String(medicineData.userId || ''),
           type: 'medicine_reminder',
           timestamp: new Date().toISOString(),
-          // Action data for frontend
           showActions: 'true',
-          actionType: 'reminder',
-          takenAction: `taken_${medicineData.medicineId}`,
-          missedAction: `missed_${medicineData.medicineId}`
-        },
-        android: {
-          notification: {
-            sound: 'default',
-            priority: 'high',
-            clickAction: 'FLUTTER_NOTIFICATION_CLICK',
-            // Action buttons for Android
-            actions: [
-              {
-                action: `taken_${medicineData.medicineId}`,
-                title: '✅ Taken',
-                icon: 'ic_check'
-              },
-              {
-                action: `missed_${medicineData.medicineId}`,
-                title: '⏭️ Skip',
-                icon: 'ic_skip'
-              }
-            ]
-          },
-          data: {
-            medicineId: String(medicineData.medicineId || ''),
-            medicineName: String(medicineData.medicineName || ''),
-            showActions: 'true'
-          }
-        },
-        apns: {
-          payload: {
-            aps: {
-              sound: 'default',
-              badge: 1,
-              category: 'MEDICINE_REMINDER',
-              // iOS action buttons
-              'mutable-content': 1
-            }
-          },
-          fcm_options: {
-            image: 'https://example.com/medicine-icon.png'
-          }
+          actionType: 'reminder'
         },
         token: fcmToken
       };
       
       const response = await messaging.send(payload);
       
-      console.log(`🔔 REMINDER FCM WITH ACTIONS DELIVERED:`, {
+      console.log(`✅ REMINDER FCM SUCCESS:`, {
         title,
-        message,
-        medicineId: medicineData.medicineId,
-        medicineName: medicineData.medicineName,
         messageId: response,
         timestamp: new Date().toLocaleTimeString()
       });
@@ -119,11 +78,11 @@ class ProductionFCMService {
       return { 
         success: true, 
         messageId: response,
-        method: 'reminder_fcm_with_actions'
+        method: 'reminder_fcm_delivered'
       };
       
     } catch (error) {
-      console.error('🚨 Reminder FCM Error:', error.message);
+      console.error('🚨 REMINDER FCM FAILED:', error.message);
       return { success: false, error: error.message };
     }
   }
@@ -190,33 +149,10 @@ class ProductionFCMService {
           medicineId: String(medicineData.medicineId || ''),
           userId: String(medicineData.userId || ''),
           scheduledAt: String(medicineData.scheduledAt || ''),
-          token: String(medicineData.token || ''),  
           type: 'medicine_reminder',
           timestamp: new Date().toISOString(),
-          // Action data for frontend handling
           showActions: 'true',
           actionType: 'medicine_reminder'
-        },
-        android: {
-          notification: {
-            sound: 'default',
-            priority: 'high',
-            clickAction: 'FLUTTER_NOTIFICATION_CLICK'
-          },
-          data: {
-            medicineId: String(medicineData.medicineId || ''),
-            userId: String(medicineData.userId || ''),
-            showActions: 'true'
-          }
-        },
-        apns: {
-          payload: {
-            aps: {
-              sound: 'default',
-              badge: 1,
-              category: 'MEDICINE_REMINDER'
-            }
-          }
         },
         token: fcmToken
       };
