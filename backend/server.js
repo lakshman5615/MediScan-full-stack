@@ -20,7 +20,7 @@ connectDB();
 
 // root test
 app.get("/", (req, res) => {
-  res.send("Mediscan Backend is running 🚀");
+  res.send("Mediscan Backend is running ");
 });
 app.use("/auth", authRoutes);
 
