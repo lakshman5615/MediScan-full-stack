@@ -52,81 +52,54 @@
 
 
 
+
+
 import { useRef, useState, useEffect } from "react";
 import { UploadCloud, ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useAI } from "../../context/AIContext";
 
 export default function UploadCard() {
   const fileRef = useRef(null);
+  const navigate = useNavigate();
+  const { openAIExplanation } = useAI();
 
   const [preview, setPreview] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const [aiResult, setAiResult] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [closing, setClosing] = useState(false);
 
-  // 🔒 Background scroll lock
   useEffect(() => {
     document.body.style.overflow = showModal ? "hidden" : "auto";
-    return () => (document.body.style.overflow = "auto");
   }, [showModal]);
 
-  // 📤 Upload Image
   const handleUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
     setPreview(URL.createObjectURL(file));
     setShowModal(true);
   };
 
-  // ❌ Close modal
-  const closeModal = () => {
-    setClosing(true);
-    setTimeout(() => {
-      setShowModal(false);
-      setClosing(false);
-      setAiResult(null);
-      setPreview(null);
-    }, 300);
-  };
-
-  // 🔁 Upload again
-  const handleReUpload = () => {
-    closeModal();
-    setTimeout(() => {
-      fileRef.current.click();
-    }, 350);
-  };
-
-  // 🤖 AI Analyze (dummy)
   const handleAnalyze = () => {
-    setLoading(true);
-    setTimeout(() => {
-      setAiResult({
-        name: "Cetirizine",
-        usage: "Allergy relief",
-        dosage: "Once daily",
-      });
-      setLoading(false);
-    }, 1500);
+    openAIExplanation({
+      name: "Cetirizine",
+      usage: "Allergy relief",
+      dosage: "Once daily",
+      source: "upload",
+    });
+
+    setShowModal(false);
+    navigate("/dashboard/ai-explanation");
+
   };
 
   return (
     <>
-      {/* ================= UPLOAD CARD ================= */}
       <div
         onClick={() => fileRef.current.click()}
-        className="
-          cursor-pointer rounded-2xl bg-white p-6
-          transition-all duration-300
-          hover:-translate-y-1 hover:shadow-xl
-        "
+        className="cursor-pointer rounded-2xl bg-white p-6 hover:shadow-xl transition"
       >
         <UploadCloud size={36} className="text-sky-600 mb-4" />
         <h3 className="font-semibold text-lg">Upload Image</h3>
-        <p className="text-sm text-slate-500">
-          Upload medicine photo
-        </p>
+        <p className="text-sm text-slate-500">Upload medicine photo</p>
 
         <input
           ref={fileRef}
@@ -137,72 +110,36 @@ export default function UploadCard() {
         />
       </div>
 
-      {/* ================= MODAL ================= */}
       {showModal && (
-        <div
-          className={`
-            fixed inset-0 z-50 flex items-center justify-center
-            bg-black/70 transition-opacity duration-300
-            ${closing ? "opacity-0" : "opacity-100"}
-          `}
-        >
-          <div
-            className={`
-              bg-white rounded-2xl w-[92%] max-w-md p-4 relative
-              max-h-[80vh] overflow-y-auto scrollbar-none
-              transform transition-all duration-300
-              ${closing
-                ? "opacity-0 translate-y-6 scale-95"
-                : "opacity-100 translate-y-0 scale-100"}
-            `}
-          >
-            {/* 🔙 Header */}
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-4 w-[92%] max-w-md">
             <div className="flex items-center gap-3 mb-3">
-              <button
-                onClick={closeModal}
-                className="p-2 rounded-full bg-slate-100 hover:bg-slate-200"
-              >
+              <button onClick={() => setShowModal(false)} className="p-2 bg-slate-100 rounded-full">
                 <ArrowLeft size={20} />
               </button>
               <h3 className="font-semibold">Upload Preview</h3>
             </div>
 
-            {/* IMAGE PREVIEW */}
-            <img
-              src={preview}
-              alt="Preview"
-              className="w-full h-56 object-cover rounded-xl"
-            />
+            <img src={preview} className="w-full h-56 rounded-xl object-cover" />
 
-            {/* ACTIONS */}
             <div className="flex gap-3 mt-4">
               <button
                 onClick={handleAnalyze}
                 className="flex-1 bg-sky-500 text-white py-2.5 rounded-xl"
               >
-                {loading ? "Analyzing..." : "Get AI Explanation"}
+                Get AI Explanation
               </button>
 
               <button
-                onClick={handleReUpload}
+                onClick={() => setShowModal(false)}
                 className="flex-1 bg-sky-500 text-white py-2.5 rounded-xl"
               >
                 Upload Again
               </button>
             </div>
-
-            {/* AI RESULT */}
-            {aiResult && (
-              <div className="mt-4 bg-slate-50 p-3 rounded-xl text-sm space-y-1">
-                <p><b>Name:</b> {aiResult.name}</p>
-                <p><b>Use:</b> {aiResult.usage}</p>
-                <p><b>Dosage:</b> {aiResult.dosage}</p>
-              </div>
-            )}
           </div>
         </div>
       )}
     </>
   );
 }
-
