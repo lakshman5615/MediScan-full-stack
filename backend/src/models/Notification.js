@@ -24,6 +24,30 @@ const notificationSchema = new mongoose.Schema({
     default: 'medicine_reminder'
   },
   
+  // Add alert dashboard fields
+  alertType: {
+    type: String,
+    enum: ['REMINDER', 'EXPIRY', 'LOW_STOCK'],
+    default: 'REMINDER'
+  },
+  
+  status: {
+    type: String,
+    enum: ['PENDING', 'TAKEN', 'MISSED', 'DISMISSED'],
+    default: 'PENDING'
+  },
+  
+  severity: {
+    type: String,
+    enum: ['NORMAL', 'WARNING', 'CRITICAL'],
+    default: 'NORMAL'
+  },
+  
+  showInUI: {
+    type: Boolean,
+    default: true
+  },
+  
   medicineId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Medicine',
