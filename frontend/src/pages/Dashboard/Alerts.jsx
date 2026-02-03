@@ -1,759 +1,690 @@
-import React, { useState } from 'react';
-import {Pill} from 'lucide-react';
-const AlertScreen = () => {
-  const [activeTab, setActiveTab] = useState('alerts');
-  const [medications, setMedications] = useState({
-    upcoming: [
-      { 
-        id: 1, 
-        name: "Metformin", 
-        dosage: "500mg", 
-        time: "08:00 AM", 
-        schedule: "Morning dose", 
-        confirmed: false,
-        type: "tablet",
-        instructions: "Take with food",
-        remaining: 30
-      },
-      { 
-        id: 2, 
-        name: "Atorvastatin", 
-        dosage: "20mg", 
-        time: "09:00 PM", 
-        schedule: "Night dose", 
-        confirmed: false,
-        type: "tablet",
-        instructions: "Take at bedtime",
-        remaining: 15
-      },
-      { 
-        id: 3, 
-        name: "Levothyroxine", 
-        dosage: "50mcg", 
-        time: "07:00 AM", 
-        schedule: "Morning dose", 
-        confirmed: false,
-        type: "tablet",
-        instructions: "Take on empty stomach",
-        remaining: 45
+import React, { useState, useEffect } from 'react';
+import { NavLink } from 'react-router-dom';
+import { 
+  Bell, 
+  Clock, 
+  Pill, 
+  Calendar, 
+  AlertTriangle,
+  CheckCircle,
+  X,
+  ChevronRight,
+  Sun,
+  Moon,
+  Package,
+  Search,
+  RefreshCw,
+  ArrowLeft,
+  Shield,
+  Thermometer,
+  Heart,
+  Info,
+  Zap,
+  CheckSquare,
+  XSquare,
+  CalendarDays,
+  TrendingUp,
+  Battery,
+  Droplets,
+  AlertCircle,
+  Trash2,
+  ShoppingCart,
+  ChevronDown,
+  ChevronUp,
+  MoreVertical,
+  Clock4,
+  Clock8,
+  Clock12,
+  Clock3,
+  Clock9,
+  TrendingDown,
+  ThermometerSnowflake,
+  BatteryCharging,
+  CalendarX,
+  CalendarCheck,
+  PackageX,
+  PackageCheck,
+  AlertOctagon,
+  BellRing,
+  ClockAlert,
+  Edit,
+  Save,
+  Eye,
+  FileText
+} from 'lucide-react';
+import EditMedicineModal from "../../components/common/EditMedicineModal";
+import { 
+  generateAlertsFromMedicines,
+  getAlertStatusConfig,
+  getExpiryStatusBadge,
+  getLowStockStatusBadge,
+  getMedicineStatus 
+} from '../../components/common/alertUtils';
+
+const AlertsPage = () => {
+  const [medicines, setMedicines] = useState([]);
+  const [alerts, setAlerts] = useState([]);
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [expandedExpiry, setExpandedExpiry] = useState(true);
+  const [expandedLowStock, setExpandedLowStock] = useState(true);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedMedicine, setSelectedMedicine] = useState(null);
+  
+  // Load medicines from localStorage
+  useEffect(() => {
+    const loadMedicines = () => {
+      const savedMedicines = localStorage.getItem('medicines');
+      if (savedMedicines) {
+        try {
+          const parsedMedicines = JSON.parse(savedMedicines);
+          // Update status for each medicine
+          const updatedMedicines = parsedMedicines.map(medicine => ({
+            ...medicine,
+            status: getMedicineStatus(medicine)
+          }));
+          setMedicines(updatedMedicines);
+        } catch (error) {
+          console.error('Error parsing medicines:', error);
+          setMedicines([]);
+        }
       }
-    ],
-    completed: [
-      { 
-        id: 4, 
-        name: "Lisinopril", 
-        dosage: "10mg", 
-        takenTime: "07:15 AM", 
-        date: "Today",
-        actualTime: "07:15:23",
-        adherence: "On time"
-      },
-      { 
-        id: 5, 
-        name: "Aspirin", 
-        dosage: "81mg", 
-        takenTime: "08:30 AM", 
-        date: "Today",
-        actualTime: "08:30:45",
-        adherence: "15 mins late"
-      },
-      { 
-        id: 6, 
-        name: "Vitamin D3", 
-        dosage: "2000 IU", 
-        takenTime: "09:00 AM", 
-        date: "Yesterday",
-        actualTime: "09:00:12",
-        adherence: "On time"
+    };
+    
+    loadMedicines();
+    
+    // Set up interval to check for updates
+    const intervalId = setInterval(() => {
+      loadMedicines();
+      setCurrentTime(new Date());
+    }, 60000);
+    
+    return () => clearInterval(intervalId);
+  }, []);
+
+  // Generate alerts based on medicines
+  useEffect(() => {
+    if (medicines.length === 0) return;
+
+    const generatedAlerts = generateAlertsFromMedicines(medicines);
+    
+    const savedActions = localStorage.getItem('medicineActions') || '{}';
+    const actionHistory = JSON.parse(savedActions);
+    
+    const updatedAlerts = generatedAlerts.map(alert => {
+      if (alert.type === 'schedule') {
+        const actionKey = `${alert.id}-action`;
+        if (actionHistory[actionKey]) {
+          return {
+            ...alert,
+            status: actionHistory[actionKey],
+            timestamp: new Date(actionHistory[actionKey + '-time'] || alert.timestamp)
+          };
+        }
       }
-    ]
-  });
+      return alert;
+    });
 
-  const [alerts, setAlerts] = useState([
-    {
-      id: 1,
-      type: "critical",
-      title: "Critical Expiry",
-      message: "Your Paracetamol pack (Lot #4421) will expire in 2 days. Please dispose of safely and replace immediately.",
-      action: "Find Replacement",
-      timestamp: "2 hours ago",
-      priority: "high"
-    },
-    {
-      id: 2,
-      type: "warning",
-      title: "Low Inventory Alert",
-      message: "Vitamin D3: Only 4 tablets remaining. This will last for 4 more days based on your schedule.",
-      action: "Order Refill Now",
-      timestamp: "1 day ago",
-      priority: "medium"
-    },
-    {
-      id: 3,
-      type: "info",
-      title: "Database Synchronized",
-      message: "Last update: 2 minutes ago. All your medication data is backed up to cloud.",
-      action: null,
-      timestamp: "Just now",
-      priority: "low"
-    },
-    {
-      id: 4,
-      type: "warning",
-      title: "Missed Dose Alert",
-      message: "You missed your 2:00 PM dose of Metformin yesterday. Please consult your doctor.",
-      action: "Report Issue",
-      timestamp: "5 hours ago",
-      priority: "high"
-    }
-  ]);
+    setAlerts(updatedAlerts);
+  }, [medicines]);
 
-  const [reminderTime, setReminderTime] = useState("15");
-  const [showNotification, setShowNotification] = useState(false);
-  const [selectedMedication, setSelectedMedication] = useState(null);
-  const [showMedicationDetails, setShowMedicationDetails] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-
-  const handleConfirmIntake = (id) => {
-    setMedications(prev => {
-      const confirmedMed = prev.upcoming.find(med => med.id === id);
-      const updatedUpcoming = prev.upcoming.filter(med => med.id !== id);
-      const currentTime = new Date();
-      
-      return {
-        ...prev,
-        upcoming: updatedUpcoming,
-        completed: [
-          {
-            ...confirmedMed,
-            takenTime: currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            date: 'Today',
-            actualTime: currentTime.toISOString(),
-            adherence: "Confirmed"
-          },
-          ...prev.completed
-        ]
-      };
+  // Handle dose action
+  const handleDoseAction = (alertId, action) => {
+    const updatedAlerts = alerts.map(alert => {
+      if (alert.id === alertId) {
+        if (action === 'taken' && alert.medicine && alert.medicine.quantity > 0) {
+          const updatedMedicines = medicines.map(medicine => {
+            if (medicine.id === alert.medicine.id) {
+              const newQuantity = Math.max(0, medicine.quantity - 1);
+              const updatedMedicine = {
+                ...medicine,
+                quantity: newQuantity,
+                remaining: `${newQuantity} ${medicine.unit} remaining`,
+                status: getMedicineStatus({ ...medicine, quantity: newQuantity })
+              };
+              
+              const allMedicines = JSON.parse(localStorage.getItem('medicines') || '[]');
+              const updatedAllMedicines = allMedicines.map(m => 
+                m.id === medicine.id ? updatedMedicine : m
+              );
+              localStorage.setItem('medicines', JSON.stringify(updatedAllMedicines));
+              
+              return updatedMedicine;
+            }
+            return medicine;
+          });
+          
+          setMedicines(updatedMedicines);
+        }
+        
+        return {
+          ...alert,
+          status: action,
+          actionTime: new Date()
+        };
+      }
+      return alert;
     });
     
-    // Show confirmation notification
-    setShowNotification(true);
-    setTimeout(() => setShowNotification(false), 3000);
+    setAlerts(updatedAlerts);
+    
+    const savedActions = localStorage.getItem('medicineActions') || '{}';
+    const actionHistory = JSON.parse(savedActions);
+    actionHistory[`${alertId}-action`] = action;
+    actionHistory[`${alertId}-action-time`] = new Date().toISOString();
+    localStorage.setItem('medicineActions', JSON.stringify(actionHistory));
   };
 
-  const handleDismissAlert = (id) => {
-    setAlerts(prev => prev.filter(alert => alert.id !== id));
+  // Handle edit medicine
+  const handleEditMedicine = (medicine) => {
+    setSelectedMedicine(medicine);
+    setShowEditModal(true);
   };
 
-  const handleSnoozeAlert = (id) => {
-    const alertToSnooze = alerts.find(alert => alert.id === id);
-    if (alertToSnooze) {
-      // Update timestamp for snooze
-      setAlerts(prev => prev.map(alert => 
-        alert.id === id ? { ...alert, timestamp: "Snoozed for 1 hour" } : alert
-      ));
+  // Handle save edited medicine
+  const handleSaveMedicine = (medicineData) => {
+    const updatedMedicines = medicines.map(medicine => {
+      if (medicine.id === selectedMedicine.id) {
+        const updatedMedicine = {
+          ...medicine,
+          name: medicineData.name,
+          brand: medicineData.brand,
+          type: medicineData.type,
+          strength: medicineData.dosage,
+          quantity: parseInt(medicineData.totalQuantity),
+          unit: medicineData.dosage.includes('mg') ? 'tablets' : 
+                medicineData.dosage.includes('ml') ? 'ml' : 'units',
+          expiryDate: medicineData.expiryDate,
+          lotNumber: medicineData.lotNumber,
+          dailyDoses: parseInt(medicineData.dailyDoses) || 1,
+          schedule: medicineData.schedule,
+          scheduleEnabled: medicineData.scheduleEnabled,
+          remaining: `${medicineData.totalQuantity} ${medicineData.dosage.includes('mg') ? 'tablets' : medicineData.dosage.includes('ml') ? 'ml' : 'units'} remaining`,
+          status: getMedicineStatus({
+            expiryDate: medicineData.expiryDate,
+            quantity: parseInt(medicineData.totalQuantity)
+          })
+        };
+        
+        return updatedMedicine;
+      }
+      return medicine;
+    });
+
+    setMedicines(updatedMedicines);
+    localStorage.setItem('medicines', JSON.stringify(updatedMedicines));
+    
+    setSelectedMedicine(null);
+    setShowEditModal(false);
+    
+    alert('Medicine updated successfully!');
+  };
+
+  // Handle other alert actions
+  const handleAlertAction = (alertId, action) => {
+    if (action === 'dismiss') {
+      setAlerts(prev => prev.filter(alert => alert.id !== alertId));
+    } else if (action === 'replace') {
+      const alert = alerts.find(a => a.id === alertId);
+      alert(`Finding replacement for ${alert.medicine.name}...`);
+      setTimeout(() => handleAlertAction(alertId, 'dismiss'), 500);
+    } else if (action === 'reorder') {
+      const alert = alerts.find(a => a.id === alertId);
+      alert(`Ordering more ${alert.medicine.name}...`);
+      setTimeout(() => handleAlertAction(alertId, 'dismiss'), 500);
     }
   };
 
-  const handleViewDetails = (medication) => {
-    setSelectedMedication(medication);
-    setShowMedicationDetails(true);
+  // Refresh alerts
+  const handleRefresh = () => {
+    const savedMedicines = localStorage.getItem('medicines');
+    if (savedMedicines) {
+      const parsedMedicines = JSON.parse(savedMedicines);
+      const updatedMedicines = parsedMedicines.map(medicine => ({
+        ...medicine,
+        status: getMedicineStatus(medicine)
+      }));
+      setMedicines(updatedMedicines);
+    }
   };
 
-  const handleReminderTimeChange = (time) => {
-    setReminderTime(time);
-    // In real app, this would update backend settings
-  };
-
-  const filteredAlerts = alerts.filter(alert => 
-    alert.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    alert.message.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const filteredMedications = medications.upcoming.filter(med => 
-    med.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const stats = {
-    totalMeds: medications.upcoming.length + medications.completed.length,
-    takenToday: medications.completed.filter(m => m.date === 'Today').length,
-    adherenceRate: Math.round((medications.completed.filter(m => m.adherence === "On time").length / 
-      medications.completed.length) * 100) || 0
-  };
+  // Filter alerts
+  const scheduleAlerts = alerts.filter(a => a.type === 'schedule');
+  const expiryAlerts = alerts.filter(a => a.type === 'expiry');
+  const lowStockAlerts = alerts.filter(a => a.type === 'low_stock');
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
-      {/* Notification Toast */}
-      {showNotification && (
-        <div className="fixed top-4 right-4 z-50 animate-slide-in">
-          <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg shadow-lg w-80">
-            <div className="flex items-center">
-              <i className="fas fa-check-circle text-green-500 text-xl mr-3"></i>
-              <div>
-                <p className="font-semibold">Medication Confirmed!</p>
-                <p className="text-sm">Intake has been recorded successfully.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-2 lg:p-4">
+      {/* Back Button */}
+      <div className="mb-4 lg:mb-6">
+        <NavLink 
+          to="/dashboard"
+          className="group inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl hover:bg-blue-50 hover:border-blue-200 transition-all duration-200 text-gray-700 hover:text-blue-600 shadow-sm hover:shadow-md text-sm lg:text-base font-medium"
+        >
+          <ArrowLeft size={18} className="lg:w-5 lg:h-5 group-hover:-translate-x-0.5 transition-transform duration-200" />
+          <span>Back to Home</span>
+        </NavLink>
+      </div>
 
-      {/* Medication Details Modal */}
-      {showMedicationDetails && selectedMedication && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl">
-            <div className="p-6 border-b">
-              <div className="flex justify-between items-center">
-                <h3 className="text-2xl font-bold text-gray-800">{selectedMedication.name}</h3>
-                <button 
-                  onClick={() => setShowMedicationDetails(false)}
-                  className="text-gray-500 hover:text-gray-700 text-2xl"
-                >
-                  &times;
-                </button>
-              </div>
-            </div>
-            <div className="p-6">
-              <div className="grid grid-cols-2 gap-6 mb-6">
-                <div>
-                  <p className="text-sm text-gray-500">Dosage</p>
-                  <p className="text-lg font-semibold">{selectedMedication.dosage}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Schedule</p>
-                  <p className="text-lg font-semibold">{selectedMedication.schedule}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Time</p>
-                  <p className="text-lg font-semibold">{selectedMedication.time}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Type</p>
-                  <p className="text-lg font-semibold">{selectedMedication.type}</p>
-                </div>
-              </div>
-              <div className="mb-6">
-                <p className="text-sm text-gray-500 mb-2">Instructions</p>
-                <p className="text-gray-700">{selectedMedication.instructions}</p>
-              </div>
-              <div className="flex gap-3">
-                <button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg">
-                  <i className="fas fa-edit mr-2"></i> Edit Details
-                </button>
-                <button className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 rounded-lg">
-                  <i className="fas fa-history mr-2"></i> View History
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Main Container */}
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-2xl shadow-lg p-6 mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center gap-4">
-              {/* <div className="bg-white/20 p-3 rounded-xl">
-                <i className="fas fa-pills text-2xl"></i>
-              </div> */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-8">
+          {/* Left Column: Today's Schedule */}
+          <div>
+            <div className="bg-white rounded-2xl p-4 lg:p-6 shadow-lg border border-gray-200 mb-4 lg:mb-6">
+              <div className="flex items-center justify-between mb-4 lg:mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 lg:w-10 h-8 lg:h-10 bg-blue-50 rounded-xl border border-blue-200 flex items-center justify-center">
+                    <Clock className="text-blue-600 lg:w-[22px] lg:h-[22px]" size={18}  />
+                  </div>
+                  <div>
+                    <h2 className="text-lg lg:text-xl font-bold text-gray-900">Alert's & Notification</h2>
+                    <p className="text-xs lg:text-sm text-gray-600">
+                      {new Date().toLocaleDateString('en-US', { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      })}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xl lg:text-2xl font-bold text-gray-900">
+                    {scheduleAlerts.filter(a => a.status === 'pending').length} <span className="hidden sm:inline">Pending</span>
+                  </div>
+                  <div className="text-xs lg:text-sm text-gray-500">
+                    <span className="hidden sm:inline">Dose reminders</span>
+                    <span className="sm:hidden">Doses</span>
+                  </div>
+                </div>
+              </div>
               
-               <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-              <Pill className="text-white" size={22} />
-            </div>
-              <div>
-                <h1 className="text-3xl font-bold">MediScan</h1>
-               
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="hidden md:flex items-center gap-3 bg-white/20 p-3 rounded-xl">
-                <i className="fas fa-user-md"></i>
-                <div>
-                  <p className="font-semibold">Dr. Alex Smith</p>
-                  <p className="text-xs text-blue-100">Premium User</p>
-                </div>
-              </div>
-              <button className="bg-white/20 hover:bg-white/30 p-3 rounded-xl transition-colors">
-                <i className="fas fa-cog text-xl"></i>
-              </button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white/20 p-4 rounded-xl">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-blue-100">Total Medications</p>
-                  <p className="text-3xl font-bold">{stats.totalMeds}</p>
-                </div>
-                <i className="fas fa-capsules text-2xl opacity-80"></i>
-              </div>
-            </div>
-            <div className="bg-white/20 p-4 rounded-xl">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-blue-100">Taken Today</p>
-                  <p className="text-3xl font-bold">{stats.takenToday}</p>
-                </div>
-                <i className="fas fa-check-circle text-2xl opacity-80"></i>
-              </div>
-            </div>
-            <div className="bg-white/20 p-4 rounded-xl">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-blue-100">Adherence Rate</p>
-                  <p className="text-3xl font-bold">{stats.adherenceRate}%</p>
-                </div>
-                <i className="fas fa-chart-line text-2xl opacity-80"></i>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* Left Sidebar - Navigation */}
-          <div className="lg:w-1/4">
-            <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-              <div className="mb-6">
-                <div className="relative">
-                  <i className="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-                  <input
-                    type="text"
-                    placeholder="Search medications or alerts..."
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <nav className="space-y-2">
-                <button
-                  className={`w-full flex items-center gap-3 p-4 rounded-xl transition-all ${activeTab === 'alerts' ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600' : 'hover:bg-gray-50 text-gray-600'}`}
-                  onClick={() => setActiveTab('alerts')}
-                >
-                  <i className="fas fa-bell w-6 text-center"></i>
-                  <span className="font-semibold">Alerts & Reminders</span>
-                  {alerts.length > 0 && (
-                    <span className="ml-auto bg-red-500 text-white text-xs px-2 py-1 rounded-full">
-                      {alerts.filter(a => a.priority === 'high').length}
-                    </span>
-                  )}
-                </button>
-
-                <button
-                  className={`w-full flex items-center gap-3 p-4 rounded-xl transition-all ${activeTab === 'completed' ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600' : 'hover:bg-gray-50 text-gray-600'}`}
-                  onClick={() => setActiveTab('completed')}
-                >
-                  <i className="fas fa-check-circle w-6 text-center"></i>
-                  <span className="font-semibold">Completed</span>
-                  <span className="ml-auto bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full">
-                    {medications.completed.length}
-                  </span>
-                </button>
-
-                <button
-                  className={`w-full flex items-center gap-3 p-4 rounded-xl transition-all ${activeTab === 'reports' ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600' : 'hover:bg-gray-50 text-gray-600'}`}
-                  onClick={() => setActiveTab('reports')}
-                >
-                  <i className="fas fa-chart-bar w-6 text-center"></i>
-                  <span className="font-semibold">Reports</span>
-                </button>
-
-                <button
-                  className={`w-full flex items-center gap-3 p-4 rounded-xl transition-all ${activeTab === 'inventory' ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600' : 'hover:bg-gray-50 text-gray-600'}`}
-                  onClick={() => setActiveTab('inventory')}
-                >
-                  <i className="fas fa-box w-6 text-center"></i>
-                  <span className="font-semibold">Inventory</span>
-                </button>
-
-                <button
-                  className={`w-full flex items-center gap-3 p-4 rounded-xl transition-all ${activeTab === 'settings' ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600' : 'hover:bg-gray-50 text-gray-600'}`}
-                  onClick={() => setActiveTab('settings')}
-                >
-                  <i className="fas fa-cog w-6 text-center"></i>
-                  <span className="font-semibold">Settings</span>
-                </button>
-              </nav>
-
-              {/* Reminder Settings */}
-              <div className="mt-8 p-4 bg-blue-50 rounded-xl">
-                <h4 className="font-semibold text-gray-800 mb-3">Reminder Settings</h4>
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-sm text-gray-600">Remind me before:</label>
-                    <div className="flex items-center gap-2 mt-2">
-                      {["5", "15", "30", "60"].map((time) => (
-                        <button
-                          key={time}
-                          className={`px-3 py-2 rounded-lg ${reminderTime === time ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border'}`}
-                          onClick={() => handleReminderTimeChange(time)}
-                        >
-                          {time} min
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <button className="w-full flex items-center justify-center gap-2 text-blue-600 hover:text-blue-800 font-semibold">
-                    <i className="fas fa-bell"></i>
-                    Test Notification
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Main Content Area */}
-          <div className="lg:w-3/4">
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-              {/* Tab Content Header */}
-              <div className="flex justify-between items-center mb-6">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-800">
-                    {activeTab === 'alerts' && 'Alerts & Reminders'}
-                    {activeTab === 'completed' && 'Completed Medications'}
-                    {activeTab === 'reports' && 'Medication Reports'}
-                    {activeTab === 'inventory' && 'Medication Inventory'}
-                    {activeTab === 'settings' && 'Settings'}
-                  </h2>
-                  <p className="text-gray-600">
-                    {activeTab === 'alerts' && 'Real-time medication management and system status'}
-                    {activeTab === 'completed' && 'History of confirmed medication intake'}
-                    {activeTab === 'reports' && 'Analytics and adherence reports'}
-                    {activeTab === 'inventory' && 'Track medication stock and refills'}
-                    {activeTab === 'settings' && 'Configure your medication preferences'}
-                  </p>
-                </div>
-                <div className="flex gap-3">
-                  <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg flex items-center gap-2">
-                    <i className="fas fa-plus"></i>
-                    Add Medication
-                  </button>
-                  <button className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold px-4 py-2 rounded-lg flex items-center gap-2">
-                    <i className="fas fa-filter"></i>
-                    Filter
-                  </button>
-                </div>
-              </div>
-
-              {/* Tab Content */}
-              {activeTab === 'alerts' && (
-                <div className="space-y-6">
-                  {/* Upcoming Medications */}
-                  <div className="bg-blue-50 rounded-xl p-6">
-                    <div className="flex justify-between items-center mb-4">
-                      <div>
-                        <h3 className="text-xl font-bold text-gray-800">Dose Reminders</h3>
-                        <p className="text-gray-600">UPCOMING TODAY • {medications.upcoming.length} medications</p>
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        <i className="far fa-clock mr-1"></i>
-                        Next dose in 2 hours
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {filteredMedications.map(med => (
-                        <div key={med.id} className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
-                          <div className="flex justify-between items-start mb-3">
-                            <div>
-                              <h4 className="font-bold text-lg text-gray-800">{med.name}</h4>
-                              <p className="text-gray-600">{med.dosage} • {med.type}</p>
+              <div className="space-y-3 lg:space-y-4">
+                {scheduleAlerts.length > 0 ? (
+                  scheduleAlerts.map(alert => {
+                    const statusBadge = getAlertStatusConfig(alert.status);
+                    const alertDate = new Date(alert.timestamp);
+                    const today = new Date();
+                    const isToday = alertDate.toDateString() === today.toDateString();
+                    
+                    return (
+                      <div key={alert.id} className="p-3 lg:p-5 rounded-xl border border-blue-200 bg-blue-50 hover:shadow-md transition-all duration-300">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start gap-3 lg:gap-4 flex-1 min-w-0">
+                            <div className="p-2 lg:p-3 rounded-lg bg-blue-100 border border-blue-200 flex-shrink-0">
+                              {alert.icon}
                             </div>
-                            <button 
-                              onClick={() => handleViewDetails(med)}
-                              className="text-gray-400 hover:text-gray-600"
-                            >
-                              <i className="fas fa-ellipsis-h"></i>
-                            </button>
-                          </div>
-                          
-                          <div className="mb-4">
-                            <div className="flex items-center text-gray-700 mb-2">
-                              <i className="far fa-clock mr-2 text-blue-500"></i>
-                              <span className="font-semibold">{med.time}</span>
-                              <span className="mx-2">•</span>
-                              <span>{med.schedule}</span>
-                            </div>
-                            <p className="text-sm text-gray-600 flex items-center">
-                              <i className="fas fa-info-circle mr-2 text-blue-500"></i>
-                              {med.instructions}
-                            </p>
-                            <div className="flex items-center justify-between mt-3 text-sm">
-                              <span className="text-gray-500">
-                                <i className="fas fa-pills mr-1"></i>
-                                {med.remaining} remaining
-                              </span>
-                              <span className="text-green-600 font-medium">
-                                <i className="fas fa-bell mr-1"></i>
-                                Active
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleConfirmIntake(med.id)}
-                              className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg flex items-center justify-center gap-2"
-                            >
-                              <i className="fas fa-check"></i>
-                              Confirm Intake
-                            </button>
-                            <button className="px-4 bg-white hover:bg-gray-50 text-gray-700 font-semibold py-3 rounded-lg border border-gray-300 flex items-center">
-                              <i className="fas fa-clock"></i>
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* System Alerts */}
-                  <div>
-                    <div className="flex justify-between items-center mb-4">
-                      <h3 className="text-xl font-bold text-gray-800">System Alerts</h3>
-                      <span className="text-sm text-gray-500">{filteredAlerts.length} active alerts</span>
-                    </div>
-
-                    <div className="space-y-4">
-                      {filteredAlerts.map(alert => (
-                        <div
-                          key={alert.id}
-                          className={`rounded-xl p-5 border-l-4 ${alert.type === 'critical' ? 'border-red-500 bg-red-50' :
-                            alert.type === 'warning' ? 'border-amber-500 bg-amber-50' :
-                            'border-blue-500 bg-blue-50'}`}
-                        >
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-start gap-4">
-                              <div className={`mt-1 ${alert.type === 'critical' ? 'text-red-500' :
-                                alert.type === 'warning' ? 'text-amber-500' :
-                                'text-blue-500'}`}>
-                                {alert.type === 'critical' && <i className="fas fa-exclamation-triangle text-2xl"></i>}
-                                {alert.type === 'warning' && <i className="fas fa-exclamation-circle text-2xl"></i>}
-                                {alert.type === 'info' && <i className="fas fa-info-circle text-2xl"></i>}
-                              </div>
-                              <div className="flex-1">
-                                <div className="flex items-center gap-3 mb-2">
-                                  <h4 className="font-bold text-lg text-gray-800">{alert.title}</h4>
-                                  <span className={`px-2 py-1 rounded text-xs font-semibold ${alert.priority === 'high' ? 'bg-red-100 text-red-700' :
-                                    alert.priority === 'medium' ? 'bg-amber-100 text-amber-700' :
-                                    'bg-blue-100 text-blue-700'}`}>
-                                    {alert.priority} priority
+                            <div className="flex-1 min-w-0">
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-2">
+                                <div className="flex items-center gap-2 lg:gap-3 min-w-0">
+                                  <h3 className="font-bold text-gray-900 text-sm lg:text-base truncate">{alert.title}</h3>
+                                  <span className="text-xs lg:text-sm text-blue-600 bg-blue-100 px-2 py-1 rounded-full flex-shrink-0">
+                                    {alert.medicine.strength}
                                   </span>
                                 </div>
-                                <p className="text-gray-700 mb-3">{alert.message}</p>
-                                <div className="flex items-center justify-between">
-                                  <span className="text-sm text-gray-500">
-                                    <i className="far fa-clock mr-1"></i>
-                                    {alert.timestamp}
+                                <div className="flex items-center gap-2 text-xs lg:text-sm text-gray-500 flex-shrink-0">
+                                  <CalendarDays size={12} className="lg:w-[14px] lg:h-[14px]" />
+                                  <span>
+                                    {isToday ? 'Today' : alertDate.toLocaleDateString('en-US', { 
+                                      month: 'short', 
+                                      day: 'numeric' 
+                                    })}
                                   </span>
-                                  <div className="flex gap-2">
-                                    {alert.action && (
-                                      <button className={`px-4 py-2 rounded-lg font-semibold ${alert.type === 'critical' ? 'bg-red-500 hover:bg-red-600' :
-                                        alert.type === 'warning' ? 'bg-amber-500 hover:bg-amber-600' :
-                                        'bg-blue-500 hover:bg-blue-600'} text-white`}>
-                                        {alert.action}
-                                      </button>
+                                </div>
+                              </div>
+                              
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-gray-600 text-xs lg:text-sm mb-2 lg:mb-3">{alert.description}</p>
+                                  
+                                  <div className="flex flex-wrap items-center gap-2 lg:gap-3">
+                                    <span className={`inline-flex items-center gap-1 px-2 lg:px-3 py-1 rounded-full text-xs font-medium ${statusBadge.bg} ${statusBadge.text} ${statusBadge.border}`}>
+                                      {alert.status === 'pending' ? <Clock size={10} className="lg:w-3 lg:h-3" /> : 
+                                      alert.status === 'taken' ? <CheckCircle size={10} className="lg:w-3 lg:h-3" /> : 
+                                      <X size={10} className="lg:w-3 lg:h-3" />}
+                                      {statusBadge.label}
+                                    </span>
+                                    
+                                    {alert.status === 'pending' && alert.timeDiff <= 1 && (
+                                      <span className="inline-flex items-center gap-1 px-2 lg:px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200">
+                                        <Zap size={10} className="lg:w-3 lg:h-3" />
+                                        <span className="hidden sm:inline">Soon: {Math.round(alert.timeDiff * 60)}min</span>
+                                        <span className="sm:hidden">{Math.round(alert.timeDiff * 60)}m</span>
+                                      </span>
                                     )}
-                                    <button
-                                      onClick={() => handleSnoozeAlert(alert.id)}
-                                      className="px-4 py-2 rounded-lg font-semibold bg-white hover:bg-gray-50 text-gray-700 border border-gray-300"
-                                    >
-                                      Snooze
-                                    </button>
-                                    <button
-                                      onClick={() => handleDismissAlert(alert.id)}
-                                      className="px-4 py-2 rounded-lg font-semibold bg-white hover:bg-gray-50 text-gray-700 border border-gray-300"
-                                    >
-                                      Dismiss
-                                    </button>
+                                  </div>
+                                </div>
+                                
+                                <div className="text-right flex-shrink-0">
+                                  <div className="text-sm lg:text-base font-medium text-gray-900">
+                                    {alert.time}
+                                  </div>
+                                  <div className="text-xs text-gray-500 capitalize">
+                                    {alert.period}
                                   </div>
                                 </div>
                               </div>
                             </div>
                           </div>
                         </div>
-                      ))}
+                        
+                        <div className="flex gap-2 mt-3 lg:mt-4 pt-3 lg:pt-4 border-t border-blue-200">
+                          {alert.status === 'pending' ? (
+                            <>
+                              <button
+                                onClick={() => handleDoseAction(alert.id, 'taken')}
+                                className="flex-1 px-3 lg:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs lg:text-sm font-medium flex items-center gap-1 lg:gap-2 justify-center shadow-sm hover:shadow"
+                              >
+                                <CheckSquare size={14} className="lg:w-4 lg:h-4" />
+                                <span className="hidden sm:inline">Confirm Taken</span>
+                                <span className="sm:hidden">Taken</span>
+                              </button>
+                              <button
+                                onClick={() => handleDoseAction(alert.id, 'missed')}
+                                className="flex-1 px-3 lg:px-4 py-2 border border-red-300 text-red-700 rounded-lg hover:bg-red-50 transition-colors text-xs lg:text-sm font-medium flex items-center gap-1 lg:gap-2 justify-center"
+                              >
+                                <XSquare size={14} className="lg:w-4 lg:h-4" />
+                                <span className="hidden sm:inline">Mark Missed</span>
+                                <span className="sm:hidden">Missed</span>
+                              </button>
+                            </>
+                          ) : (
+                            <div className="w-full text-center">
+                              <div className={`text-xs lg:text-sm font-medium ${alert.status === 'taken' ? 'text-green-600' : 'text-red-600'}`}>
+                                {alert.status === 'taken' ? '✓ Confirmed' : '✗ Missed'}
+                              </div>
+                              <div className="text-xs text-gray-500 mt-1">
+                                {alert.actionTime ? new Date(alert.actionTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="text-center py-8 lg:py-12">
+                    <Clock className="mx-auto text-gray-300 mb-4 lg:w-12 lg:h-12" size={40}  />
+                    <h3 className="text-base lg:text-lg font-medium text-gray-900 mb-2">No scheduled doses</h3>
+                    <p className="text-gray-600 max-w-sm mx-auto text-sm lg:text-base px-4">
+                      All doses for today are completed or no medicines are scheduled.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: Expiry & Low Stock Lists */}
+          <div className="space-y-4 lg:space-y-6">
+            {/* Expiry Medicines List */}
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+              <div 
+                className="p-4 lg:p-6 border-b border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors"
+                onClick={() => setExpandedExpiry(!expandedExpiry)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 lg:w-10 h-8 lg:h-10 bg-red-50 rounded-xl border border-red-200 flex items-center justify-center">
+                      <AlertTriangle className="text-red-600 lg:w-[22px] lg:h-[22px]" size={18}  />
+                    </div>
+                    <div>
+                      <h2 className="text-lg lg:text-xl font-bold text-gray-900">Expiry Medicines</h2>
+                      <p className="text-xs lg:text-sm text-gray-600">Track and manage expiry dates</p>
                     </div>
                   </div>
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <div className="text-xl lg:text-2xl font-bold text-gray-900">{expiryAlerts.length}</div>
+                      <div className="text-xs lg:text-sm text-gray-500">
+                        <span className="hidden sm:inline">Total items</span>
+                        <span className="sm:hidden">Items</span>
+                      </div>
+                    </div>
+                    {expandedExpiry ? <ChevronUp size={18} className="lg:w-5 lg:h-5" /> : <ChevronDown size={18} className="lg:w-5 lg:h-5" />}
+                  </div>
                 </div>
-              )}
-
-              {activeTab === 'completed' && (
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Completed Medications */}
-                    <div className="bg-gray-50 rounded-xl p-6">
-                      <h3 className="text-xl font-bold text-gray-800 mb-4">Today's Medications</h3>
-                      <div className="space-y-4">
-                        {medications.completed.filter(m => m.date === 'Today').map(med => (
-                          <div key={med.id} className="bg-white rounded-xl p-4 border-l-4 border-green-500">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <div className="text-green-500">
-                                  <i className="fas fa-check-circle text-2xl"></i>
+              </div>
+              
+              {expandedExpiry && (
+                <div className="p-4 lg:p-6">
+                  <div className="space-y-3 lg:space-y-4">
+                    {expiryAlerts.length > 0 ? (
+                      expiryAlerts.map(alert => {
+                        const statusBadge = getExpiryStatusBadge(alert.daysUntilExpiry);
+                        
+                        return (
+                          <div key={alert.id} className="p-3 lg:p-4 border border-red-200 rounded-xl hover:shadow-sm transition-all duration-200 bg-red-50">
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-start gap-3 lg:gap-4 flex-1 min-w-0">
+                                <div className="p-2 rounded-lg bg-red-100 flex-shrink-0">
+                                  {alert.icon}
                                 </div>
-                                <div>
-                                  <h4 className="font-bold text-gray-800">{med.name}</h4>
-                                  <p className="text-sm text-gray-600">Taken at {med.takenTime}</p>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-3 gap-2">
+                                    <div className="min-w-0">
+                                      <h3 className="font-bold text-gray-900 text-sm lg:text-base truncate">{alert.title}</h3>
+                                      <p className="text-gray-600 text-xs lg:text-sm mt-1">{alert.description}</p>
+                                    </div>
+                                    <span className={`inline-flex items-center px-2 lg:px-3 py-1 rounded-full text-xs font-medium ${statusBadge.bg} ${statusBadge.text} ${statusBadge.border} flex-shrink-0`}>
+                                      {statusBadge.label}
+                                    </span>
+                                  </div>
+                                  
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4">
+                                    <div className="bg-white p-2 lg:p-3 rounded-lg border border-red-100">
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <CalendarDays size={12} className="text-gray-500 lg:w-[14px] lg:h-[14px]" />
+                                        <span className="text-xs font-medium text-gray-700">Expiry Date</span>
+                                      </div>
+                                      <div className="text-xs lg:text-sm text-gray-900">
+                                        {new Date(alert.medicine.expiryDate).toLocaleDateString()}
+                                      </div>
+                                      <div className={`text-xs font-medium ${alert.daysUntilExpiry <= 0 ? 'text-red-600' : 'text-orange-600'}`}>
+                                        {alert.daysUntilExpiry <= 0 
+                                          ? `${Math.abs(alert.daysUntilExpiry)} days ago` 
+                                          : `In ${alert.daysUntilExpiry} days`}
+                                      </div>
+                                    </div>
+                                    
+                                    <div className="bg-white p-2 lg:p-3 rounded-lg border border-red-100">
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <Package size={12} className="text-gray-500 lg:w-[14px] lg:h-[14px]" />
+                                        <span className="text-xs font-medium text-gray-700">Quantity</span>
+                                      </div>
+                                      <div className="text-xs lg:text-sm text-gray-900">
+                                        {alert.medicine.quantity} {alert.medicine.unit}
+                                      </div>
+                                      <div className="text-xs text-gray-500">
+                                        Status: {alert.medicine.status}
+                                      </div>
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
-                              <span className={`px-3 py-1 rounded-full text-sm font-medium ${med.adherence === 'On time' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
-                                {med.adherence}
-                              </span>
+                            </div>
+                            
+                            <div className="flex gap-2 lg:gap-3 mt-3 lg:mt-4 pt-3 lg:pt-4 border-t border-red-200">
+                              <button
+                                onClick={() => handleEditMedicine(alert.medicine)}
+                                className="px-3 lg:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs lg:text-sm font-medium flex items-center gap-1 lg:gap-2 flex-1 justify-center"
+                              >
+                                <Edit size={14} className="lg:w-4 lg:h-4" />
+                                <span className="hidden sm:inline">Edit Details</span>
+                                <span className="sm:hidden">Edit</span>
+                              </button>
+                             
+                              <button
+                                onClick={() => handleAlertAction(alert.id, 'dismiss')}
+                                className="px-3 lg:px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-xs lg:text-sm font-medium"
+                              >
+                                Dismiss
+                              </button>
                             </div>
                           </div>
-                        ))}
+                        );
+                      })
+                    ) : (
+                      <div className="text-center py-6 lg:py-8">
+                        <CalendarCheck className="mx-auto text-green-300 mb-3 lg:w-10 lg:h-10" size={32}  />
+                        <h3 className="text-base lg:text-lg font-medium text-gray-900 mb-2">No Expiry Alerts</h3>
+                        <p className="text-gray-600 text-sm lg:text-base">
+                          All medicines have valid expiry dates.
+                        </p>
                       </div>
-                    </div>
-
-                    {/* Inventory Alert */}
-                    <div className="bg-amber-50 rounded-xl p-6 border-l-4 border-amber-500">
-                      <div className="flex items-start gap-4">
-                        <div className="text-amber-500 mt-1">
-                          <i className="fas fa-box text-3xl"></i>
-                        </div>
-                        <div>
-                          <h3 className="text-xl font-bold text-gray-800 mb-2">Low Inventory Alert</h3>
-                          <p className="text-gray-700 mb-4">
-                            Vitamin D3: Only 4 tablets remaining. This will last for 4 more days based on your schedule.
-                          </p>
-                          <div className="flex gap-3">
-                            <button className="bg-amber-500 hover:bg-amber-600 text-gray-800 font-semibold py-2 px-6 rounded-lg">
-                              Order Refill Now
-                            </button>
-                            <button className="bg-white hover:bg-gray-50 text-gray-700 font-semibold py-2 px-6 rounded-lg border border-gray-300">
-                              Dismiss
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                    )}
                   </div>
-
-                  {/* History Table */}
-                  <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                    <div className="p-6 border-b">
-                      <h3 className="text-xl font-bold text-gray-800">Medication History</h3>
-                    </div>
-                    <div className="overflow-x-auto">
-                      <table className="w-full">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            <th className="text-left p-4 text-gray-700 font-semibold">Medication</th>
-                            <th className="text-left p-4 text-gray-700 font-semibold">Dosage</th>
-                            <th className="text-left p-4 text-gray-700 font-semibold">Scheduled Time</th>
-                            <th className="text-left p-4 text-gray-700 font-semibold">Actual Time</th>
-                            <th className="text-left p-4 text-gray-700 font-semibold">Status</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {medications.completed.map(med => (
-                            <tr key={med.id} className="border-b hover:bg-gray-50">
-                              <td className="p-4">
-                                <div className="font-medium text-gray-800">{med.name}</div>
-                              </td>
-                              <td className="p-4 text-gray-600">{med.dosage}</td>
-                              <td className="p-4 text-gray-600">08:00 AM</td>
-                              <td className="p-4 text-gray-600">{med.takenTime}</td>
-                              <td className="p-4">
-                                <span className={`px-3 py-1 rounded-full text-sm font-medium ${med.adherence === 'On time' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
-                                  {med.adherence}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {activeTab === 'reports' && (
-                <div className="text-center py-12">
-                  <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <i className="fas fa-chart-bar text-4xl text-blue-500"></i>
-                  </div>
-                  <h3 className="text-2xl font-bold text-gray-800 mb-2">Medication Reports</h3>
-                  <p className="text-gray-600 mb-8 max-w-md mx-auto">
-                    View detailed analytics, adherence reports, and medication history charts.
-                  </p>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto">
-                    <div className="bg-blue-50 p-6 rounded-xl">
-                      <i className="fas fa-chart-line text-3xl text-blue-500 mb-4"></i>
-                      <h4 className="font-bold text-gray-800 mb-2">Adherence Report</h4>
-                      <p className="text-sm text-gray-600">View your medication adherence over time</p>
-                    </div>
-                    <div className="bg-green-50 p-6 rounded-xl">
-                      <i className="fas fa-calendar-check text-3xl text-green-500 mb-4"></i>
-                      <h4 className="font-bold text-gray-800 mb-2">Monthly Summary</h4>
-                      <p className="text-sm text-gray-600">Monthly medication intake statistics</p>
-                    </div>
-                    <div className="bg-purple-50 p-6 rounded-xl">
-                      <i className="fas fa-file-pdf text-3xl text-purple-500 mb-4"></i>
-                      <h4 className="font-bold text-gray-800 mb-2">Export Data</h4>
-                      <p className="text-sm text-gray-600">Download reports for your doctor</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {activeTab === 'inventory' && (
-                <div className="text-center py-12">
-                  <h3 className="text-2xl font-bold text-gray-800 mb-2">Medication Inventory</h3>
-                  <p className="text-gray-600">Track your medication stock and set up automatic refills.</p>
-                </div>
-              )}
-
-              {activeTab === 'settings' && (
-                <div className="text-center py-12">
-                  <h3 className="text-2xl font-bold text-gray-800 mb-2">Settings</h3>
-                  <p className="text-gray-600">Configure notification preferences and account settings.</p>
                 </div>
               )}
             </div>
 
-            {/* Footer */}
-            <div className="mt-6 text-center text-gray-500 text-sm">
-              <p>© 2024 Mediscan AI. All medical advice should be verified with a professional.</p>
-              <div className="flex justify-center gap-6 mt-2">
-                <a href="/help" className="text-blue-600 hover:text-blue-800">Help Center</a>
-                <a href="/privacy" className="text-blue-600 hover:text-blue-800">Privacy Policy</a>
-                <a href="/emergency" className="text-blue-600 hover:text-blue-800">Emergency Contacts</a>
+            {/* Low Stock Medicines List */}
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+              <div 
+                className="p-4 lg:p-6 border-b border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors"
+                onClick={() => setExpandedLowStock(!expandedLowStock)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 lg:w-10 h-8 lg:h-10 bg-yellow-50 rounded-xl border border-yellow-200 flex items-center justify-center">
+                      <Package className="text-yellow-600 lg:w-[22px] lg:h-[22px]" size={18}  />
+                    </div>
+                    <div>
+                      <h2 className="text-lg lg:text-xl font-bold text-gray-900">Low Stock Medicines</h2>
+                      <p className="text-xs lg:text-sm text-gray-600">Track and manage stock levels</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <div className="text-xl lg:text-2xl font-bold text-gray-900">{lowStockAlerts.length}</div>
+                      <div className="text-xs lg:text-sm text-gray-500">
+                        <span className="hidden sm:inline">Total items</span>
+                        <span className="sm:hidden">Items</span>
+                      </div>
+                    </div>
+                    {expandedLowStock ? <ChevronUp size={18} className="lg:w-5 lg:h-5" /> : <ChevronDown size={18} className="lg:w-5 lg:h-5" />}
+                  </div>
+                </div>
               </div>
+              
+              {expandedLowStock && (
+                <div className="p-6">
+                  <div className="space-y-4">
+                    {lowStockAlerts.length > 0 ? (
+                      lowStockAlerts.map(alert => {
+                        const statusBadge = getLowStockStatusBadge(alert.quantity);
+                        
+                        return (
+                          <div key={alert.id} className="p-4 border border-yellow-200 rounded-xl hover:shadow-sm transition-all duration-200 bg-yellow-50">
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-start gap-4">
+                                <div className="p-2 rounded-lg bg-yellow-100">
+                                  {alert.icon}
+                                </div>
+                                <div className="flex-1">
+                                  <div className="flex items-start justify-between">
+                                    <div>
+                                      <h3 className="font-bold text-gray-900">{alert.title}</h3>
+                                      <p className="text-gray-600 text-sm mt-1">{alert.description}</p>
+                                    </div>
+                                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${statusBadge.bg} ${statusBadge.text} ${statusBadge.border}`}>
+                                      {statusBadge.label}
+                                    </span>
+                                  </div>
+                                  
+                                  <div className="grid grid-cols-2 gap-4 mt-3">
+                                    <div className="bg-white p-3 rounded-lg border border-yellow-100">
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <Package size={14} className="text-gray-500" />
+                                        <span className="text-xs font-medium text-gray-700">Stock Level</span>
+                                      </div>
+                                      <div className="flex items-center gap-3">
+                                        <div className="flex-1">
+                                          <div className="w-full bg-gray-200 rounded-full h-2">
+                                            <div 
+                                              className={`h-2 rounded-full ${
+                                                alert.quantity <= 3 ? 'bg-red-500' :
+                                                alert.quantity <= 5 ? 'bg-orange-500' :
+                                                'bg-yellow-500'
+                                              }`}
+                                              style={{ width: `${(alert.quantity / 20) * 100}%` }}
+                                            ></div>
+                                          </div>
+                                        </div>
+                                        <div className="text-sm font-bold text-gray-900">
+                                          {alert.quantity}/20
+                                        </div>
+                                      </div>
+                                      <div className="text-xs text-gray-500 mt-1">
+                                        Will last {alert.daysLeft} days
+                                      </div>
+                                    </div>
+                                    
+                                    <div className="bg-white p-3 rounded-lg border border-yellow-100">
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <CalendarDays size={14} className="text-gray-500" />
+                                        <span className="text-xs font-medium text-gray-700">Expiry</span>
+                                      </div>
+                                      <div className="text-sm text-gray-900">
+                                        {new Date(alert.medicine.expiryDate).toLocaleDateString()}
+                                      </div>
+                                      <div className="text-xs text-gray-500">
+                                        Status: {alert.medicine.status}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="flex gap-3 mt-4 pt-4 border-t border-yellow-200">
+                              <button
+                                onClick={() => handleEditMedicine(alert.medicine)}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium flex items-center gap-2 flex-1 justify-center"
+                              >
+                                <Edit size={16} />
+                                Edit Stock
+                              </button>
+                             
+                              <button
+                                onClick={() => handleAlertAction(alert.id, 'dismiss')}
+                                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                              >
+                                Dismiss
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="text-center py-8">
+                        <PackageCheck className="mx-auto text-green-300 mb-3" size={40} />
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">Stock Levels Good</h3>
+                        <p className="text-gray-600">
+                          All medicines are well-stocked.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Add Font Awesome in index.html */}
-      <link 
-        rel="stylesheet" 
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      {/* Edit Medicine Modal */}
+      <EditMedicineModal
+        medicine={selectedMedicine}
+        isOpen={showEditModal}
+        onClose={() => {
+          setSelectedMedicine(null);
+          setShowEditModal(false);
+        }}
+        onSave={handleSaveMedicine}
+        isEditing={true}
       />
-      
-      {/* Add custom animations */}
-      <style jsx>{`
-        @keyframes slide-in {
-          from {
-            transform: translateX(100%);
-            opacity: 0;
-          }
-          to {
-            transform: translateX(0);
-            opacity: 1;
-          }
-        }
-        .animate-slide-in {
-          animation: slide-in 0.3s ease-out;
-        }
-      `}</style>
     </div>
   );
 };
 
-export default AlertScreen;
+export default AlertsPage;

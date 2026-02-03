@@ -98,14 +98,16 @@ export default function AppRoutes() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
 
-        {/* Dashboard Routes */}
+        {/* Dashboard Routes with Sidebar */}
         <Route path="/dashboard" element={<DashboardLayout />}>
           <Route index element={<Home />} />
           <Route path="scan" element={<Scan />} />
-          <Route path="cabinet" element={<Cabinet />} />
           <Route path="schedule" element={<Schedule />} />
-          <Route path="alerts" element={<Alerts />} />
         </Route>
+
+        {/* Routes without common sidebar */}
+        <Route path="/dashboard/cabinet" element={<Cabinet />} />
+        <Route path="/dashboard/alerts" element={<Alerts />} />
       </Routes>
     </CabinetProvider>
   );
