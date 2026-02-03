@@ -1,10 +1,9 @@
-
 import { useRef, useState, useEffect } from "react";
 import { Camera, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAI } from "../../context/AIContext";
 
-export default function ScanCard() {
+export default function ScanCard({ mode }) {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const navigate = useNavigate();
@@ -63,18 +62,25 @@ export default function ScanCard() {
 
   /* ---------------- AI ANALYZE ---------------- */
   const handleAnalyze = () => {
-    openAIExplanation({
-      name: "Paracetamol",
-      usage: "Pain & fever relief",
-      dosage: "500mg twice daily",
-      sideEffects: "Rare nausea",
-      warning: "Avoid alcohol",
-      expiryDate: "2026-08-12",
-      source: "scan",
-    });
+  openAIExplanation({
+    name: "Paracetamol",
+    usage: "Pain & fever relief",
+    dosage: "500mg twice daily",
+    sideEffects: "Rare nausea",
+    warning: "Avoid alcohol",
+    expiryDate: "2026-08-12",
+    source: "scan",
+  });
 
-    navigate("/dashboard/ai-explanation");
-  };
+  const isLoggedIn = !!localStorage.getItem("user");
+
+  navigate("/dashboard/ai-explanation", {
+  state: {
+    from: mode === "guest" ? "landing" : "dashboard",
+  },
+});
+};
+
 
   return (
     <>

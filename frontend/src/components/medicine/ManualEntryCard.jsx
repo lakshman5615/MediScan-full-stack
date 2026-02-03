@@ -74,7 +74,7 @@ import { Edit3, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAI } from "../../context/AIContext";
 
-export default function ManualEntryCard() {
+export default function ManualEntryCard({ mode }) {
   const navigate = useNavigate();
   const { openAIExplanation } = useAI();
 
@@ -86,20 +86,27 @@ export default function ManualEntryCard() {
   }, [showModal]);
 
   const handleAnalyze = () => {
-    if (!name) return;
+  if (!name) return;
 
-    openAIExplanation({
-      name,
-      usage: "Pain & fever relief",
-      dosage: "500mg twice daily",
-      sideEffects: "Rare nausea",
-      source: "manual",
-    });
+  openAIExplanation({
+    name,
+    usage: "Pain & fever relief",
+    dosage: "500mg twice daily",
+    sideEffects: "Rare nausea",
+    source: "manual",
+  });
 
-    setShowModal(false);
-    navigate("/dashboard/ai-explanation");
+  setShowModal(false);
 
-  };
+  const isLoggedIn = !!localStorage.getItem("user");
+
+  navigate("/dashboard/ai-explanation", {
+  state: {
+    from: mode === "guest" ? "landing" : "dashboard",
+  },
+});
+};
+
 
   return (
     <>
@@ -150,4 +157,5 @@ export default function ManualEntryCard() {
     </>
   );
 }
+
 

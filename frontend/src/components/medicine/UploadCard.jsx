@@ -53,13 +53,12 @@
 
 
 
-
 import { useRef, useState, useEffect } from "react";
 import { UploadCloud, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAI } from "../../context/AIContext";
 
-export default function UploadCard() {
+export default function UploadCard({ mode }) {
   const fileRef = useRef(null);
   const navigate = useNavigate();
   const { openAIExplanation } = useAI();
@@ -79,17 +78,23 @@ export default function UploadCard() {
   };
 
   const handleAnalyze = () => {
-    openAIExplanation({
-      name: "Cetirizine",
-      usage: "Allergy relief",
-      dosage: "Once daily",
-      source: "upload",
-    });
+  openAIExplanation({
+    name: "Cetirizine",
+    usage: "Allergy relief",
+    dosage: "Once daily",
+    source: "upload",
+  });
 
-    setShowModal(false);
-    navigate("/dashboard/ai-explanation");
+  setShowModal(false);
 
-  };
+  const isLoggedIn = !!localStorage.getItem("user");
+
+  navigate("/dashboard/ai-explanation", {
+  state: {
+    from: mode === "guest" ? "landing" : "dashboard",
+  },
+});
+};
 
   return (
     <>

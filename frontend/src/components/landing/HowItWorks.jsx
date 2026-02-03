@@ -36,10 +36,19 @@ const steps = [
 ];
 
 const HowItWorks = () => {
+
+  const scrollToHome = () => {
+    const homeSection = document.getElementById("home");
+    if (homeSection) {
+      homeSection.scrollIntoView({ behavior: "smooth" });
+    }
+  };
   return (
     <section
       id="how-it-works"
       className="w-full bg-gray-50 py-20"
+      onClick={scrollToHome} 
+
     >
       {/* Heading */}
       <div className="text-center mb-16">
