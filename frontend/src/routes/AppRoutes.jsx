@@ -86,6 +86,7 @@ import Scan from "../pages/Dashboard/Scan";
 import Cabinet from "../pages/Dashboard/Cabinet";
 import Schedule from "../pages/Dashboard/Schedule";
 import Alerts from "../pages/Dashboard/Alerts";
+import Emergency from "../pages/Dashboard/Emergency";
 
 import { CabinetProvider } from "../context/CabinetContext";
 
@@ -108,6 +109,7 @@ export default function AppRoutes() {
         {/* Routes without common sidebar */}
         <Route path="/dashboard/cabinet" element={<Cabinet />} />
         <Route path="/dashboard/alerts" element={<Alerts />} />
+<Route path="/dashboard/emergency" element={<Emergency />} />
       </Routes>
     </CabinetProvider>
   );
