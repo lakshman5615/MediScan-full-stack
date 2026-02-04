@@ -4,7 +4,7 @@ import { Mail, Lock, User, Calendar } from "lucide-react";
 
 import AuthLayout from "../../components/layout/AuthLayout";
 import MediScanIcon from "../../components/common/MediScanIcon";
-import { signupUser } from "../../services/authService";
+import { signupUser } from "../../services/authApi";
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -35,20 +35,21 @@ export default function Signup() {
     try {
       setLoading(true);
 
-      const res = await signupUser({
+      const res = await signupUser(
         name,
         email,
         age,
         password,
-      });
+      );
 
       // 🔐 SAME AS LOGIN
-      localStorage.setItem("token", res.token);
-      localStorage.setItem("user", JSON.stringify(res.user));
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+
 
       navigate("/dashboard");
     } catch (err) {
-      setError(err.message || "Signup failed");
+      setError(err.response?.data?.message || "Signup failed");
     } finally {
       setLoading(false);
     }
