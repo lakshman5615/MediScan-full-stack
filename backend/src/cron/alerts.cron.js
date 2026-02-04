@@ -10,14 +10,26 @@ const reminderInterval = 24 * 60 * 60 * 1000; // 1 day
 cron.schedule('* * * * *', async () => {
   try {
     const now = new Date();
-    const currentTime = now.toTimeString().slice(0, 5);
+    const currentTime = now.toTimeString().slice(0, 5); // HH:MM format
     const currentDay = now.getDay();
     const currentDate = now.getDate();
+
+    console.log(`🔍 Checking reminders at ${currentTime}`);
 
     const medicines = await Medicine.find({
       quantity: { $gt: 0 },
       'schedule.time': currentTime
     }).populate('userId');
+
+    console.log(`💊 Found ${medicines.length} medicines scheduled for ${currentTime}`);
+    
+    if (medicines.length > 0) {
+      console.log('Medicines:', medicines.map(m => ({ 
+        name: m.medicineName, 
+        time: m.schedule.time,
+        user: m.userId?.name 
+      })));
+    }
 
     for (const med of medicines) {
       const { schedule, medicineName, userId, _id, lastReminderSent } = med;
@@ -104,6 +116,20 @@ cron.schedule('0 * * * *', async () => {
         `Low stock for medicine: ${med.medicineName} (${med.quantity} doses left)`,
         { medicineId: med._id, type: 'low_quantity' }
       );
+      
+      // Store in notifications for UI
+      await require('../models/Notification').create({
+        userId: med.userId._id,
+        medicineId: med._id,
+        title: '⚠️ Low Stock Alert',
+        message: `Low stock for medicine: ${med.medicineName} (${med.quantity} doses left)`,
+        type: 'low_stock',
+        alertType: 'LOW_STOCK',
+        status: 'PENDING',
+        severity: 'WARNING',
+        showInUI: true,
+        deliveryStatus: 'delivered'
+      });
 
       med.lastLowStockAlert = now;
       await med.save();
@@ -130,6 +156,21 @@ cron.schedule('0 * * * *', async () => {
         `${med.medicineName} will expire in ${daysLeft} day(s)`,
         { medicineId: med._id, type: 'expiry_warning' }
       );
+      
+      // Store in notifications for UI
+      const severity = daysLeft <= 1 ? 'CRITICAL' : 'WARNING';
+      await require('../models/Notification').create({
+        userId: med.userId._id,
+        medicineId: med._id,
+        title: '📅 Expiry Alert',
+        message: `${med.medicineName} will expire in ${daysLeft} day(s)`,
+        type: 'expiry_alert',
+        alertType: 'EXPIRY',
+        status: 'PENDING',
+        severity,
+        showInUI: true,
+        deliveryStatus: 'delivered'
+      });
 
       med.lastExpiryAlert = now;
       await med.save();

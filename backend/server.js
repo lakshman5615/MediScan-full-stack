@@ -14,13 +14,11 @@ require('./src/cron/medicine-reminder.cron');
 require('./src/cron/alerts.cron');
 
 // Import routes
-
 const medicineRoutes = require('./src/routes/medicine.routes');
 const medicineActionRoutes = require('./src/routes/medicine-actions.routes');
 const doseRoutes = require('./src/routes/dose.routes');
 const notificationRoutes = require('./src/routes/notification.routes');
 const phoneUserRoutes = require('./src/routes/phone-user.routes');
-const cabinetRoutes = require('./src/routes/cabinet.routes');
 const reminderRoutes = require('./src/routes/reminder.routes');
 
 
@@ -53,9 +51,6 @@ app.get("/", (req, res) => {
 });
 app.use("/auth", authRoutes);
 
-app.use('/api/cabinet', cabinetRoutes);
-app.use('/api/reminder', reminderRoutes);
-
 // Use routes
 app.use('/api/auth', authRoutes);
 app.use('/api/ai', aiRoutes);
@@ -66,6 +61,7 @@ app.use('/api/notification', notificationRoutes);
 app.use('/api/phone-user', phoneUserRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use('/api/reminder', reminderRoutes);
 
 
 
