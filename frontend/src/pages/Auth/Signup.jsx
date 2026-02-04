@@ -1,24 +1,28 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { Mail, Lock, User, Calendar } from "lucide-react";
+
+import AuthLayout from "../../components/layout/AuthLayout";
+import MediScanIcon from "../../components/common/MediScanIcon";
 import { signupUser } from "../../services/authService";
 
-const Signup = () => {
+export default function Signup() {
+  const navigate = useNavigate();
+
   const [name, setName] = useState("");
-  const [emailOrMobile, setEmailOrMobile] = useState("");
+  const [email, setEmail] = useState("");
   const [age, setAge] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
-  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
-    // ✅ Frontend validation
-    if (!name || !emailOrMobile || !age || !password || !confirmPassword) {
+    if (!name || !email || !age || !password || !confirmPassword) {
       setError("All fields are required");
       return;
     }
@@ -28,18 +32,21 @@ const Signup = () => {
       return;
     }
 
-    setLoading(true);
-
     try {
-      await signupUser({
-        name: name,
-        email: emailOrMobile, // authService email expect karta hai
-        age: age,
-        password: password,
+      setLoading(true);
+
+      const res = await signupUser({
+        name,
+        email,
+        age,
+        password,
       });
 
-      alert("Signup successful! Please login.");
-      // navigate("/login");
+      // 🔐 SAME AS LOGIN
+      localStorage.setItem("token", res.token);
+      localStorage.setItem("user", JSON.stringify(res.user));
+
+      navigate("/dashboard");
     } catch (err) {
       setError(err.message || "Signup failed");
     } finally {
@@ -48,162 +55,186 @@ const Signup = () => {
   };
 
   return (
+    <AuthLayout>
+      <MediScanIcon />
 
-    <div className="min-h-screen flex items-center justify-center bg-slate-100 px-4">
-  <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-lg">
-    <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
-      Sign Up to MediScan
-    </h2>
+      <p className="text-center text-gray-500 text-sm mt-1 mb-5">
+        Create your account
+      </p>
 
-    {error && (
-      <div className="mb-4 text-sm text-red-700 bg-red-100 p-2 rounded">
-        {error}
-      </div>
-    )}
+      {error && (
+        <div className="mb-3 text-sm text-red-700 bg-red-100 p-2 rounded">
+          {error}
+        </div>
+      )}
 
-    <form onSubmit={handleSubmit} className="space-y-3">
-      <input
-        type="text"
-        placeholder="User Name"
-        className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-      />
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <Input icon={User} placeholder="User Name" value={name} onChange={(e) => setName(e.target.value)} />
+        <Input icon={Mail} placeholder="Email / Mobile" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <Input icon={Calendar} type="number" placeholder="Age" value={age} onChange={(e) => setAge(e.target.value)} />
+        <Input icon={Lock} type="password" placeholder="Set Password" value={password} onChange={(e) => setPassword(e.target.value)} />
+        <Input icon={Lock} type="password" placeholder="Confirm Password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
 
-      <input
-        type="text"
-        placeholder="Email / Mobile"
-        className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-        value={emailOrMobile}
-        onChange={(e) => setEmailOrMobile(e.target.value)}
-      />
+        <button
+          type="submit"
+          disabled={loading}
+          className={`w-full h-11 mt-3 rounded-xl text-white font-medium ${
+            loading ? "bg-gray-400" : "bg-cyan-500 hover:bg-cyan-600"
+          }`}
+        >
+          {loading ? "Creating account..." : "Sign Up →"}
+        </button>
+      </form>
 
-      <input
-        type="number"
-        placeholder="Age"
-        className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-        value={age}
-        onChange={(e) => setAge(e.target.value)}
-      />
-
-      <input
-        type="password"
-        placeholder="Set Password"
-        className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
-
-      <input
-        type="password"
-        placeholder="Confirm Password"
-        className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-        value={confirmPassword}
-        onChange={(e) => setConfirmPassword(e.target.value)}
-      />
-
-      <button
-        type="submit"
-        disabled={loading}
-        className={`w-full py-2 rounded-lg text-white font-semibold ${
-          loading
-            ? "bg-gray-400"
-            : "bg-blue-600 hover:bg-blue-700"
-        }`}
-      >
-        {loading ? "Signing up..." : "Sign Up"}
-      </button>
-    </form>
-
-    <p className="mt-4 text-center text-sm text-gray-600">
-      Already have an account?{" "}
-      <Link to="/login" className="text-blue-600 font-medium hover:underline">
-        Login
-      </Link>
-    </p>
-  </div>
-</div>
-
-    // <div className="fixed inset-0 flex items-center justify-center bg-slate-100">
-    //   <div className="w-full max-w-md bg-white p-10 rounded-2xl shadow-lg">
-    //     <h2 className="text-3xl font-bold text-center text-gray-800 mb-8">
-    //       Sign Up
-    //     </h2>
-
-    //     {/* Error Message */}
-    //     {error && (
-    //       <div className="mb-6 text-sm text-red-700 bg-red-100 p-3 rounded">
-    //         {error}
-    //       </div>
-    //     )}
-
-    //     <form onSubmit={handleSubmit} className="space-y-4">
-    //       <input
-    //         type="text"
-    //         placeholder="User Name"
-    //         className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-    //         value={name}
-    //         onChange={(e) => setName(e.target.value)}
-    //       />
-
-    //       <input
-    //         type="text"
-    //         placeholder="Email / Mobile"
-    //         className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-    //         value={emailOrMobile}
-    //         onChange={(e) => setEmailOrMobile(e.target.value)}
-    //       />
-
-    //       <input
-    //         type="number"
-    //         placeholder="Age"
-    //         className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-    //         value={age}
-    //         onChange={(e) => setAge(e.target.value)}
-    //       />
-
-    //       <input
-    //         type="password"
-    //         placeholder="Set Password"
-    //         className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-    //         value={password}
-    //         onChange={(e) => setPassword(e.target.value)}
-    //       />
-
-    //       <input
-    //         type="password"
-    //         placeholder="Confirm Password"
-    //         className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-    //         value={confirmPassword}
-    //         onChange={(e) => setConfirmPassword(e.target.value)}
-    //       />
-
-    //       <button
-    //         type="submit"
-    //         disabled={loading}
-    //         className={`w-full py-3 rounded-lg text-white font-semibold ${
-    //           loading
-    //             ? "bg-gray-400 cursor-not-allowed"
-    //             : "bg-blue-600 hover:bg-blue-700"
-    //         }`}
-    //       >
-    //         {loading ? "Signing up..." : "Sign Up"}
-    //       </button>
-    //     </form>
-
-    //     {/* Login Navigation */}
-    //     <p className="mt-6 text-center text-sm text-gray-600">
-    //       Already have an account?{" "}
-    //       <Link
-    //         to="/login"
-    //         className="text-blue-600 font-medium hover:underline"
-    //       >
-    //         Login
-    //       </Link>
-    //     </p>
-    //   </div>
-    // </div>
+      <p className="mt-4 text-center text-sm text-gray-600">
+        Already have an account?{" "}
+        <Link to="/login" className="text-cyan-500 font-medium">
+          Login
+        </Link>
+      </p>
+    </AuthLayout>
   );
-};
+}
 
-export default Signup;
+/* 🔹 same reusable input */
+function Input({ icon: Icon, ...props }) {
+  return (
+    <div className="flex items-center border rounded-xl px-3 h-11 bg-white focus-within:ring-2 focus-within:ring-cyan-400">
+      <Icon size={17} className="text-gray-400" />
+      <input
+        {...props}
+        className="w-full ml-3 bg-transparent outline-none text-sm text-gray-800 placeholder:text-gray-400"
+      />
+    </div>
+  );
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+// // import BackButton from "../../components/common/BackButton";
+// import { useState } from "react";
+// // import { useNavigate, Link } from "react-router-dom";
+// import { signupUser } from "../../services/authService";
+
+
+// import { Link, useNavigate } from "react-router-dom";
+// import { ArrowLeft, Mail, Lock, User, Calendar, PlusSquare  } from "lucide-react";
+
+// export default function Signup() {
+//   const navigate = useNavigate();
+
+//   return (
+//     <div className="min-h-screen flex items-center justify-center bg-slate-100 px-4">
+//       {/* Card */}
+//       <div className="relative w-full max-w-[360px] bg-white rounded-2xl shadow-md px-6 py-6">
+        
+//         {/* Back */}
+//         <button
+//           onClick={() => navigate(-1)}
+//           className="absolute left-4 top-4 text-gray-500 hover:text-gray-700"
+//         >
+//           <ArrowLeft size={20} />
+//         </button>
+
+//         {/* Icon (same style as MediScan) */}
+//         <div className="flex justify-center mb-3">
+//           <div className="h-14 w-14 rounded-xl bg-cyan-100 flex items-center justify-center">
+//             <PlusSquare size={26} className="text-cyan-600" />
+//           </div>
+//         </div>
+
+//         {/* Title */}
+//         <h2 className="text-center text-2xl font-bold text-gray-800">
+//           MediScan
+//         </h2>
+//         <p className="text-center text-gray-500 text-sm mt-1 mb-5">
+//           Create your account
+//         </p>
+
+//         {/* Form */}
+//         <form className="space-y-3">
+          
+//           {/* Username */}
+//           <div className="flex items-center border rounded-xl px-3 h-10">
+//             <User size={17} className="text-gray-400" />
+//             <input
+//               type="text"
+//               placeholder="User Name"
+//               className="w-full ml-3 outline-none text-sm placeholder:text-gray-400"
+//             />
+//           </div>
+
+//           {/* Email */}
+//           <div className="flex items-center border rounded-xl px-3 h-10">
+//             <Mail size={17} className="text-gray-400" />
+//             <input
+//               type="text"
+//               placeholder="Email / Mobile"
+//               className="w-full ml-3 outline-none text-sm placeholder:text-gray-400"
+//             />
+//           </div>
+
+//           {/* Age */}
+//           <div className="flex items-center border rounded-xl px-3 h-10">
+//             <Calendar size={17} className="text-gray-400" />
+//             <input
+//               type="number"
+//               placeholder="Age"
+//               className="w-full ml-3 outline-none text-sm placeholder:text-gray-400"
+//             />
+//           </div>
+
+//           {/* Password */}
+//           <div className="flex items-center border rounded-xl px-3 h-10">
+//             <Lock size={17} className="text-gray-400" />
+//             <input
+//               type="password"
+//               placeholder="Set Password"
+//               className="w-full ml-3 outline-none text-sm placeholder:text-gray-400"
+//             />
+//           </div>
+
+//           {/* Confirm Password */}
+//           <div className="flex items-center border rounded-xl px-3 h-10">
+//             <Lock size={17} className="text-gray-400" />
+//             <input
+//               type="password"
+//               placeholder="Confirm Password"
+//               className="w-full ml-3 outline-none text-sm placeholder:text-gray-400"
+//             />
+//           </div>
+
+//           {/* Button */}
+//           <button
+//             type="submit"
+//             className="w-full h-11 mt-3 rounded-xl bg-cyan-500 text-white font-medium hover:bg-cyan-600 transition"
+//           >
+//             Sign Up →
+//           </button>
+//         </form>
+
+//         {/* Footer */}
+//         <p className="mt-4 text-center text-sm text-gray-600">
+//           Already have an account?{" "}
+//           <Link to="/login" className="text-cyan-500 font-medium">
+//             Login
+//           </Link>
+//         </p>
+//       </div>
+//     </div>
+//   );
+// }
+
+
+
+
