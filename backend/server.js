@@ -7,6 +7,7 @@ dotenv.config();
 const authRoutes = require("./src/routes/auth.routes");
 const aiRoutes = require("./src/routes/ai.routes");
 const helmet = require('helmet');
+const dashboardRoutes = require("./src/routes/dashboard.routes")
 
 // Cron jobs
 require('./src/cron/medicine-reminder.cron');
@@ -63,6 +64,8 @@ app.use('/api/medicine-action', medicineActionRoutes);
 app.use('/api/dose', doseRoutes);
 app.use('/api/notification', notificationRoutes);
 app.use('/api/phone-user', phoneUserRoutes);
+app.use("/api/ai", aiRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 
 
