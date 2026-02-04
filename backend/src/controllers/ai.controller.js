@@ -134,3 +134,62 @@ exports.scanSearch = async (req, res) => {
 
     }
 };
+exports.guestManualSearch = async (req, res) => {
+    try {
+        const { text } = req.body;
+
+        const normalized = normalizeText(text);
+
+
+        const scanMed = await ScanMedicine.findOne({
+            normalizedName: normalized
+        });
+
+        if (scanMed) {
+            return res.json({
+                source: "database",
+                data: scanMed.aiExplanation
+            });
+        }
+        const aiData = await getMedicineExplanation(text, null);
+
+        return res.json({
+            source: "ai",
+            data: aiData
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+// GUEST SCAN IMAGE SEARCH
+exports.guestScanSearch = async (req, res) => {
+    try {
+        const image = req.file;
+
+        if (!image) {
+            return res.status(400).json({ message: "Image file is required" });
+        }
+
+        // image → base64 data URL
+        const imageBase64 = image.buffer.toString("base64");
+        const imageUrl = `data:${image.mimetype};base64,${imageBase64}`;
+
+        // AI CALL
+        const aiData = await getMedicineExplanation(
+            "analyze this medicine image",
+            imageUrl
+        );
+
+        return res.json({
+            source: "ai",
+            data: aiData
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Scan failed" });
+    }
+};

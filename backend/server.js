@@ -6,6 +6,7 @@ const User = require("./src/models/User");
 dotenv.config();
 const authRoutes = require("./src/routes/auth.routes");
 const aiRoutes = require("./src/routes/ai.routes");
+const dashboardRoutes = require("./src/routes/dashboard.routes")
 
 
 
@@ -26,6 +27,7 @@ app.get("/", (req, res) => {
 });
 app.use("/auth", authRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 
 
