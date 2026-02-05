@@ -73,6 +73,9 @@ import { useState, useEffect } from "react";
 import { Edit3, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAI } from "../../context/AIContext";
+import { guestManualSearch } from "../../services/guestApi";
+import { manualSearch } from "../../services/authMedicineApi";
+
 
 export default function ManualEntryCard({ mode }) {
   const navigate = useNavigate();
@@ -85,27 +88,89 @@ export default function ManualEntryCard({ mode }) {
     document.body.style.overflow = showModal ? "hidden" : "auto";
   }, [showModal]);
 
-  const handleAnalyze = () => {
+
+/* ---------------- AI ANALYZE ---------------- */
+
+
+// const handleAnalyze = async () => {
+//   if (!name) return;
+
+//   try {
+//     console.log("🟡 ANALYZE CLICKED", { mode, name });
+
+//     let aiData;
+
+//     if (mode === "guest") {
+//       console.log("calling guest manual api");
+//       aiData = await guestManualSearch({ name });
+//     } else {
+//       console.log(" calling auth manual api");
+//       aiData = await manualSearch({ name });
+//     }
+
+//     console.log(" AI RESPONSE:", aiData);
+
+//     openAIExplanation(aiData);
+//     setShowModal(false); //  VERY IMPORTANT
+
+//     navigate("/dashboard/ai-explanation", {
+//       state: {
+//         from: mode === "guest" ? "landing" : "dashboard",
+//       },
+//     });
+
+//   } 
+//   catch (error) {
+//     console.error(" Manual analyze failed:", error);
+//     alert("AI service not available (backend off?)");
+//   }
+// };
+
+
+const handleAnalyze = async () => {
   if (!name) return;
 
-  openAIExplanation({
-    name,
-    usage: "Pain & fever relief",
-    dosage: "500mg twice daily",
-    sideEffects: "Rare nausea",
-    source: "manual",
-  });
+  let aiData;
 
-  setShowModal(false);
+  if (mode === "guest") {
+    aiData = await guestManualSearch({ name });
+  } else {
+    aiData = await manualSearch({ name });
+  }
 
-  const isLoggedIn = !!localStorage.getItem("user");
+  openAIExplanation(aiData);
 
   navigate("/dashboard/ai-explanation", {
-  state: {
-    from: mode === "guest" ? "landing" : "dashboard",
-  },
-});
+    state: {
+      from: mode === "guest" ? "landing" : "dashboard",
+    },
+  });
 };
+
+
+
+
+//   const handleAnalyze = () => {
+//   if (!name) return;
+
+//   openAIExplanation({
+//     name,
+//     usage: "Pain & fever relief",
+//     dosage: "500mg twice daily",
+//     sideEffects: "Rare nausea",
+//     source: "manual",
+//   });
+
+//   setShowModal(false);
+
+//   const isLoggedIn = !!localStorage.getItem("user");
+
+//   navigate("/dashboard/ai-explanation", {
+//   state: {
+//     from: mode === "guest" ? "landing" : "dashboard",
+//   },
+// });
+// };
 
 
   return (

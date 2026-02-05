@@ -11,6 +11,7 @@ export default function Signup() {
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [mobile, setMobile] = useState("");
   const [age, setAge] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -22,7 +23,7 @@ export default function Signup() {
     e.preventDefault();
     setError("");
 
-    if (!name || !email || !age || !password || !confirmPassword) {
+    if (!name || !email || !mobile || !age || !password || !confirmPassword) {
       setError("All fields are required");
       return;
     }
@@ -38,6 +39,7 @@ export default function Signup() {
       const res = await signupUser(
         name,
         email,
+        mobile,
         age,
         password,
       );
@@ -71,7 +73,9 @@ export default function Signup() {
 
       <form onSubmit={handleSubmit} className="space-y-3">
         <Input icon={User} placeholder="User Name" value={name} onChange={(e) => setName(e.target.value)} />
-        <Input icon={Mail} placeholder="Email / Mobile" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <Input icon={Mail} placeholder="Email " value={email} onChange={(e) => setEmail(e.target.value)} />
+        <Input icon={Mail} placeholder="Mobile " value={mobile} onChange={(e) => setMobile(e.target.value)} />
+
         <Input icon={Calendar} type="number" placeholder="Age" value={age} onChange={(e) => setAge(e.target.value)} />
         <Input icon={Lock} type="password" placeholder="Set Password" value={password} onChange={(e) => setPassword(e.target.value)} />
         <Input icon={Lock} type="password" placeholder="Confirm Password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
