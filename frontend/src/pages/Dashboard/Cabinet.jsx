@@ -350,7 +350,7 @@ const MedicineCabinet = () => {
                   }}
                   className={`flex items-center justify-between w-full p-2 rounded-lg transition-colors duration-200 ${selectedFilter === 'prescription' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'text-gray-700 hover:bg-gray-100'}`}
                 >
-                  <span>High Stocked</span>
+                  <span>High Stock</span>
                   <span className="text-sm font-medium bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
                     {prescriptionCount}
                   </span>

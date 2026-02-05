@@ -10,6 +10,19 @@
 
 //       if (user) {
 //         resolve({
+//           token: "fake-jwt-token",    
+//           user,
+//         });
+//       } else {
+//         reject({
+//           message: "Invalid email or password",
+//         });
+//       }
+//     }, 800);
+//   });
+// };
+//       if (user) {
+//         resolve({
 //           token: "fake-jwt-token",
 //           user,
 //         });
