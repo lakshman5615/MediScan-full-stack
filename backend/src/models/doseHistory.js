@@ -13,6 +13,7 @@ const doseHistorySchema = new mongoose.Schema({
     enum: ['TAKEN', 'MISSED'],
     required: true
   }
+  
 }, { timestamps: true });
 
 module.exports = mongoose.model('DoseHistory', doseHistorySchema);

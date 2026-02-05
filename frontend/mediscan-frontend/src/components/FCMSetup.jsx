@@ -1,7 +1,7 @@
 // src/components/FCMSetup.jsx
 
 import { useEffect, useState } from "react";
-import FCMService from "../services/fcmService";
+import FCMService from "../fcmService";
 
 const FCMSetup = ({ user }) => {
   const [status, setStatus] = useState("idle");
@@ -12,7 +12,7 @@ const FCMSetup = ({ user }) => {
 
   const enableFCM = async () => {
     setStatus("loading");
-    const ok = await FCMService.setupFCM();
+    const ok = await FCMService.initializeFCM();
     setStatus(ok ? "enabled" : "failed");
   };
 

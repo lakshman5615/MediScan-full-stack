@@ -1,5 +1,61 @@
 const cron = require('node-cron');
 const Medicine = require('../models/Medicine');
+const ProductionFCMService = require('../services/production-fcm.service');
+
+// Run every minute to check for medicine reminders
+cron.schedule('* * * * *', async () => {
+    try {
+        console.log('🔔 Checking medicine reminders...');
+        
+        const now = new Date();
+        const currentTime = now.toTimeString().slice(0, 5); // HH:MM format
+        const today = now.toDateString();
+        
+        // Find medicines with schedules that match current time
+        const medicines = await Medicine.find({
+            'schedule.time': currentTime,
+            quantity: { $gt: 0 },
+            expiryDate: { $gte: today },
+            isActive: { $ne: false }
+        }).populate('userId', 'fcmToken name');
+        
+        for (const medicine of medicines) {
+            if (!medicine.userId?.fcmToken) continue;
+            
+            try {
+                // Send reminder with action buttons (YouTube-style)
+                await ProductionFCMService.sendNotificationWithAlert(medicine.userId._id, {
+                    title: '💊 Medicine Reminder',
+                    message: `Time to take ${medicine.medicineName} - ${medicine.dosage || '1 dose'}`,
+                    alertType: 'REMINDER',
+                    medicineId: medicine._id,
+                    medicineName: medicine.medicineName,
+                    dosage: medicine.dosage,
+                    severity: 'NORMAL',
+                    meta: {
+                        scheduledTime: currentTime,
+                        medicineId: medicine._id
+                    }
+                });
+                
+                console.log(`✅ Reminder sent: ${medicine.medicineName} to ${medicine.userId.name} at ${currentTime}`);
+                
+            } catch (notificationError) {
+                console.error(`❌ Failed to send reminder for ${medicine.medicineName}:`, notificationError);
+            }
+        }
+        
+    } catch (error) {
+        console.error('❌ Medicine reminder cron error:', error);
+    }
+});
+
+console.log('🔔 Medicine reminder cron job started - runs every minute');
+
+// OLD CODE (Commented for backup)
+/*
+const cron = require('node-cron');
+const Medicine = require('../models/Medicine');
 const Notification = require('../models/Notification');
 const ProductionFCMService = require('../services/production-fcm.service');
 
@@ -12,8 +68,17 @@ cron.schedule('* * * * *', async () => {
         const currentTime = now.toTimeString().slice(0, 5); // HH:MM format
         const today = now.toDateString();
         
-        // Find all medicines with enabled schedules
-        const medicines = await Medicine.find({}).populate('userId', 'fcmToken');
+        // Find medicines with enabled schedules and valid users
+        const medicines = await Medicine.find({
+            $or: [
+                { 'schedule.morning.enabled': true },
+                { 'schedule.afternoon.enabled': true },
+                { 'schedule.evening.enabled': true },
+                { 'schedule.night.enabled': true }
+            ],
+            remainingQuantity: { $gt: 0 },
+            expiryDate: { $gte: today }
+        }).populate('userId', 'fcmToken');
         
         for (const medicine of medicines) {
             if (!medicine.userId?.fcmToken) continue;
@@ -26,16 +91,15 @@ cron.schedule('* * * * *', async () => {
                 // Skip if not enabled or time doesn't match
                 if (!schedule?.enabled || schedule.time !== currentTime) continue;
                 
-                // Check if reminder already sent today
-                const reminderKey = `${medicine._id}_${slot}_${today}`;
+                // Check if reminder already sent today (batch check will be added later)
+                const todayStart = new Date(today);
+                const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
+                
                 const existingNotification = await Notification.findOne({
                     userId: medicine.userId._id,
                     medicineId: medicine._id,
                     type: 'medicine_reminder',
-                    createdAt: {
-                        $gte: new Date(today),
-                        $lt: new Date(new Date(today).getTime() + 24 * 60 * 60 * 1000)
-                    },
+                    createdAt: { $gte: todayStart, $lt: todayEnd },
                     message: { $regex: slot, $options: 'i' }
                 });
                 
@@ -44,15 +108,8 @@ cron.schedule('* * * * *', async () => {
                     continue;
                 }
                 
-                // Skip if expired
-                if (medicine.status === 'EXPIRED') {
-                    console.log(`⚠️ Skipping expired medicine: ${medicine.name}`);
-                    continue;
-                }
-                
-                // Skip if out of stock
-                if (medicine.remainingQuantity <= 0) {
-                    console.log(`📦 Skipping out of stock medicine: ${medicine.name}`);
+                // Additional safety checks (already filtered in query)
+                if (medicine.remainingQuantity <= 0 || new Date(medicine.expiryDate) < new Date(today)) {
                     continue;
                 }
                 
@@ -119,3 +176,4 @@ cron.schedule('* * * * *', async () => {
 });
 
 console.log('🔔 Medicine reminder cron job started - runs every minute');
+*/
