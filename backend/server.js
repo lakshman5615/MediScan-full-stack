@@ -33,10 +33,15 @@ app.use(express.json());
 
 // 🔐 SECURITY FIRST
 app.use(helmet());
+// app.use(cors({
+//   origin: 'http://localhost:3000',
+//   credentials: true
+// }));
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: 'http://localhost:5173',
   credentials: true
 }));
+
 
 // Root route
 app.get('/', (req, res) => res.send('Cabinet API is running 🚀'));
