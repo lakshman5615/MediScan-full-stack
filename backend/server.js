@@ -8,8 +8,22 @@ const authRoutes = require("./src/routes/auth.routes");
 const aiRoutes = require("./src/routes/ai.routes");
 const dashboardRoutes = require("./src/routes/dashboard.routes")
 
+// Cron jobs
+require('./src/cron/medicine-reminder.cron');
+require('./src/cron/alerts.cron');
 
 
+
+// Import routes
+const medicineRoutes = require('./src/routes/medicine.routes');
+const medicineActionRoutes = require('./src/routes/medicine-actions.routes');
+const doseRoutes = require('./src/routes/dose.routes');
+const notificationRoutes = require('./src/routes/notification.routes');
+const phoneUserRoutes = require('./src/routes/phone-user.routes');
+const reminderRoutes = require('./src/routes/reminder.routes');
+
+// middlewares
+app.use(cors());
 const app = express();
 
 // middlewares
@@ -18,7 +32,22 @@ app.use(express.json());
 
 // app.use(express.urlencoded({ extended: true }));
 
-// connect DB
+// app.use(express.urlencoded({ extended: true }));
+
+
+
+
+// 🔐 SECURITY FIRST
+app.use(helmet());
+// app.use(cors({
+//   origin: 'http://localhost:5173',
+//   credentials: true
+// }));
+
+// Root route
+app.get('/', (req, res) => res.send('Cabinet API is running 🚀'));
+
+// Connect MongoDB
 connectDB();
 
 // root test
@@ -27,6 +56,8 @@ app.get("/", (req, res) => {
 });
 app.use("/auth", authRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/dashboard", dashboardRoutes);
+app.use('/api/reminder', reminderRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 
 
