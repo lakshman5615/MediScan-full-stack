@@ -102,10 +102,10 @@ const app = express();
 
 // ✅ MIDDLEWARES AFTER APP INIT
 
-app.use(cors({
-  origin: 'http://localhost:5173',
-  credentials: true
-}));
+// app.use(cors({
+//   origin: 'http://localhost:5173',
+//   credentials: true
+// }));
 
 // app.use(cors());
 // app.use(cors({
