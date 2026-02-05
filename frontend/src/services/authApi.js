@@ -2,7 +2,7 @@ import axios from "./axios";
 
 // -----LOGIN API-----
 export const loginUser = (email, password) => {
-  return axios.post("/auth/login", {
+  return axios.post("/api/auth/login", {
     email,
     password,
   });
@@ -10,7 +10,7 @@ export const loginUser = (email, password) => {
 
 // -----SIGNUP API-----
 export const signupUser = (name, email, age, password) => {
-  return axios.post("/auth/signup", {
+  return axios.post("/api/auth/signup", {
     name,
     email,
     age,
