@@ -34,7 +34,7 @@ app.use(express.json());
 // 🔐 SECURITY FIRST
 app.use(helmet());
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: 'http://localhost:5176',
   credentials: true
 }));
 
@@ -51,7 +51,7 @@ app.get("/", (req, res) => {
 app.use("/auth", authRoutes);
 
 // Use routes
-app.use('/api/auth', authRoutes);
+app.use('/auth', authRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/medicine', medicineRoutes);
 app.use('/api/medicine-action', medicineActionRoutes);
