@@ -1,8 +1,11 @@
 // Production-Ready Backend Notification System
 // src/services/production-fcm.service.js
 
+const Notification = require('../models/Notification');
 const User = require('../models/User');
 const messaging = require('../config/firebase');
+
+const MIN_FCM_TOKEN_LENGTH = 50;
 
 class ProductionFCMService {
   
@@ -17,13 +20,11 @@ class ProductionFCMService {
       }
       
       // Method 1: Real FCM with action buttons (if token exists)
-      if (user.fcmToken && user.fcmToken.length > 50) {
+      if (user.fcmToken && user.fcmToken.length > MIN_FCM_TOKEN_LENGTH) {
         const fcmResult = await this.sendReminderFCM(user.fcmToken, title, message, medicineData);
         if (fcmResult.success) {
           console.log(`✅ Reminder FCM with actions sent to ${user.name}: ${title}`);
-          // Save to database
-          await this.saveNotificationToDatabase(userId, title, message, medicineData);
-          return fcmResult;  // ✅ SUCCESS - Return here, no fallback
+          return fcmResult;  // ✅ SUCCESS - Return here, no database save for successful FCM
         }
       }
       
@@ -45,22 +46,19 @@ class ProductionFCMService {
     }
   }
   
-  // Real FCM with action buttons for reminders
   async sendReminderFCM(fcmToken, title, message, medicineData) {
     try {
-      console.log(`📱 Attempting FCM send to token: ${fcmToken.substring(0, 20)}...`);
+      console.log(`📱 Attempting FCM send to token: ${fcmToken.length} chars`);
       
+      const timestamp = new Date();
       const payload = {
-        notification: {
-          title: title,
-          body: message
-        },
+        notification: { title, body: message },
         data: {
           medicineId: String(medicineData.medicineId || ''),
           medicineName: String(medicineData.medicineName || ''),
           userId: String(medicineData.userId || ''),
           type: 'medicine_reminder',
-          timestamp: new Date().toISOString(),
+          timestamp: timestamp.toISOString(),
           showActions: 'true',
           actionType: 'reminder'
         },
@@ -72,7 +70,7 @@ class ProductionFCMService {
       console.log(`✅ REMINDER FCM SUCCESS:`, {
         title,
         messageId: response,
-        timestamp: new Date().toLocaleTimeString()
+        timestamp: timestamp.toLocaleTimeString()
       });
       
       return { 
@@ -111,11 +109,11 @@ class ProductionFCMService {
       }
       
       // Method 1: Real FCM (if token exists and valid)
-      if (user.fcmToken && user.fcmToken.length > 50) {
+      if (user.fcmToken && user.fcmToken.length > MIN_FCM_TOKEN_LENGTH) {
         const fcmResult = await this.sendRealFCM(user.fcmToken, title, message, medicineData);
         if (fcmResult.success) {
           console.log(`✅ FCM sent to ${user.name}: ${title}`);
-          return fcmResult;
+          return fcmResult; // Don't save to DB if FCM succeeds
         }
       }
       
@@ -137,20 +135,17 @@ class ProductionFCMService {
     }
   }
   
-  // Real FCM with proper error handling
   async sendRealFCM(fcmToken, title, message, medicineData) {
     try {
+      const timestamp = new Date();
       const payload = {
-        notification: {
-          title: title,
-          body: message
-        },
+        notification: { title, body: message },
         data: {
           medicineId: String(medicineData.medicineId || ''),
           userId: String(medicineData.userId || ''),
           scheduledAt: String(medicineData.scheduledAt || ''),
           type: 'medicine_reminder',
-          timestamp: new Date().toISOString(),
+          timestamp: timestamp.toISOString(),
           showActions: 'true',
           actionType: 'medicine_reminder'
         },
@@ -163,7 +158,7 @@ class ProductionFCMService {
         title,
         message,
         messageId: response,
-        timestamp: new Date().toLocaleTimeString()
+        timestamp: timestamp.toLocaleTimeString()
       });
       
       return { 
@@ -190,11 +185,8 @@ class ProductionFCMService {
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   }
   
-  // Save notification to database for frontend polling
   async saveNotificationToDatabase(userId, title, message, medicineData) {
     try {
-      const Notification = require('../models/Notification');
-      
       const notification = new Notification({
         userId: userId,
         title: title,
@@ -256,5 +248,32 @@ class ProductionFCMService {
     }
   }
 }
+
+// Auto-refresh FCM token every 24 hours
+setInterval(async () => {
+    try {
+        console.log('🔄 Auto-refreshing FCM tokens...');
+        const users = await User.find({ fcmToken: { $exists: true, $ne: null } });
+        
+        for (const user of users) {
+            // Test if token is still valid by sending a test message
+            try {
+                await messaging.send({
+                    token: user.fcmToken,
+                    data: { test: 'token_validation' }
+                });
+                console.log(`✅ Token valid for user: ${user.name}`);
+            } catch (error) {
+                if (error.message.includes('not found')) {
+                    console.log(`❌ Invalid token for user: ${user.name} - marking for refresh`);
+                    user.fcmToken = null; // Mark for refresh
+                    await user.save();
+                }
+            }
+        }
+    } catch (error) {
+        console.error('❌ Token refresh error:', error);
+    }
+}, 24 * 60 * 60 * 1000); // Every 24 hours
 
 module.exports = new ProductionFCMService(); 

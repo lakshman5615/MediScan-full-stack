@@ -52,6 +52,5 @@ const alertSchema = new mongoose.Schema({
 // Indexes for performance
 alertSchema.index({ userId: 1, type: 1, status: 1 });
 alertSchema.index({ userId: 1, createdAt: -1 });
-alertSchema.index({ uniqueKey: 1 });
 
 module.exports = mongoose.model('Alert', alertSchema);

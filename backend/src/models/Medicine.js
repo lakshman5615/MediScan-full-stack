@@ -50,7 +50,9 @@ const medicineSchema = new mongoose.Schema({
     activeIngredients: [String],
     
     // Tracking Fields
-    lastReminderSent: { type: Date, default: null }
+    lastReminderSent: { type: Date, default: null },
+    lastLowStockAlert: { type: Date, default: null },
+    lastExpiryAlert: { type: Date, default: null }
 }, {
     timestamps: true // createdAt, updatedAt
 });
@@ -73,7 +75,7 @@ medicineSchema.set('toJSON', { virtuals: true });
 medicineSchema.set('toObject', { virtuals: true });
 
 // Indexes for performance
-medicineSchema.index({ userId: 1, status: 1 });
+medicineSchema.index({ userId: 1 });
 medicineSchema.index({ userId: 1, name: 'text' });
 
 module.exports = mongoose.model('Medicine', medicineSchema);

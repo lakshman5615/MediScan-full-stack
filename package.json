@@ -1,7 +1,29 @@
 {
+    "name": "mediscan-full-stack",
+    "version": "1.0.0",
+    "scripts": {
+        "dev": "cd backend && npm run dev",
+        "start": "cd backend && npm start",
+        "install-backend": "cd backend && npm install",
+        "install-frontend": "cd frontend && npm install"
+    },
     "dependencies": {
+        "@google/generative-ai": "^0.24.1",
+        "axios": "^1.13.4",
+        "bcryptjs": "^3.0.3",
+        "cors": "^2.8.6",
+        "dotenv": "^17.2.3",
+        "express": "^5.2.1",
         "firebase-admin": "^13.6.0",
         "groq-sdk": "^0.37.0",
-        "joi": "^18.0.2"
+        "helmet": "^8.1.0",
+        "joi": "^18.0.2",
+        "jsonwebtoken": "^9.0.3",
+        "mongoose": "^9.1.5",
+        "node-cron": "^4.2.1",
+        "nodemailer": "^7.0.13"
+    },
+    "devDependencies": {
+        "nodemon": "^3.1.11"
     }
 }
