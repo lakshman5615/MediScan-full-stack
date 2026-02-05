@@ -8,9 +8,9 @@ const { getMedicineExplanation } = require("../services/ai.service");
 
 exports.manualSearch = async (req, res) => {
     try {
-        const { text } = req.body;
-        const userId = req.user.id;
-
+        const { name } = req.body;
+        const userId = req.user._id;
+         const text = name;
         const normalized = normalizeText(text);
 
         let scanMed = await ScanMedicine.findOne({
@@ -68,7 +68,7 @@ exports.manualSearch = async (req, res) => {
         console.error(error);
 
         await AIHistory.create({
-            userId: req.user.id,
+            userId: req.user._id,
             inputText: req.body.text,
             queryType: "text",
             status: "failed"
