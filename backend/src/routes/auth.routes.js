@@ -8,8 +8,8 @@ const authMiddleware = require("../middlewares/auth.jwt");
 const User = require('../models/User');
 
 router.post('/login', loginValidation, login);
-router.post('/signup', signupValidation, signup);
-
+// router.post('/signup', signupValidation ,signup);
+router.post('/signup' ,signup);
 
 
 // profile 
