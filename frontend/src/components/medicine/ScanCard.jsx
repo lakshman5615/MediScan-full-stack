@@ -2,6 +2,8 @@ import { useRef, useState, useEffect } from "react";
 import { Camera, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAI } from "../../context/AIContext";
+import { guestScanSearch } from "../../services/guestApi";
+import { scanSearch } from "../../services/authMedicineApi";
 
 export default function ScanCard({ mode }) {
   const videoRef = useRef(null);
@@ -61,25 +63,86 @@ export default function ScanCard({ mode }) {
   };
 
   /* ---------------- AI ANALYZE ---------------- */
-  const handleAnalyze = () => {
-  openAIExplanation({
-    name: "Paracetamol",
-    usage: "Pain & fever relief",
-    dosage: "500mg twice daily",
-    sideEffects: "Rare nausea",
-    warning: "Avoid alcohol",
-    expiryDate: "2026-08-12",
-    source: "scan",
-  });
 
-  const isLoggedIn = !!localStorage.getItem("user");
 
-  navigate("/dashboard/ai-explanation", {
-  state: {
-    from: mode === "guest" ? "landing" : "dashboard",
-  },
-});
+  const handleAnalyze = async () => {
+  if (!preview) return;
+
+  try {
+    console.log("🟡 SCAN ANALYZE CLICKED", mode);
+
+    let aiData;
+
+    if (mode === "guest") {
+      console.log("🔓 calling guest scan api");
+      aiData = await guestScanSearch({ image: preview });
+    } else {
+      console.log("🔐 calling auth scan api");
+      aiData = await scanSearch({ image: preview });
+    }
+
+    console.log("✅ AI RESPONSE:", aiData);
+
+    openAIExplanation(aiData);
+    setShowModal(false); // ❗ IMPORTANT
+
+    navigate("/dashboard/ai-explanation", {
+      state: {
+        from: mode === "guest" ? "landing" : "dashboard",
+      },
+    });
+
+  } catch (error) {
+    console.error("❌ Scan analyze failed:", error);
+    alert("AI service not available (backend off?)");
+  }
 };
+
+
+// const handleAnalyze = async () => {
+//   let aiData;
+
+//   if (mode === "guest") {
+//     aiData = await guestScanSearch({
+//       image: preview,
+//     });
+//   } else {
+//     aiData = await scanSearch({
+//       image: preview,
+//     });
+//   }
+
+//   openAIExplanation(aiData);
+
+//   navigate("/dashboard/ai-explanation", {
+//     state: {
+//       from: mode === "guest" ? "landing" : "dashboard",
+//     },
+//   });
+
+
+// }
+
+
+//   const handleAnalyze = () => {
+//   openAIExplanation({
+//     name: "Paracetamol",
+//     usage: "Pain & fever relief",
+//     dosage: "500mg twice daily",
+//     sideEffects: "Rare nausea",
+//     warning: "Avoid alcohol",
+//     expiryDate: "2026-08-12",
+//     source: "scan",
+//   });
+
+//   const isLoggedIn = !!localStorage.getItem("user");
+
+//   navigate("/dashboard/ai-explanation", {
+//   state: {
+//     from: mode === "guest" ? "landing" : "dashboard",
+//   },
+// });
+// };
 
 
   return (

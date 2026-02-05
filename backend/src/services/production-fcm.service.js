@@ -302,11 +302,10 @@ class ProductionFCMService {
         if (!user.fcmToken || user.fcmToken.length < MIN_FCM_TOKEN_LENGTH) {
           user.fcmToken = null;
           await user.save();
-          if (this.isDev) console.log(`⚠️ Cleared invalid FCM token for user ${user._id}`);
         }
       }
 
-      if (this.isDev) console.log('🔄 FCM token validation completed (runs every 7 days).');
+
     } catch (error) {
       console.error('❌ FCM validation error:', error);
     }
