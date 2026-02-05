@@ -21,7 +21,7 @@
 //       setError("All fields are required");
 //       return;
 //     }
-    
+
 //     setLoading(true);
 //     try {
 //       const res = await loginUser(email, password);
@@ -38,14 +38,14 @@
 //   return (
 //     <div className="min-h-screen flex items-center justify-center bg-slate-100">
 //       <div className="w-full max-w-xs bg-white rounded-2xl shadow-lg p-8 relative">
-        
+
 //         {/* Back button INSIDE card */}
 //         <button
 //           onClick={() => navigate(-1)}
 //           className="absolute top-5 left-5 flex items-center gap-2 hover:text-cyan-600"
 //         >
 //           <ArrowLeft size={18} />
-          
+
 //         </button>
 
 //         {/* Icon */}
@@ -148,7 +148,9 @@ import { Mail, Lock } from "lucide-react";
 
 import AuthLayout from "../../components/layout/AuthLayout";
 import MediScanIcon from "../../components/common/MediScanIcon";
-import { loginUser } from "../../services/authService";
+import { loginUser } from "../../services/authApi";
+
+// import { loginUser } from "../../services/authService";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -168,12 +170,14 @@ export default function Login() {
     try {
       setLoading(true);
       const res = await loginUser(email, password);
-      localStorage.setItem("token", res.token);
-      localStorage.setItem("user", JSON.stringify(res.user));
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
       navigate("/dashboard");
-    } catch (err) {
-      setError(err.message || "Invalid credentials");
-    } finally {
+    }
+    catch (err) {
+      setError(err.response?.data?.message ||  "Login failed");
+    }
+    finally {
       setLoading(false);
     }
   };
@@ -220,9 +224,8 @@ export default function Login() {
         <button
           type="submit"
           disabled={loading}
-          className={`w-full py-3 rounded-lg text-white font-semibold ${
-            loading ? "bg-gray-400" : "bg-cyan-500 hover:bg-cyan-600"
-          }`}
+          className={`w-full py-3 rounded-lg text-white font-semibold ${loading ? "bg-gray-400" : "bg-cyan-500 hover:bg-cyan-600"
+            }`}
         >
           {loading ? "Logging in..." : "Login →"}
         </button>
