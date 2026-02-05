@@ -2,9 +2,128 @@ const express = require('express');
 const authMiddleware = require('../middlewares/auth.jwt');
 const Medicine = require('../models/Medicine');
 const DoseHistory = require('../models/doseHistory');
+const Alert = require('../models/Alert');
 const ProductionFCMService = require('../services/production-fcm.service');
 
 const router = express.Router();
+
+// ----------------------
+// NEW: YouTube-style Action Handler (Unified)
+// ----------------------
+router.post('/action', authMiddleware, async (req, res) => {
+    try {
+        const { _id: userId } = req.user;
+        const { alertId, medicineId, action, source } = req.body; // source: 'notification' or 'alert'
+
+        console.log('🎯 Medicine action request:', { userId, alertId, medicineId, action, source });
+
+        const medicine = await Medicine.findOne({ _id: medicineId, userId });
+        if (!medicine) {
+            return res.status(404).json({ success: false, error: 'Medicine not found' });
+        }
+
+        // Handle action
+        let result;
+        if (action === 'taken') {
+            result = await handleTakenAction(userId, medicine, source);
+        } else if (action === 'missed') {
+            result = await handleMissedAction(userId, medicine, source);
+        } else {
+            return res.status(400).json({ success: false, error: 'Invalid action' });
+        }
+
+        // Update both Alert and Notification (YouTube-style sync)
+        await ProductionFCMService.handleAction(alertId, action, source);
+
+        res.json({
+            success: true,
+            message: `Medicine ${action} successfully`,
+            data: result,
+            syncedFrom: source
+        });
+
+    } catch (error) {
+        console.error('❌ Medicine action error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Helper: Handle taken action
+async function handleTakenAction(userId, medicine, source) {
+    // Update quantity
+    medicine.quantity -= 1;
+    await medicine.save();
+    console.log('✅ Medicine quantity updated to:', medicine.quantity);
+
+    // Save to DoseHistory
+    const doseRecord = await DoseHistory.create({
+        userId,
+        medicineId: medicine._id,
+        medicineName: medicine.medicineName,
+        scheduledTime: medicine.schedule?.time || 'Unknown',
+        scheduledAt: new Date(),
+        status: 'TAKEN',
+        actionSource: source
+    });
+
+    // Check for low stock
+    if (medicine.quantity <= 2 && medicine.quantity > 0) {
+        await ProductionFCMService.sendNotificationWithAlert(userId, {
+            title: '⚠️ Low Stock Alert',
+            message: `${medicine.medicineName} is running low. Only ${medicine.quantity} doses remaining.`,
+            alertType: 'LOW_STOCK',
+            medicineId: medicine._id,
+            medicineName: medicine.medicineName,
+            severity: 'WARNING'
+        });
+    }
+
+    // Check for out of stock
+    if (medicine.quantity === 0) {
+        await ProductionFCMService.sendNotificationWithAlert(userId, {
+            title: '🚫 Out of Stock',
+            message: `${medicine.medicineName} is out of stock. Please refill your prescription.`,
+            alertType: 'LOW_STOCK',
+            medicineId: medicine._id,
+            medicineName: medicine.medicineName,
+            severity: 'CRITICAL'
+        });
+    }
+
+    return {
+        medicine: {
+            name: medicine.medicineName,
+            remainingQuantity: medicine.quantity,
+            status: medicine.quantity === 0 ? 'Out of Stock' :
+                    medicine.quantity <= 2 ? 'Low Stock' : 'Available'
+        },
+        doseHistoryId: doseRecord._id
+    };
+}
+
+// Helper: Handle missed action
+async function handleMissedAction(userId, medicine, source) {
+    // Save to DoseHistory (no quantity change)
+    const doseRecord = await DoseHistory.create({
+        userId,
+        medicineId: medicine._id,
+        medicineName: medicine.medicineName,
+        scheduledTime: medicine.schedule?.time || 'Unknown',
+        scheduledAt: new Date(),
+        status: 'MISSED',
+        actionSource: source
+    });
+
+    return {
+        medicine: {
+            name: medicine.medicineName,
+            quantity: medicine.quantity,
+            nextReminder: medicine.schedule?.time,
+            note: 'Quantity unchanged - dose was missed'
+        },
+        doseHistoryId: doseRecord._id
+    };
+}
 
 // ----------------------
 // Medicine Taken
