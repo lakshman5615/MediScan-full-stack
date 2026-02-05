@@ -10,7 +10,7 @@ export const loginUser = (email, password) => {
 
       if (user) {
         resolve({
-          token: "fake-jwt-token",
+          token: "fake-jwt-token",    
           user,
         });
       } else {
