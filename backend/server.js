@@ -62,6 +62,8 @@ app.use('/api/medicine-action', medicineActionRoutes);
 app.use('/api/dose', doseRoutes);
 app.use('/api/notification', notificationRoutes);
 app.use('/api/phone-user', phoneUserRoutes);
+app.use("/api/ai", aiRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 app.use('/api/reminder', reminderRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 
