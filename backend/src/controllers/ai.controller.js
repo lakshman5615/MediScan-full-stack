@@ -70,7 +70,7 @@ exports.manualSearch = async (req, res) => {
 
         await AIHistory.create({
             userId: req.user._id,
-            inputText: req.body.text,
+            inputText: req.body.name,
             queryType: "text",
             status: "failed"
         });

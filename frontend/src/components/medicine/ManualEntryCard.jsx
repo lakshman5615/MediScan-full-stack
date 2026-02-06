@@ -130,21 +130,38 @@ export default function ManualEntryCard({ mode }) {
 const handleAnalyze = async () => {
   if (!name) return;
 
-  let aiData;
+  try {
+    let response;
 
-  if (mode === "guest") {
-    aiData = await guestManualSearch({ name });
-  } else {
-    aiData = await manualSearch({ name });
+    if (mode === "guest") {
+      response = await guestManualSearch({ text: name });
+    } else {
+      response = await manualSearch({ name });
+    }
+
+    const aiData = response.data?.aiExplanation || response.data;
+
+    openAIExplanation({
+      name: aiData.medicineName || name,
+      usage: aiData.usage,
+      dosage: aiData.dosage,
+      sideEffects: aiData.sideEffects,
+      warning: aiData.warnings,
+      expiryDate: aiData.expirydate,
+      source: response.source || "ai"
+    });
+
+    setShowModal(false);
+
+    navigate("/dashboard/ai-explanation", {
+      state: {
+        from: mode === "guest" ? "landing" : "dashboard",
+      },
+    });
+  } catch (error) {
+    console.error("Manual search failed:", error);
+    alert("Failed to get medicine info. Check backend.");
   }
-
-  openAIExplanation(aiData);
-
-  navigate("/dashboard/ai-explanation", {
-    state: {
-      from: mode === "guest" ? "landing" : "dashboard",
-    },
-  });
 };
 
 
