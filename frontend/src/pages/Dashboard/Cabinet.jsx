@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink } from "react-router-dom";
+
 import { 
   Search, 
   Filter, 
@@ -37,13 +38,21 @@ import {
   ArrowLeft,
   CalendarDays
 } from 'lucide-react';
-import EditMedicineModal from '../../components/common/EditMedicineModal';
-import { 
-  initialMedicines, 
+
+import {
+  getMedicines,
+  addMedicine,
+  deleteMedicine,
+  markDoseTaken,
+} from "../../services/medicine.service";
+import {
   getStatusConfig,
   isMedicineExpired,
   getMedicineStatus
-} from '../../components/common/medicinesData';
+} from "../../utils/medicineUtils";
+
+import EditMedicineModal from '../../components/common/EditMedicineModal';
+
 
 const MedicineCabinet = () => {
   const [medicines, setMedicines] = useState([]);
@@ -58,46 +67,74 @@ const MedicineCabinet = () => {
   const [notificationCount, setNotificationCount] = useState(0);
   const [showAllMedicines, setShowAllMedicines] = useState(false);
   
-  // Initialize medicines from common data
+  // Load medicines from backend
+  // useEffect(() => {
+  //   const loadMedicines = async () => {
+  //     try {
+  //       // const data = await getCabinet();
+  //       const updatedMedicines = data.medicines?.map(medicine => ({
+  //         ...medicine,
+  //         status: getMedicineStatus(medicine)
+  //       })) || [];
+  //       setMedicines(updatedMedicines);
+  //       calculateNotificationCount(updatedMedicines);
+  //     } catch (error) {
+  //       console.error('Error loading medicines:', error);
+  //       // Fallback to localStorage for offline mode
+  //       const savedMedicines = localStorage.getItem('medicines');
+  //       if (savedMedicines) {
+  //         try {
+  //           const parsedMedicines = JSON.parse(savedMedicines);
+  //           const updatedMedicines = parsedMedicines.map(medicine => ({
+  //             ...medicine,
+  //             status: getMedicineStatus(medicine)
+  //           }));
+  //           setMedicines(updatedMedicines);
+  //           calculateNotificationCount(updatedMedicines);
+  //         } catch (parseError) {
+  //           console.error('Error parsing saved medicines:', parseError);
+  //         }
+  //       }
+  //     }
+  //   };
+    
+  //   loadMedicines();
+    
+  //   // Refresh every minute for real-time updates
+  //   const interval = setInterval(() => {
+  //     loadMedicines();
+  //   }, 60000);
+    
+  //   return () => clearInterval(interval);
+  // }, []);
+
+
   useEffect(() => {
-    const loadMedicines = () => {
-      const savedMedicines = localStorage.getItem('medicines');
-      if (savedMedicines) {
-        try {
-          const parsedMedicines = JSON.parse(savedMedicines);
-          // Update status for each medicine
-          const updatedMedicines = parsedMedicines.map(medicine => ({
-            ...medicine,
-            status: getMedicineStatus(medicine)
-          }));
-          setMedicines(updatedMedicines);
-          
-          // Calculate notification count
-          calculateNotificationCount(updatedMedicines);
-        } catch (error) {
-          console.error('Error parsing saved medicines:', error);
-          const initializedMedicines = initialMedicines();
-          setMedicines(initializedMedicines);
-          calculateNotificationCount(initializedMedicines);
-          localStorage.setItem('medicines', JSON.stringify(initializedMedicines));
-        }
-      } else {
-        const initializedMedicines = initialMedicines();
-        setMedicines(initializedMedicines);
-        calculateNotificationCount(initializedMedicines);
-        localStorage.setItem('medicines', JSON.stringify(initializedMedicines));
-      }
-    };
-    
-    loadMedicines();
-    
-    // Refresh every minute for real-time updates
-    const interval = setInterval(() => {
-      loadMedicines();
-    }, 60000);
-    
-    return () => clearInterval(interval);
-  }, []);
+  loadMedicines();
+}, []);
+
+const loadMedicines = async () => {
+  try {
+    const res = await getMedicines();
+
+    const formatted = res.data.map((med) => ({
+      ...med,
+      id: med._id,
+      name: med.medicineName,
+      remaining: `${med.quantity} units`,
+      status: getMedicineStatus({
+        expiryDate: med.expiryDate,
+        quantity: med.quantity,
+      }),
+    }));
+
+    setMedicines(formatted);
+    calculateNotificationCount(formatted);
+  } catch (err) {
+    console.error("Failed to load medicines", err);
+  }
+};
+
 
   // Calculate notification count
   const calculateNotificationCount = (medicinesList) => {
@@ -145,68 +182,71 @@ const MedicineCabinet = () => {
   };
 
   // Handle adding/editing medicine
-  const handleSaveMedicine = (medicineData) => {
-    if (isEditing && editingMedicineId) {
-      // Update existing medicine
-      const updatedMedicines = medicines.map(medicine => 
-        medicine.id === editingMedicineId ? {
-          ...medicine,
+  const handleSaveMedicine = async (medicineData) => {
+    try {
+      if (isEditing && editingMedicineId) {
+        // For editing, we'll update locally for now
+        // TODO: Implement update API endpoint
+        const updatedMedicines = medicines.map(medicine => 
+          medicine.id === editingMedicineId ? {
+            ...medicine,
+            name: medicineData.name,
+            brand: medicineData.brand,
+            type: medicineData.type,
+            strength: medicineData.dosage,
+            quantity: parseInt(medicineData.totalQuantity),
+            unit: medicineData.dosage.includes('mg') ? 'tablets' : 
+                  medicineData.dosage.includes('ml') ? 'ml' : 'units',
+            expiryDate: medicineData.expiryDate,
+            lotNumber: medicineData.lotNumber,
+            dailyDoses: parseInt(medicineData.dailyDoses) || 1,
+            schedule: medicineData.schedule,
+            scheduleEnabled: medicineData.scheduleEnabled,
+            remaining: `${medicineData.totalQuantity} ${medicineData.dosage.includes('mg') ? 'tablets' : medicineData.dosage.includes('ml') ? 'ml' : 'units'} remaining`,
+            status: getMedicineStatus({
+              expiryDate: medicineData.expiryDate,
+              quantity: parseInt(medicineData.totalQuantity)
+            })
+          } : medicine
+        );
+        
+        setMedicines(updatedMedicines);
+        localStorage.setItem('medicines', JSON.stringify(updatedMedicines));
+        calculateNotificationCount(updatedMedicines);
+        alert(`${medicineData.name} updated successfully!`);
+      } else {
+        // Add new medicine via API
+        const unit = medicineData.dosage.includes('mg') ? 'tablets' : 
+                    medicineData.dosage.includes('ml') ? 'ml' : 'units';
+                    
+        const newMedicineData = {
           name: medicineData.name,
           brand: medicineData.brand,
           type: medicineData.type,
           strength: medicineData.dosage,
           quantity: parseInt(medicineData.totalQuantity),
-          unit: medicineData.dosage.includes('mg') ? 'tablets' : 
-                medicineData.dosage.includes('ml') ? 'ml' : 'units',
+          unit: unit,
           expiryDate: medicineData.expiryDate,
           lotNumber: medicineData.lotNumber,
           dailyDoses: parseInt(medicineData.dailyDoses) || 1,
           schedule: medicineData.schedule,
-          scheduleEnabled: medicineData.scheduleEnabled,
-          remaining: `${medicineData.totalQuantity} ${medicineData.dosage.includes('mg') ? 'tablets' : medicineData.dosage.includes('ml') ? 'ml' : 'units'} remaining`,
-          status: getMedicineStatus({
-            expiryDate: medicineData.expiryDate,
-            quantity: parseInt(medicineData.totalQuantity)
-          })
-        } : medicine
-      );
-      
-      setMedicines(updatedMedicines);
-      localStorage.setItem('medicines', JSON.stringify(updatedMedicines));
-      calculateNotificationCount(updatedMedicines);
-      alert(`${medicineData.name} updated successfully!`);
-    } else {
-      // Add new medicine
-      const unit = medicineData.dosage.includes('mg') ? 'tablets' : 
-                  medicineData.dosage.includes('ml') ? 'ml' : 'units';
-                  
-      const newMedicineObj = {
-        id: medicines.length > 0 ? Math.max(...medicines.map(m => m.id)) + 1 : 1,
-        name: medicineData.name,
-        brand: medicineData.brand,
-        type: medicineData.type,
-        strength: medicineData.dosage,
-        quantity: parseInt(medicineData.totalQuantity),
-        unit: unit,
-        remaining: `${medicineData.totalQuantity} ${unit} remaining`,
-        expiryDate: medicineData.expiryDate,
-        activeIngredients: 'To be determined',
-        requiresAttention: false,
-        lotNumber: medicineData.lotNumber,
-        dailyDoses: parseInt(medicineData.dailyDoses) || 1,
-        schedule: medicineData.schedule,
-        scheduleEnabled: medicineData.scheduleEnabled,
-        status: getMedicineStatus({
+          scheduleEnabled: medicineData.scheduleEnabled
+        };
+        
+        // await addToCabinet(newMedicineData);
+        await addMedicine({
+          medicineName: medicineData.name,
+          type: medicineData.type,
+          strength: medicineData.dosage,
+          quantity: Number(medicineData.totalQuantity),
           expiryDate: medicineData.expiryDate,
-          quantity: parseInt(medicineData.totalQuantity)
-        })
-      };
-      
-      const updatedMedicines = [...medicines, newMedicineObj];
-      setMedicines(updatedMedicines);
-      localStorage.setItem('medicines', JSON.stringify(updatedMedicines));
-      calculateNotificationCount(updatedMedicines);
-      alert(`${medicineData.name} added successfully!`);
+        });
+        await loadMedicines();
+        alert(`${medicineData.name} added successfully!`);
+      }
+    } catch (error) {
+      console.error('Error saving medicine:', error);
+      alert('Error saving medicine. Please try again.');
     }
     
     resetForm();
@@ -257,15 +297,26 @@ const MedicineCabinet = () => {
 
 
 
-  const handleDiscard = (medicineId) => {
-    if (window.confirm('Are you sure you want to discard this medicine?')) {
-      const updatedMedicines = medicines.filter(m => m.id !== medicineId);
-      setMedicines(updatedMedicines);
-      localStorage.setItem('medicines', JSON.stringify(updatedMedicines));
-      calculateNotificationCount(updatedMedicines);
-      alert('Medicine discarded successfully');
-    }
-  };
+  // const handleDiscard = (medicineId) => {
+  //   if (window.confirm('Are you sure you want to discard this medicine?')) {
+  //     const updatedMedicines = medicines.filter(m => m.id !== medicineId);
+  //     setMedicines(updatedMedicines);
+  //     localStorage.setItem('medicines', JSON.stringify(updatedMedicines));
+  //     calculateNotificationCount(updatedMedicines);
+  //     alert('Medicine discarded successfully');
+  //   }
+  // };
+  const handleDiscard = async (medicineId) => {
+  if (!window.confirm("Delete this medicine?")) return;
+
+  try {
+    await deleteMedicine(medicineId);
+    loadMedicines();
+  } catch (err) {
+    console.error("Delete failed", err);
+  }
+};
+
 
   return (
     <div className="min-h-screen bg-gray-50 flex">

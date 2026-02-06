@@ -9,16 +9,23 @@ export const loginUser = (email, password) => {
 }
 
 // -----SIGNUP API-----
-// export const signupUser = (name, email, age, password , phone) => {
-//   return axios.post("/auth/signup", {
-//     name,
-//     email,
-//     age,
-//     password,
-//     phone
-//   });
-// };
-// services/authApi.js
-export const signupUser = (data) => {
-  return axios.post("/auth/signup", data);
+export const signupUser = (name, email, age, password) => {
+  return axios.post("/auth/signup", {
+    name,
+    email,
+    age,
+    password,
+  });
 };
+
+// ------Profile Api-------
+
+export const profileUser = (name, email, phone, age) => {
+  return axios.post("/auth/profile", {
+    name,
+    email,
+    phone,
+    age,
+  });
+};
+
