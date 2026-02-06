@@ -4,22 +4,37 @@ export const isMedicineExpired = (expiryDate) => {
 };
 
 export const getMedicineStatus = (medicine) => {
-  if (isMedicineExpired(medicine.expiryDate)) return "Expired";
-  if (medicine.quantity === 0) return "Out of Stock";
-  if (medicine.quantity <= 5) return "Low Stock";
-  return "Active";
+  if (isMedicineExpired(medicine.expiryDate)) return "expired";
+  if (medicine.quantity === 0) return "out_of_stock";
+  if (medicine.quantity <= 2) return "low_stock";
+  return "high_stock";
 };
-// src/utils/medicineUtils.js
+
 export const getStatusConfig = (status) => {
   switch (status) {
-    case "LOW_STOCK":
-      return { label: "Low Stock", color: "orange" };
+    case "Expired":
     case "EXPIRED":
-      return { label: "Expired", color: "red" };
+    case "expired":
+      return { text: "EXPIRED", color: "bg-red-100 text-red-800" };
+    case "Out of Stock":
+    case "OUT_OF_STOCK":
+    case "out_of_stock":
+      return { text: "OUT OF STOCK", color: "bg-red-100 text-red-800" };
+    case "Low Stock":
+    case "LOW_STOCK":
+    case "low_stock":
+      return { text: "LOW STOCK", color: "bg-yellow-100 text-yellow-800" };
+    case "Expiring":
     case "EXPIRING":
-      return { label: "Expiring Soon", color: "yellow" };
+    case "expiring":
+      return { text: "EXPIRING SOON", color: "bg-orange-100 text-orange-800" };
+    case "High Stock":
+    case "HIGH_STOCK":
+    case "high_stock":
+    case "Active":
     case "OK":
+    case "stocked":
     default:
-      return { label: "Available", color: "green" };
+      return { text: "HIGH STOCK", color: "bg-green-100 text-green-800" };
   }
 };

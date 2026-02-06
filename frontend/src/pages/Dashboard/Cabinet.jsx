@@ -43,7 +43,9 @@ import {
   getMedicines,
   addMedicine,
   deleteMedicine,
+  updateMedicine,
   markDoseTaken,
+  markDoseMissed
 } from "../../services/medicine.service";
 import {
   getStatusConfig,
@@ -113,20 +115,71 @@ const MedicineCabinet = () => {
   loadMedicines();
 }, []);
 
+// const loadMedicines = async () => {
+//   try {
+//     const res = await getMedicines();
+
+//     const formatted = res.data.map((med) => ({
+//       ...med,
+//       id: med._id,
+//       name: med.medicineName,
+//       remaining: `${med.quantity} units`,
+//       status: getMedicineStatus({
+//         expiryDate: med.expiryDate,
+//         quantity: med.quantity,
+//       }),
+//     }));
+
+//     setMedicines(formatted);
+//     calculateNotificationCount(formatted);
+//   } catch (err) {
+//     console.error("Failed to load medicines", err);
+//   }
+// };
 const loadMedicines = async () => {
   try {
     const res = await getMedicines();
 
-    const formatted = res.data.map((med) => ({
-      ...med,
-      id: med._id,
-      name: med.medicineName,
-      remaining: `${med.quantity} units`,
-      status: getMedicineStatus({
+    // 🔥 SAFE extraction
+    const medicinesArray = res?.data || res?.medicines || [];
+
+    if (!Array.isArray(medicinesArray)) {
+      console.error("Medicines is not an array", res);
+      return;
+    }
+
+    const formatted = medicinesArray.map((med) => {
+      const schedule = med.schedule || {};
+      const scheduleEnabled = {
+        morning: !!schedule.morning?.enabled,
+        afternoon: !!schedule.afternoon?.enabled,
+        evening: !!schedule.evening?.enabled,
+        night: !!schedule.night?.enabled
+      };
+
+      return {
+        id: med._id,
+        name: med.name || med.medicineName,
+        brand: med.brand || "",
+        type: med.medicineType || med.type,
+        strength: med.dosage || "",
+        quantity: med.remainingQuantity ?? med.totalQuantity ?? med.quantity ?? 0,
+        totalQuantity: med.totalQuantity ?? 0,
         expiryDate: med.expiryDate,
-        quantity: med.quantity,
-      }),
-    }));
+        schedule: {
+          morning: schedule.morning?.time || "08:00",
+          afternoon: schedule.afternoon?.time || "13:00",
+          evening: schedule.evening?.time || "18:00",
+          night: schedule.night?.time || "22:00"
+        },
+        scheduleEnabled,
+        remaining: `${med.remainingQuantity ?? med.totalQuantity ?? med.quantity ?? 0} units`,
+        status: getMedicineStatus({
+          expiryDate: med.expiryDate,
+          quantity: med.remainingQuantity ?? med.totalQuantity ?? med.quantity ?? 0
+        })
+      };
+    });
 
     setMedicines(formatted);
     calculateNotificationCount(formatted);
@@ -184,6 +237,10 @@ const loadMedicines = async () => {
   // Handle adding/editing medicine
   const handleSaveMedicine = async (medicineData) => {
     try {
+
+      ///
+      
+      ///
       if (isEditing && editingMedicineId) {
         // For editing, we'll update locally for now
         // TODO: Implement update API endpoint
@@ -218,11 +275,12 @@ const loadMedicines = async () => {
         // Add new medicine via API
         const unit = medicineData.dosage.includes('mg') ? 'tablets' : 
                     medicineData.dosage.includes('ml') ? 'ml' : 'units';
+        const normalizedType = medicineData.type === "Prescription" ? "OTC" : (medicineData.type || "OTC");
                     
         const newMedicineData = {
           name: medicineData.name,
           brand: medicineData.brand,
-          type: medicineData.type,
+          type: normalizedType,
           strength: medicineData.dosage,
           quantity: parseInt(medicineData.totalQuantity),
           unit: unit,
@@ -234,13 +292,43 @@ const loadMedicines = async () => {
         };
         
         // await addToCabinet(newMedicineData);
+        // await addMedicine({
+        //   medicineName: medicineData.name,
+        //   type: medicineData.type,
+        //   strength: medicineData.dosage,
+        //   quantity: Number(medicineData.totalQuantity),
+        //   expiryDate: medicineData.expiryDate,
+        // });
+        const schedule = {
+          morning: {
+            enabled: !!medicineData.scheduleEnabled?.morning,
+            time: medicineData.schedule?.morning || "08:00"
+          },
+          afternoon: {
+            enabled: !!medicineData.scheduleEnabled?.afternoon,
+            time: medicineData.schedule?.afternoon || "13:00"
+          },
+          evening: {
+            enabled: !!medicineData.scheduleEnabled?.evening,
+            time: medicineData.schedule?.evening || "18:00"
+          },
+          night: {
+            enabled: !!medicineData.scheduleEnabled?.night,
+            time: medicineData.schedule?.night || "22:00"
+          }
+        };
+
         await addMedicine({
-          medicineName: medicineData.name,
-          type: medicineData.type,
-          strength: medicineData.dosage,
-          quantity: Number(medicineData.totalQuantity),
+          name: medicineData.name,
+          brand: medicineData.brand || "",
+          medicineType: normalizedType,
+          dosage: medicineData.dosage || "",
+          totalQuantity: Number(medicineData.totalQuantity),
           expiryDate: medicineData.expiryDate,
+          lowStockThreshold: medicineData.lowStockThreshold || 5,
+          schedule
         });
+
         await loadMedicines();
         alert(`${medicineData.name} added successfully!`);
       }
@@ -272,9 +360,9 @@ const loadMedicines = async () => {
       (medicine.activeIngredients && medicine.activeIngredients.toLowerCase().includes(searchQuery.toLowerCase()));
     
     if (selectedFilter === 'all') return matchesSearch;
-    if (selectedFilter === 'low_stock') return matchesSearch && medicine.quantity <= 10;
+    if (selectedFilter === 'low_stock') return matchesSearch && medicine.quantity <= 2;
     if (selectedFilter === 'expiring') return matchesSearch && isMedicineExpired(medicine.expiryDate);
-    if (selectedFilter === 'prescription') return matchesSearch && medicine.quantity > 10;
+    if (selectedFilter === 'prescription') return matchesSearch && medicine.quantity > 2;
     return matchesSearch;
   });
 
@@ -286,9 +374,9 @@ const loadMedicines = async () => {
   };
 
   const medicinesRequiringAttention = medicines.filter(m => m.requiresAttention).length;
-  const lowStockCount = medicines.filter(m => m.quantity <= 10).length;
+  const lowStockCount = medicines.filter(m => m.quantity <= 2).length;
   const expiringSoonCount = medicines.filter(m => isMedicineExpired(m.expiryDate)).length;
-  const prescriptionCount = medicines.filter(m => m.quantity > 10).length;
+  const prescriptionCount = medicines.filter(m => m.quantity > 2).length;
 
   const handleViewMedicine = (medicine) => {
     setSelectedMedicine(medicine);
@@ -569,7 +657,7 @@ const loadMedicines = async () => {
                           <td className="px-3 lg:px-6 py-4">
                             <div>
                               <div className="font-medium text-gray-900 text-sm lg:text-base">{medicine.name}</div>
-                              <div className="text-xs lg:text-sm text-gray-500">{medicine.type} • {medicine.strength}</div>
+                              <div className="text-xs lg:text-sm text-gray-500">{medicine.strength}</div>
                               {/* Mobile: Show status and quantity inline */}
                               <div className="sm:hidden mt-2 space-y-1">
                                 <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${statusConfig.color}`}>
@@ -659,7 +747,7 @@ const loadMedicines = async () => {
                       <div className="flex justify-between items-start mb-4">
                         <div className="flex-1 min-w-0">
                           <h3 className="font-bold text-gray-900 text-base lg:text-lg truncate">{medicine.name}</h3>
-                          <p className="text-gray-600 text-xs lg:text-sm truncate">{medicine.type} • {medicine.strength}</p>
+                        <p className="text-gray-600 text-xs lg:text-sm truncate">{medicine.strength}</p>
                         </div>
                         <span className={`inline-flex items-center gap-1 px-2 lg:px-3 py-1 rounded-full text-xs font-medium ${statusConfig.color} ml-2 flex-shrink-0`}>
                           {statusConfig.text}
@@ -761,7 +849,7 @@ const loadMedicines = async () => {
               <div className="flex justify-between items-start">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900">{selectedMedicine.name}</h2>
-                  <p className="text-gray-600">{selectedMedicine.type} • {selectedMedicine.strength}</p>
+                  <p className="text-gray-600">{selectedMedicine.strength}</p>
                 </div>
                 <button 
                   onClick={() => setShowMedicineModal(false)}
