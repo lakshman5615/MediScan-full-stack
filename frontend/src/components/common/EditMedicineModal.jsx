@@ -24,7 +24,7 @@ const EditMedicineModal = ({
   const [newMedicine, setNewMedicine] = useState({
     name: '',
     brand: '',
-    type: 'Prescription',
+    type: 'OTC',
     expiryDate: '',
     totalQuantity: '',
     dosage: '',
@@ -50,9 +50,9 @@ const EditMedicineModal = ({
       setNewMedicine({
         name: medicine.name,
         brand: medicine.brand || '',
-        type: medicine.type || 'Prescription',
+        type: medicine.type === 'Prescription' ? 'OTC' : (medicine.type || 'OTC'),
         expiryDate: medicine.expiryDate,
-        totalQuantity: medicine.quantity.toString(),
+        totalQuantity: (medicine.totalQuantity ?? medicine.quantity ?? 0).toString(),
         dosage: medicine.strength,
         lotNumber: medicine.lotNumber || '',
         dailyDoses: medicine.dailyDoses?.toString() || '1',
@@ -74,7 +74,7 @@ const EditMedicineModal = ({
       setNewMedicine({
         name: '',
         brand: '',
-        type: 'Prescription',
+        type: 'OTC',
         expiryDate: '',
         totalQuantity: '',
         dosage: '',

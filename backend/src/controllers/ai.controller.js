@@ -10,7 +10,8 @@ exports.manualSearch = async (req, res) => {
     try {
         const { name } = req.body;
         const userId = req.user._id;
-         const text = name;
+        const text = name;
+
         const normalized = normalizeText(text);
 
         let scanMed = await ScanMedicine.findOne({

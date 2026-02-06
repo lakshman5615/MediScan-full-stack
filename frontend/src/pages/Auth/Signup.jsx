@@ -11,8 +11,9 @@ export default function Signup() {
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [mobile, setMobile] = useState("");
+  
   const [age, setAge] = useState("");
+  const [mobile, setMobile] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
@@ -23,7 +24,7 @@ export default function Signup() {
     e.preventDefault();
     setError("");
 
-    if (!name || !email || !mobile || !age || !password || !confirmPassword) {
+    if (!name || !email || !age || !mobile || !password || !confirmPassword) {
       setError("All fields are required");
       return;
     }
@@ -39,11 +40,12 @@ export default function Signup() {
       const res = await signupUser(
         name,
         email,
-        
         Number(age),
         password,
         mobile.trim(),
       );
+
+
 
       // 🔐 SAME AS LOGIN
       localStorage.setItem("token", res.data.token);

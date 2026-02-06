@@ -96,7 +96,7 @@ const doseRoutes = require('./src/routes/dose.routes');
 const notificationRoutes = require('./src/routes/notification.routes');
 const phoneUserRoutes = require('./src/routes/phone-user.routes');
 const reminderRoutes = require('./src/routes/reminder.routes');
-
+// const getMedicines = require("./src/controllers/medicine.controller")
 // ✅ INIT APP FIRST
 const app = express();
 
@@ -152,6 +152,9 @@ app.use("/auth", authRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use('/api/reminder', reminderRoutes);
+app.use("/api/medicine", medicineRoutes);
+// app.get('/medicine', getMedicines );
+
 
 // Connect DB
 connectDB();
