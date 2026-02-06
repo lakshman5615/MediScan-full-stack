@@ -12,7 +12,7 @@ export const guestScanSearch = async (data) => {
 // 🔓 guest MANUAL text
 export const guestManualSearch = async (data) => {
   const res = await axiosInstance.post(
-    "/api/ai/guest/maunal-search",
+    "/api/ai/guest/manual-search",
     data
   );
   return res.data;
