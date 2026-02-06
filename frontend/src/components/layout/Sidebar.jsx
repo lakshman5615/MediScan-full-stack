@@ -102,9 +102,7 @@
 
 
 
-
-
-
+import { getProfile } from "../../services/authApi";
 import { useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
@@ -122,15 +120,17 @@ import {
 export default function Sidebar({ open, setOpen }) {
   const navigate = useNavigate();
 
+  const [user, setUser] = useState(null);
+  const [loadingUser, setLoadingUser] = useState(true);
   const [openAccount, setOpenAccount] = useState(false);
   const [openProfile, setOpenProfile] = useState(false);
   const [openLogoutConfirm, setOpenLogoutConfirm] = useState(false);
 
 
-  const user = {
-    name: "Alex Johnson",
-    email: "alex@gmail.com",
-  };
+  // const user = {
+  //   name: "Alex Johnson",
+  //   email: "alex@gmail.com",
+  // };
 
   /* ===== BODY SCROLL LOCK ===== */
 
@@ -149,6 +149,26 @@ export default function Sidebar({ open, setOpen }) {
     };
   }, [openProfile, openLogoutConfirm]);
 
+
+
+  useEffect(() => {
+  const fetchProfile = async () => {
+    try {
+      const res = await getProfile();
+      console.log("PROFILE 👉", res.data);
+
+      // ⚠️ backend ke response ke hisaab se
+      setUser(res.data.user || res.data);
+    } catch (err) {
+      console.error("Profile fetch failed", err);
+      navigate("/login");
+    } finally {
+      setLoadingUser(false);
+    }
+  };
+
+  fetchProfile();
+}, []);
 
 
   const handleLogout = () => {
@@ -235,14 +255,15 @@ export default function Sidebar({ open, setOpen }) {
           >
             <div className="h-9 w-9 rounded-full bg-sky-500 text-white
                             flex items-center justify-center font-semibold">
-              {user.name[0]}
+              {user?.name?.[0] || "U"}
             </div>
 
             <div className="flex-1 text-left">
               <p className="text-sm font-medium text-gray-800">
-                {user.name}
+                {user?.name || "User"}
               </p>
-              <p className="text-xs text-gray-500">{user.email}</p>
+              <p className="text-xs text-gray-500">
+                {user?.email || ""}</p>
             </div>
 
             <ChevronDown size={16} />
