@@ -52,10 +52,9 @@ export default function AIExplanation() {
               className={`
                 px-3 py-2 rounded-lg text-sm cursor-pointer
                 transition hover:bg-slate-100
-                ${
-                  current?.name === item.name
-                    ? "bg-slate-100 font-medium text-slate-900"
-                    : "text-slate-600"
+                ${current?.name === item.name
+                  ? "bg-slate-100 font-medium text-slate-900"
+                  : "text-slate-600"
                 }
               `}
             >

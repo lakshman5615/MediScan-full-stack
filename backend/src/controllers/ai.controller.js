@@ -84,7 +84,7 @@ exports.manualSearch = async (req, res) => {
 exports.scanSearch = async (req, res) => {
     try {
 
-        const userID = req.user.id;
+        const userID = req.user._id;
         const image = req.file;
 
         if (!image) {
