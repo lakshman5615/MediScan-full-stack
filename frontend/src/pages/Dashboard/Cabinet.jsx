@@ -52,13 +52,7 @@ import {
 } from "../../utils/medicineUtils";
 
 import EditMedicineModal from '../../components/common/EditMedicineModal';
-// import { 
-  
-//   getStatusConfig,
-//   isMedicineExpired,
-//   getMedicineStatus
-// } from '../../components/common/medicinesData';
-// import { addToCabinet, getCabinet } from '../../services/cabinetService';
+
 
 const MedicineCabinet = () => {
   const [medicines, setMedicines] = useState([]);
@@ -241,23 +235,13 @@ const loadMedicines = async () => {
         
         // await addToCabinet(newMedicineData);
         await addMedicine({
-  medicineName: medicineData.name,
-  type: medicineData.type,
-  strength: medicineData.dosage,
-  quantity: Number(medicineData.totalQuantity),
-  expiryDate: medicineData.expiryDate,
-});
-await loadMedicines();
-
-        
-        // Reload medicines from backend
-        const data = await getCabinet();
-        const updatedMedicines = data.medicines?.map(medicine => ({
-          ...medicine,
-          status: getMedicineStatus(medicine)
-        })) || [];
-        setMedicines(updatedMedicines);
-        calculateNotificationCount(updatedMedicines);
+          medicineName: medicineData.name,
+          type: medicineData.type,
+          strength: medicineData.dosage,
+          quantity: Number(medicineData.totalQuantity),
+          expiryDate: medicineData.expiryDate,
+        });
+        await loadMedicines();
         alert(`${medicineData.name} added successfully!`);
       }
     } catch (error) {
