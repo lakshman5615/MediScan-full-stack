@@ -236,109 +236,191 @@ const loadMedicines = async () => {
 
   // Handle adding/editing medicine
   const handleSaveMedicine = async (medicineData) => {
-    try {
+  try {
+    if (isEditing && editingMedicineId) {
+      // ✅ UPDATE VIA API
+      const schedule = {
+        morning: {
+          enabled: !!medicineData.scheduleEnabled?.morning,
+          time: medicineData.schedule?.morning || "08:00"
+        },
+        afternoon: {
+          enabled: !!medicineData.scheduleEnabled?.afternoon,
+          time: medicineData.schedule?.afternoon || "13:00"
+        },
+        evening: {
+          enabled: !!medicineData.scheduleEnabled?.evening,
+          time: medicineData.schedule?.evening || "18:00"
+        },
+        night: {
+          enabled: !!medicineData.scheduleEnabled?.night,
+          time: medicineData.schedule?.night || "22:00"
+        }
+      };
 
-      ///
+      await updateMedicine(editingMedicineId, {
+        name: medicineData.name,
+        brand: medicineData.brand || "",
+        medicineType: medicineData.type,
+        dosage: medicineData.dosage || "",
+        totalQuantity: parseInt(medicineData.totalQuantity),
+        expiryDate: medicineData.expiryDate,
+        lowStockThreshold: medicineData.lowStockThreshold || 5,
+        schedule
+      });
+
+      await loadMedicines(); // ✅ DB se fresh data load
+      alert(`${medicineData.name} updated in database!`);
       
-      ///
-      if (isEditing && editingMedicineId) {
-        // For editing, we'll update locally for now
-        // TODO: Implement update API endpoint
-        const updatedMedicines = medicines.map(medicine => 
-          medicine.id === editingMedicineId ? {
-            ...medicine,
-            name: medicineData.name,
-            brand: medicineData.brand,
-            type: medicineData.type,
-            strength: medicineData.dosage,
-            quantity: parseInt(medicineData.totalQuantity),
-            unit: medicineData.dosage.includes('mg') ? 'tablets' : 
-                  medicineData.dosage.includes('ml') ? 'ml' : 'units',
-            expiryDate: medicineData.expiryDate,
-            lotNumber: medicineData.lotNumber,
-            dailyDoses: parseInt(medicineData.dailyDoses) || 1,
-            schedule: medicineData.schedule,
-            scheduleEnabled: medicineData.scheduleEnabled,
-            remaining: `${medicineData.totalQuantity} ${medicineData.dosage.includes('mg') ? 'tablets' : medicineData.dosage.includes('ml') ? 'ml' : 'units'} remaining`,
-            status: getMedicineStatus({
-              expiryDate: medicineData.expiryDate,
-              quantity: parseInt(medicineData.totalQuantity)
-            })
-          } : medicine
-        );
-        
-        setMedicines(updatedMedicines);
-        localStorage.setItem('medicines', JSON.stringify(updatedMedicines));
-        calculateNotificationCount(updatedMedicines);
-        alert(`${medicineData.name} updated successfully!`);
-      } else {
-        // Add new medicine via API
-        const unit = medicineData.dosage.includes('mg') ? 'tablets' : 
-                    medicineData.dosage.includes('ml') ? 'ml' : 'units';
-        const normalizedType = medicineData.type === "Prescription" ? "OTC" : (medicineData.type || "OTC");
-                    
-        const newMedicineData = {
-          name: medicineData.name,
-          brand: medicineData.brand,
-          type: normalizedType,
-          strength: medicineData.dosage,
-          quantity: parseInt(medicineData.totalQuantity),
-          unit: unit,
-          expiryDate: medicineData.expiryDate,
-          lotNumber: medicineData.lotNumber,
-          dailyDoses: parseInt(medicineData.dailyDoses) || 1,
-          schedule: medicineData.schedule,
-          scheduleEnabled: medicineData.scheduleEnabled
-        };
-        
-        // await addToCabinet(newMedicineData);
-        // await addMedicine({
-        //   medicineName: medicineData.name,
-        //   type: medicineData.type,
-        //   strength: medicineData.dosage,
-        //   quantity: Number(medicineData.totalQuantity),
-        //   expiryDate: medicineData.expiryDate,
-        // });
-        const schedule = {
-          morning: {
-            enabled: !!medicineData.scheduleEnabled?.morning,
-            time: medicineData.schedule?.morning || "08:00"
-          },
-          afternoon: {
-            enabled: !!medicineData.scheduleEnabled?.afternoon,
-            time: medicineData.schedule?.afternoon || "13:00"
-          },
-          evening: {
-            enabled: !!medicineData.scheduleEnabled?.evening,
-            time: medicineData.schedule?.evening || "18:00"
-          },
-          night: {
-            enabled: !!medicineData.scheduleEnabled?.night,
-            time: medicineData.schedule?.night || "22:00"
-          }
-        };
+    } else {
+      // ✅ ADD NEW MEDICINE
+      const normalizedType = medicineData.type === "Prescription" ? "OTC" : (medicineData.type || "OTC");
+      
+      const schedule = {
+        morning: {
+          enabled: !!medicineData.scheduleEnabled?.morning,
+          time: medicineData.schedule?.morning || "08:00"
+        },
+        afternoon: {
+          enabled: !!medicineData.scheduleEnabled?.afternoon,
+          time: medicineData.schedule?.afternoon || "13:00"
+        },
+        evening: {
+          enabled: !!medicineData.scheduleEnabled?.evening,
+          time: medicineData.schedule?.evening || "18:00"
+        },
+        night: {
+          enabled: !!medicineData.scheduleEnabled?.night,
+          time: medicineData.schedule?.night || "22:00"
+        }
+      };
 
-        await addMedicine({
-          name: medicineData.name,
-          brand: medicineData.brand || "",
-          medicineType: normalizedType,
-          dosage: medicineData.dosage || "",
-          totalQuantity: Number(medicineData.totalQuantity),
-          expiryDate: medicineData.expiryDate,
-          lowStockThreshold: medicineData.lowStockThreshold || 5,
-          schedule
-        });
+      await addMedicine({
+        name: medicineData.name,
+        brand: medicineData.brand || "",
+        medicineType: normalizedType,
+        dosage: medicineData.dosage || "",
+        totalQuantity: Number(medicineData.totalQuantity),
+        expiryDate: medicineData.expiryDate,
+        lowStockThreshold: medicineData.lowStockThreshold || 5,
+        schedule
+      });
 
-        await loadMedicines();
-        alert(`${medicineData.name} added successfully!`);
-      }
-    } catch (error) {
-      console.error('Error saving medicine:', error);
-      alert('Error saving medicine. Please try again.');
+      await loadMedicines(); // ✅ DB se fresh data load
+      alert(`${medicineData.name} added to database!`);
     }
+  } catch (error) {
+    console.error('Error saving medicine:', error);
+    alert('Failed to save medicine. Check console for details.');
+  }
+  
+  resetForm();
+};
+
+  // const handleSaveMedicine = async (medicineData) => {
+  //   try {
+
+  //     ///
+      
+  //     ///
+  //     if (isEditing && editingMedicineId) {
+  //       // For editing, we'll update locally for now
+  //       // TODO: Implement update API endpoint
+  //       const updatedMedicines = medicines.map(medicine => 
+  //         medicine.id === editingMedicineId ? {
+  //           ...medicine,
+  //           name: medicineData.name,
+  //           brand: medicineData.brand,
+  //           type: medicineData.type,
+  //           strength: medicineData.dosage,
+  //           quantity: parseInt(medicineData.totalQuantity),
+  //           unit: medicineData.dosage.includes('mg') ? 'tablets' : 
+  //                 medicineData.dosage.includes('ml') ? 'ml' : 'units',
+  //           expiryDate: medicineData.expiryDate,
+  //           lotNumber: medicineData.lotNumber,
+  //           dailyDoses: parseInt(medicineData.dailyDoses) || 1,
+  //           schedule: medicineData.schedule,
+  //           scheduleEnabled: medicineData.scheduleEnabled,
+  //           remaining: `${medicineData.totalQuantity} ${medicineData.dosage.includes('mg') ? 'tablets' : medicineData.dosage.includes('ml') ? 'ml' : 'units'} remaining`,
+  //           status: getMedicineStatus({
+  //             expiryDate: medicineData.expiryDate,
+  //             quantity: parseInt(medicineData.totalQuantity)
+  //           })
+  //         } : medicine
+  //       );
+        
+  //       setMedicines(updatedMedicines);
+  //       localStorage.setItem('medicines', JSON.stringify(updatedMedicines));
+  //       calculateNotificationCount(updatedMedicines);
+  //       alert(`${medicineData.name} updated successfully!`);
+  //     } else {
+  //       // Add new medicine via API
+  //       const unit = medicineData.dosage.includes('mg') ? 'tablets' : 
+  //                   medicineData.dosage.includes('ml') ? 'ml' : 'units';
+  //       const normalizedType = medicineData.type === "Prescription" ? "OTC" : (medicineData.type || "OTC");
+                    
+  //       const newMedicineData = {
+  //         name: medicineData.name,
+  //         brand: medicineData.brand,
+  //         type: normalizedType,
+  //         strength: medicineData.dosage,
+  //         quantity: parseInt(medicineData.totalQuantity),
+  //         unit: unit,
+  //         expiryDate: medicineData.expiryDate,
+  //         lotNumber: medicineData.lotNumber,
+  //         dailyDoses: parseInt(medicineData.dailyDoses) || 1,
+  //         schedule: medicineData.schedule,
+  //         scheduleEnabled: medicineData.scheduleEnabled
+  //       };
+        
+  //       // await addToCabinet(newMedicineData);
+  //       // await addMedicine({
+  //       //   medicineName: medicineData.name,
+  //       //   type: medicineData.type,
+  //       //   strength: medicineData.dosage,
+  //       //   quantity: Number(medicineData.totalQuantity),
+  //       //   expiryDate: medicineData.expiryDate,
+  //       // });
+  //       const schedule = {
+  //         morning: {
+  //           enabled: !!medicineData.scheduleEnabled?.morning,
+  //           time: medicineData.schedule?.morning || "08:00"
+  //         },
+  //         afternoon: {
+  //           enabled: !!medicineData.scheduleEnabled?.afternoon,
+  //           time: medicineData.schedule?.afternoon || "13:00"
+  //         },
+  //         evening: {
+  //           enabled: !!medicineData.scheduleEnabled?.evening,
+  //           time: medicineData.schedule?.evening || "18:00"
+  //         },
+  //         night: {
+  //           enabled: !!medicineData.scheduleEnabled?.night,
+  //           time: medicineData.schedule?.night || "22:00"
+  //         }
+  //       };
+
+  //       await addMedicine({
+  //         name: medicineData.name,
+  //         brand: medicineData.brand || "",
+  //         medicineType: normalizedType,
+  //         dosage: medicineData.dosage || "",
+  //         totalQuantity: Number(medicineData.totalQuantity),
+  //         expiryDate: medicineData.expiryDate,
+  //         lowStockThreshold: medicineData.lowStockThreshold || 5,
+  //         schedule
+  //       });
+
+  //       await loadMedicines();
+  //       alert(`${medicineData.name} added successfully!`);
+  //     }
+  //   } catch (error) {
+  //     console.error('Error saving medicine:', error);
+  //     alert('Error saving medicine. Please try again.');
+  //   }
     
-    resetForm();
-  };
+  //   resetForm();
+  // };
 
   // Handle edit medicine
   const handleEditMedicine = (medicine) => {
