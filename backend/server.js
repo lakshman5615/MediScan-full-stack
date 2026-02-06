@@ -139,15 +139,15 @@ require('./src/cron/alerts.cron');
 app.get("/", (req, res) => {
   res.send("Mediscan Backend is running 🚀");
 });
-
+// Connect DB
+connectDB();
 // Routes
 app.use("/auth", authRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use('/api/reminder', reminderRoutes);
 
-// Connect DB
-connectDB();
+
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
