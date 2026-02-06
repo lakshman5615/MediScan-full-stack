@@ -37,21 +37,14 @@ export default function Signup() {
     try {
       setLoading(true);
 
-      // const res = await signupUser(
-      //   name,
-      //   email,
-        
-      //   Number(age),
-      //   password,
-      //   mobile.trim(),
-      // );
-      const res = await signupUser({
-  name,
-  email,
-  age: Number(age),
-  phone: mobile.trim(),
-  password,
-});
+      const res = await signupUser(
+        name,
+        email,
+        Number(age),
+        password,
+        mobile.trim(),
+      );
+
 
 
       // 🔐 SAME AS LOGIN
