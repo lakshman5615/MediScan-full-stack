@@ -17,3 +17,15 @@ export const signupUser = (name, email, age, password) => {
     password,
   });
 };
+
+// ------Profile Api-------
+
+export const profileUser = (name, email, phone, age) => {
+  return axios.post("/auth/profile", {
+    name,
+    email,
+    phone,
+    age,
+  });
+};
+
