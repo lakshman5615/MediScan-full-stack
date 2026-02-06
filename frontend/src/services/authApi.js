@@ -9,10 +9,11 @@ export const loginUser = (email, password) => {
 }
 
 // -----SIGNUP API-----
-export const signupUser = (name, email, age, password) => {
+export const signupUser = (name, email, phone, age, password) => {
   return axios.post("/auth/signup", {
     name,
     email,
+    phone,
     age,
     password,
   });
@@ -20,12 +21,18 @@ export const signupUser = (name, email, age, password) => {
 
 // ------Profile Api-------
 
-export const profileUser = (name, email, phone, age) => {
-  return axios.post("/auth/profile", {
-    name,
-    email,
-    phone,
-    age,
-  });
+
+export const getProfile = () => {
+  return axios.get("/auth/profile");
 };
+
+
+// export const getProfile = (name, email, phone, age) => {
+//   return axios.get("/auth/profile", {
+//     name,
+//     email,
+//     phone,
+//     age,
+//   });
+// };
 
