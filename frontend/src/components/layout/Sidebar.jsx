@@ -207,7 +207,7 @@ export default function Sidebar({ open, setOpen }) {
         </div>
 
         {/* MENU */}
-        <nav className="p-3 space-y-1 flex-1">
+        <nav className=" lexend p-3 space-y-1 flex-1">
           {[
             { to: "/dashboard", icon: Home, label: "Home" },
             { to: "/dashboard/cabinet", icon: Archive, label: "Cabinet" },
