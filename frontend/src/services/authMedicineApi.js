@@ -1,11 +1,22 @@
+
+
 import axiosInstance from "./axios";
 
 // 🔐 logged-in IMAGE scan
-export const scanSearch = async (data) => {
+export const scanSearch = async (file) => {
+  const formData = new FormData();
+  formData.append("image", file); // 👈 MUST be "image"
+
   const res = await axiosInstance.post(
     "/api/ai/scan-search",
-    data
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
   );
+
   return res.data;
 };
 
