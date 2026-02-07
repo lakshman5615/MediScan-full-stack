@@ -51,7 +51,7 @@ const EditMedicineModal = ({
         name: medicine.name,
         brand: medicine.brand || '',
         type: medicine.type === 'Prescription' ? 'OTC' : (medicine.type || 'OTC'),
-        expiryDate: medicine.expiryDate,
+        expiryDate: medicine.expiryDate ? new Date(medicine.expiryDate).toISOString().split('T')[0] : '',
         totalQuantity: (medicine.totalQuantity ?? medicine.quantity ?? 0).toString(),
         dosage: medicine.strength,
         lotNumber: medicine.lotNumber || '',

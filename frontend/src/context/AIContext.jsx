@@ -1,4 +1,5 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
+import { getAIHistory } from "../services/authMedicineApi";
 
 const AIContext = createContext();
 
@@ -6,12 +7,27 @@ export const AIProvider = ({ children }) => {
   const [history, setHistory] = useState([]);
   const [current, setCurrent] = useState(null);
 
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      fetchHistory();
+    }
+  }, []);
+
+  const fetchHistory = async () => {
+    try {
+      const res = await getAIHistory();
+      setHistory(res.data || []);
+    } catch (error) {
+      console.error("Failed to fetch history:", error);
+    }
+  };
+
   const openAIExplanation = (data) => {
     setCurrent(data);
     setHistory((prev) => [data, ...prev]);
   };
 
-  // 🔥 NEW: history item select
   const selectFromHistory = (item) => {
     setCurrent(item);
   };
@@ -22,7 +38,7 @@ export const AIProvider = ({ children }) => {
         history,
         current,
         openAIExplanation,
-        selectFromHistory, // 👈 expose
+        selectFromHistory,
       }}
     >
       {children}

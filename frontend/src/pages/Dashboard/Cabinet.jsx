@@ -145,6 +145,7 @@ const loadMedicines = async () => {
 
     if (!Array.isArray(medicinesArray)) {
       console.error("Medicines is not an array", res);
+      setMedicines([]);
       return;
     }
 
@@ -185,6 +186,7 @@ const loadMedicines = async () => {
     calculateNotificationCount(formatted);
   } catch (err) {
     console.error("Failed to load medicines", err);
+    setMedicines([]);
   }
 };
 
@@ -269,8 +271,9 @@ const loadMedicines = async () => {
         schedule
       });
 
-      await loadMedicines(); // ✅ DB se fresh data load
-      alert(`${medicineData.name} updated in database!`);
+      resetForm();
+      await loadMedicines(); //  DB se update data load
+      alert(`${medicineData.name} updated successfully!`);
       
     } else {
       // ✅ ADD NEW MEDICINE
@@ -306,15 +309,14 @@ const loadMedicines = async () => {
         schedule
       });
 
+      resetForm();
       await loadMedicines(); // ✅ DB se fresh data load
-      alert(`${medicineData.name} added to database!`);
+      alert(`${medicineData.name} added successfully!`);
     }
   } catch (error) {
     console.error('Error saving medicine:', error);
     alert('Failed to save medicine. Check console for details.');
   }
-  
-  resetForm();
 };
 
   // const handleSaveMedicine = async (medicineData) => {
@@ -477,13 +479,15 @@ const loadMedicines = async () => {
   //   }
   // };
   const handleDiscard = async (medicineId) => {
-  if (!window.confirm("Delete this medicine?")) return;
+  if (!window.confirm("Are you sure you want to delete this medicine?")) return;
 
   try {
     await deleteMedicine(medicineId);
-    loadMedicines();
+    await loadMedicines();
+    alert('Medicine deleted successfully!');
   } catch (err) {
     console.error("Delete failed", err);
+    alert('Failed to delete medicine. Please try again.');
   }
 };
 

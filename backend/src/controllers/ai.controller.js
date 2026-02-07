@@ -194,3 +194,24 @@ exports.guestScanSearch = async (req, res) => {
         res.status(500).json({ message: "Scan failed" });
     }
 };
+
+exports.getHistory = async (req, res) => {
+    try {
+        const userId = req.user._id;
+
+        const history = await AIHistory.find({
+            userId,
+            status: "success"
+        })
+            .sort({ createdAt: -1 })
+            .limit(50)
+            .select("aiSnapshot queryType createdAt");
+
+        const formattedHistory = history.map(item => item.aiSnapshot);
+
+        res.json({ data: formattedHistory });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Failed to fetch history" });
+    }
+};
