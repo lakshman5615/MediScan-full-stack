@@ -125,7 +125,8 @@ export default function ExpiryCard() {
   }, []);
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6">
+    <div className="rounded-2xl border border-slate-200 bg-white p-6 transition-all duration-300
+                    hover:shadow-lg  hover:-translate-y-1        ">
 
       {/* Top */}
       <div className="flex items-center justify-between">
@@ -155,7 +156,7 @@ export default function ExpiryCard() {
         </div>
 
         <Link
-          to="/cabinet"
+          to="/dashboard/cabinet"
           className="text-sm font-medium text-sky-500 hover:underline"
         >
           Review Cabinet
