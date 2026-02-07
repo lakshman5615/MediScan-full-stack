@@ -17,28 +17,28 @@ export default function ScanCard({ mode }) {
 
   /* ---------------- OPEN BACK CAMERA ---------------- */
 
-const openCamera = async () => {
-  try {
-    setPreview(null);
-    setShowModal(true);
+  const openCamera = async () => {
+    try {
+      setPreview(null);
+      setShowModal(true);
 
-    const constraints = {
-      video: navigator.userAgent.includes("Mobi")
-        ? { facingMode: { ideal: "environment" } } // 📱 mobile → back camera
-        : true // 💻 desktop → default webcam
-    };
+      const constraints = {
+        video: navigator.userAgent.includes("Mobi")
+          ? { facingMode: { ideal: "environment" } } // 📱 mobile → back camera
+          : true // 💻 desktop → default webcam
+      };
 
-    const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
 
-    setStream(mediaStream);
-    if (videoRef.current) {
-      videoRef.current.srcObject = mediaStream;
+      setStream(mediaStream);
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream;
+      }
+    } catch (err) {
+      console.error("Camera error:", err);
+      alert("Camera access denied. Please allow camera permission.");
     }
-  } catch (err) {
-    console.error("Camera error:", err);
-    alert("Camera access denied. Please allow camera permission.");
-  }
-};
+  };
 
 
 
@@ -62,11 +62,11 @@ const openCamera = async () => {
   //   }
   // };
 
-// ------Scan Again--------
-const scanAgain = async () => {
-  setPreview(null);
-  await openCamera(); // 🔴 camera dubara start
-};
+  // ------Scan Again--------
+  const scanAgain = async () => {
+    setPreview(null);
+    await openCamera(); // 🔴 camera dubara start
+  };
 
   /* ---------------- CAPTURE IMAGE ---------------- */
   const captureImage = () => {
@@ -98,66 +98,93 @@ const scanAgain = async () => {
     stopCamera();
     setPreview(null);
     setShowModal(false);
-    
+
+  };
+
+  /* ---------------- BASE64 TO FILE CONVERTER ---------------- */
+  const base64ToFile = (base64String, filename) => {
+    // Step 1: Split base64 string - "data:image/png;base64,ABC123..."
+    const [header, data] = base64String.split(',');
+
+    // Step 2: Extract MIME type - "image/png"
+    const mime = header.match(/:(.*?);/)[1];
+
+    // Step 3: Decode base64 to binary
+    const binary = atob(data);
+
+    // Step 4: Convert binary to Uint8Array
+    const array = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      array[i] = binary.charCodeAt(i);
+    }
+
+    // Step 5: Create Blob from array
+    const blob = new Blob([array], { type: mime });
+
+    // Step 6: Convert Blob to File
+    return new File([blob], filename, { type: mime });
   };
 
   /* ---------------- AI ANALYZE ---------------- */
-
-
   const handleAnalyze = async () => {
-  if (!preview) return;
+    if (!preview) return;
 
-  try {
-    console.log("🟡 SCAN ANALYZE CLICKED", mode);
+    try {
+      console.log("🟡 SCAN ANALYZE CLICKED", mode);
 
-    let aiData;
+      // Convert base64 string to File object
+      const imageFile = base64ToFile(preview, "scan.png");
+      console.log("📦 File created:", imageFile);
 
-    if (mode === "guest") {
-      console.log("🔓 calling guest scan api");
-      aiData = await guestScanSearch({ image: preview });
-    } else {
-      console.log("🔐 calling auth scan api");
-      aiData = await scanSearch({ image: preview });
+      let response;
+
+      if (mode === "guest") {
+        console.log("🔓 calling guest scan api");
+        response = await guestScanSearch(imageFile);
+      } else {
+        console.log("🔐 calling auth scan api");
+        response = await scanSearch(imageFile);
+      }
+
+      console.log("✅ AI RESPONSE:", response);
+
+      const aiData = response.data || response;
+      openAIExplanation(aiData);
+      setShowModal(false);
+
+      navigate("/dashboard/ai-explanation", {
+        state: {
+          from: mode === "guest" ? "landing" : "dashboard",
+        },
+      });
+
+    } catch (error) {
+      console.error("❌ Scan analyze failed:", error);
+      alert("Failed to analyze image. Check backend.");
     }
-
-    console.log("✅ AI RESPONSE:", aiData);
-
-    openAIExplanation(aiData);
-    setShowModal(false); // ❗ IMPORTANT
-
-    navigate("/dashboard/ai-explanation", {
-      state: {
-        from: mode === "guest" ? "landing" : "dashboard",
-      },
-    });
-
-  } catch (error) {
-    console.error(" Scan analyze failed:", error);
-    alert("AI service not available (backend off?)");
-  }
-};
+  };
 
 
 
-//   const handleAnalyze = () => {
-//   openAIExplanation({
-//     name: "Paracetamol",
-//     usage: "Pain & fever relief",
-//     dosage: "500mg twice daily",
-//     sideEffects: "Rare nausea",
-//     warning: "Avoid alcohol",
-//     expiryDate: "2026-08-12",
-//     source: "scan",
-//   });
+  //   const handleAnalyze = () => {
+  //   openAIExplanation({
+  //     name: "Paracetamol",
+  //     usage: "Pain & fever relief",
+  //     dosage: "500mg twice daily",
+  //     sideEffects: "Rare nausea",
+  //     warning: "Avoid alcohol",
+  //     expiryDate: "2026-08-12",
+  //     source: "scan",
+  //   });
 
-//   const isLoggedIn = !!localStorage.getItem("user");
+  //   const isLoggedIn = !!localStorage.getItem("user");
 
-//   navigate("/dashboard/ai-explanation", {
-//   state: {
-//     from: mode === "guest" ? "landing" : "dashboard",
-//   },
-// });
-// };
+  //   navigate("/dashboard/ai-explanation", {
+  //   state: {
+  //     from: mode === "guest" ? "landing" : "dashboard",
+  //   },
+  // });
+  // };
 
 
   return (
