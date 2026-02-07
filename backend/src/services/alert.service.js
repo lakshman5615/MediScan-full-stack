@@ -17,7 +17,7 @@ class AlertService {
   if (existing) return;
 
   const alert = await Alert.create({
-    userId: medicine.userId._id,
+    userId: medicine.userId,
     type: 'REMINDER',
     medicineId: medicine._id,
     medicineName: medicine.name,

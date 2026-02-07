@@ -16,20 +16,57 @@ export default function ScanCard({ mode }) {
   const [showModal, setShowModal] = useState(false);
 
   /* ---------------- OPEN BACK CAMERA ---------------- */
-  const openCamera = async () => {
-    try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        // video: { facingMode: { exact: "environment" } },
-         video: { facingMode: "environment" }
-      });
 
-      setStream(mediaStream);
+const openCamera = async () => {
+  try {
+    setPreview(null);
+    setShowModal(true);
+
+    const constraints = {
+      video: navigator.userAgent.includes("Mobi")
+        ? { facingMode: { ideal: "environment" } } // 📱 mobile → back camera
+        : true // 💻 desktop → default webcam
+    };
+
+    const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+
+    setStream(mediaStream);
+    if (videoRef.current) {
       videoRef.current.srcObject = mediaStream;
-      setShowModal(true);
-    } catch (err) {
-      alert("Camera access denied");
     }
-  };
+  } catch (err) {
+    console.error("Camera error:", err);
+    alert("Camera access denied. Please allow camera permission.");
+  }
+};
+
+
+
+  // const openCamera = async () => {
+  //   try {
+
+  //     setPreview(null);     
+  //     setShowModal(true);  
+
+  //     const mediaStream = await navigator.mediaDevices.getUserMedia({
+  //       // video: { facingMode: { exact: "environment" } },
+  //        video: { facingMode: "environment" }
+  //       // video: { facingMode: { ideal: "environment" } } 
+  //     });
+
+  //     setStream(mediaStream);
+  //     videoRef.current.srcObject = mediaStream;
+  //     //  setShowModal(true);
+  //   } catch (err) {
+  //     alert("Camera access denied");
+  //   }
+  // };
+
+// ------Scan Again--------
+const scanAgain = async () => {
+  setPreview(null);
+  await openCamera(); // 🔴 camera dubara start
+};
 
   /* ---------------- CAPTURE IMAGE ---------------- */
   const captureImage = () => {
@@ -52,14 +89,16 @@ export default function ScanCard({ mode }) {
   const stopCamera = () => {
     if (stream) {
       stream.getTracks().forEach(track => track.stop());
+      setStream(null);
     }
   };
 
   /* ---------------- CLOSE MODAL ---------------- */
   const closeModal = () => {
     stopCamera();
-    setShowModal(false);
     setPreview(null);
+    setShowModal(false);
+    
   };
 
   /* ---------------- AI ANALYZE ---------------- */
@@ -93,35 +132,11 @@ export default function ScanCard({ mode }) {
     });
 
   } catch (error) {
-    console.error("❌ Scan analyze failed:", error);
+    console.error(" Scan analyze failed:", error);
     alert("AI service not available (backend off?)");
   }
 };
 
-
-// const handleAnalyze = async () => {
-//   let aiData;
-
-//   if (mode === "guest") {
-//     aiData = await guestScanSearch({
-//       image: preview,
-//     });
-//   } else {
-//     aiData = await scanSearch({
-//       image: preview,
-//     });
-//   }
-
-//   openAIExplanation(aiData);
-
-//   navigate("/dashboard/ai-explanation", {
-//     state: {
-//       from: mode === "guest" ? "landing" : "dashboard",
-//     },
-//   });
-
-
-// }
 
 
 //   const handleAnalyze = () => {
@@ -200,7 +215,7 @@ export default function ScanCard({ mode }) {
                     Get AI Explanation
                   </button>
                   <button
-                    onClick={closeModal}
+                    onClick={scanAgain}
                     className="flex-1 bg-slate-200 py-2.5 rounded-xl"
                   >
                     Scan Again

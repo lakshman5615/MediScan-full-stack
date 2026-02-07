@@ -127,10 +127,7 @@ export default function Sidebar({ open, setOpen }) {
   const [openLogoutConfirm, setOpenLogoutConfirm] = useState(false);
 
 
-  // const user = {
-  //   name: "Alex Johnson",
-  //   email: "alex@gmail.com",
-  // };
+
 
   /* ===== BODY SCROLL LOCK ===== */
 
