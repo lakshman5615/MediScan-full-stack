@@ -52,13 +52,13 @@ export default function AIExplanation() {
               className={`
                 px-3 py-2 rounded-lg text-sm cursor-pointer
                 transition hover:bg-slate-100
-                ${current?.name === item.name
+                ${(current?.medicineName === item.medicineName || current?.name === item.name)
                   ? "bg-slate-100 font-medium text-slate-900"
                   : "text-slate-600"
                 }
               `}
             >
-              {item.name}
+              {item.medicineName || item.name}
             </div>
           ))}
         </div>
@@ -88,9 +88,9 @@ export default function AIExplanation() {
           <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow p-6 space-y-6">
 
             {/* MEDICINE NAME */}
-            <h2 className="text-2xl font-semibold text-slate-800">
-              {current.name}
-            </h2>
+            <h1 className="text-2xl font-semibold text-slate-800">
+              {current.medicineName || current.name}
+            </h1>
 
             {current.summary && (
               <p className="text-slate-600 leading-relaxed">
@@ -125,20 +125,20 @@ export default function AIExplanation() {
                 />
               )}
 
-              {current.warning && (
+              {current.warnings && (
                 <InfoRow
                   icon={<ShieldAlert size={20} className="text-red-500" />}
                   label="Warnings"
-                  value={current.warning}
+                  value={current.warnings}
                   highlight
                 />
               )}
 
-              {current.expiryDate && (
+              {current.expirydate && (
                 <InfoRow
                   icon={<Calendar size={20} className="text-indigo-600" />}
                   label="Expiry Date"
-                  value={current.expiryDate}
+                  value={current.expirydate}
                 />
               )}
             </div>

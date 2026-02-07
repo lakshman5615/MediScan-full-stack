@@ -89,17 +89,18 @@ export default function UploadCard({ mode }) {
     }
 
     try {
-      let aiData;
+      let response;
 
       if (mode === "guest") {
-        aiData = await guestScanSearch(selectedFile);
+        response = await guestScanSearch(selectedFile);
       } else {
-        aiData = await scanSearch(selectedFile);
+        response = await scanSearch(selectedFile);
       }
 
-      console.log("✅ AI RESPONSE:", aiData);
+      console.log("✅ AI RESPONSE:", response);
 
-      openAIExplanation(aiData.data || aiData);
+      const aiData = response.data || response;
+      openAIExplanation(aiData);
       setShowModal(false);
 
       navigate("/dashboard/ai-explanation", {

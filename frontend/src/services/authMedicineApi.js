@@ -28,3 +28,9 @@ export const manualSearch = async (data) => {
   );
   return res.data;
 };
+
+// 🔐 GET history
+export const getAIHistory = async () => {
+  const res = await axiosInstance.get("/api/ai/history");
+  return res.data;
+};
