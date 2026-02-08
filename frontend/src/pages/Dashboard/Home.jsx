@@ -18,14 +18,14 @@ export default function Home() {
           <h1 className="text-3xl tracking-tight font-semibold">
             Welcome
           </h1>
-          <p className="text-sm sm:text-base lg:text-sm text-gray-500 max-w-xl mt-1">
+          <p className="inter text-sm sm:text-base lg:text-sm text-gray-500 max-w-xl mt-1">
             Here’s a quick overview of your medicines, alerts, and daily actions.
           </p>
         </div>
 
         <button
           onClick={() => navigate("/dashboard/emergency")}
-          className="flex items-center gap-2 bg-red-50 text-red-600 px-6 py-3.5 rounded-xl text-sm sm:text-base font-semibold
+          className=" lexend flex items-center gap-2 bg-red-50 text-red-600 px-6 py-3.5 rounded-xl text-sm sm:text-base font-semibold
                hover:bg-red-100 transition w-full lg:w-auto"
         >
           <AlertTriangle size={20} />

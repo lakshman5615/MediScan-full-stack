@@ -18,7 +18,8 @@ import { Link } from "react-router-dom";
 
 export default function LowStockCard() {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 transition-all duration-300
+                    // border border-slate-200
+    <div className="rounded-2xl  bg-white p-6 transition-all duration-300
                     hover:shadow-lg  hover:-translate-y-1 ">
 
       {/* Top */}
@@ -27,7 +28,7 @@ export default function LowStockCard() {
           <AlertTriangle size={20} className="text-red-500" />
         </div>
 
-        <p className="text-xs font-semibold tracking-wide text-slate-400">
+        <p className=" text-xs font-semibold tracking-wide text-red-500">
           LOW STOCK
         </p>
       </div>

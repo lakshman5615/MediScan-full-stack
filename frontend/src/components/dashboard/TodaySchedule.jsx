@@ -128,17 +128,17 @@ export default function TodaySchedule() {
         Today’s Schedule
       </h3>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-6">
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 mb-5 transition-all duration-300  hover:shadow-lg  hover:-translate-y-1">
         {/* Timeline */}
-        <div className="relative space-y-6">
+        <div className="relative space-y-6 ">
           {/* Vertical line */}
           <div className="absolute left-[10px] top-0 h-full w-px bg-sky-200" />
 
           {schedule.map((item, index) => (
-            <div key={index} className="relative flex gap-4">
+            <div key={index} className="relative flex gap-5 ">
               {/* Dot */}
               <div
-                className={`mt-1 h-3 w-3 rounded-full ${
+                className={`mt-1 h-3 w-3 rounded-full  ${
                   item.active ? "bg-sky-500" : "bg-slate-300"
                 }`}
               />
@@ -165,9 +165,9 @@ export default function TodaySchedule() {
         </div>
 
         {/* Footer */}
-        <button className="mt-6 w-full rounded-xl bg-slate-100 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200">
+        {/* <button className="mt-6 w-full rounded-xl bg-slate-100 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200">
           Full Calendar View
-        </button>
+        </button> */}
       </div>
     </div>
   );

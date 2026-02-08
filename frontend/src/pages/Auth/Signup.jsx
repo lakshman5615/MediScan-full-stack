@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Mail, Lock, User, Calendar } from "lucide-react";
+import { Mail, Lock, User, Calendar, Eye, EyeOff } from "lucide-react";
 
 import AuthLayout from "../../components/layout/AuthLayout";
 import MediScanIcon from "../../components/common/MediScanIcon";
@@ -19,6 +19,10 @@ export default function Signup() {
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -76,13 +80,25 @@ export default function Signup() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-3">
-        <Input icon={User} placeholder="User Name" value={name} onChange={(e) => setName(e.target.value)} />
+        <Input icon={User}  placeholder="User Name" value={name} onChange={(e) => setName(e.target.value)} />
         <Input icon={Mail} placeholder="Email " value={email} onChange={(e) => setEmail(e.target.value)} />
         <Input icon={Mail} placeholder="Mobile " value={mobile} onChange={(e) => setMobile(e.target.value)} />
 
         <Input icon={Calendar} type="number" placeholder="Age" value={age} onChange={(e) => setAge(e.target.value)} />
-        <Input icon={Lock} type="password" placeholder="Set Password" value={password} onChange={(e) => setPassword(e.target.value)} />
-        <Input icon={Lock} type="password" placeholder="Confirm Password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+        
+        <Input icon={Lock} 
+         type={showPassword ? "text" : "password"} 
+        placeholder="Set Password" value={password} 
+        onChange={(e) => setPassword(e.target.value)} 
+        isPassword
+        show={showPassword}
+        toggleShow={() => setShowPassword(!showPassword)} />
+
+        <Input icon={Lock} type={showConfirmPassword ? "text" : "password"} 
+        placeholder="Confirm Password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
+        isPassword
+        show={showConfirmPassword}
+        toggleShow={() => setShowConfirmPassword(!showConfirmPassword)} />
 
         <button
           type="submit"
@@ -106,14 +122,24 @@ export default function Signup() {
 }
 
 /* 🔹 same reusable input */
-function Input({ icon: Icon, ...props }) {
+function Input({ icon: Icon, isPassword = false, show, toggleShow,  ...props }) {
   return (
-    <div className="flex items-center border rounded-xl px-3 h-11 bg-white focus-within:ring-2 focus-within:ring-cyan-400">
+    <div className="relative flex items-center border rounded-xl px-3 h-11 bg-white focus-within:ring-2 focus-within:ring-cyan-400">
       <Icon size={17} className="text-gray-400" />
       <input
         {...props}
         className="w-full ml-3 bg-transparent outline-none text-sm text-gray-800 placeholder:text-gray-400"
       />
+
+       {isPassword && (
+        <button
+          type="button"
+          onClick={toggleShow}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+        >
+          {show ? <EyeOff size={18} /> : <Eye size={18} />}
+        </button>
+      )}
     </div>
   );
 }

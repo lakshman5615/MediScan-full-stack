@@ -248,7 +248,7 @@ export default function RecentScans() {
   return (
     <div>
       {/* ===== HEADER ===== */}
-      <div className="mb-2 flex items-center justify-between">
+      <div className="mb-2 flex items-center justify-between ">
         <h3 className="text-lg font-semibold text-slate-900 mt-4">
           Recent Scans
         </h3>
@@ -271,7 +271,7 @@ export default function RecentScans() {
       </div>
 
       {/* ===== CARD ===== */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-4">
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 transition-all duration-300  hover:shadow-lg  hover:-translate-y-1">
         <div className="space-y-4 max-h-[420px] overflow-y-auto pr-1">
           {scans.map((item, index) => (
             <div
@@ -281,7 +281,7 @@ export default function RecentScans() {
                 flex items-center justify-between
                 rounded-xl border border-slate-100
                 px-4 py-3 cursor-pointer
-                hover:bg-slate-50 transition
+                hover:bg-sky-50 transition
               "
             >
               {/* LEFT */}
