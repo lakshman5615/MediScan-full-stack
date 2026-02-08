@@ -149,8 +149,7 @@ import { Mail, Lock } from "lucide-react";
 import AuthLayout from "../../components/layout/AuthLayout";
 import MediScanIcon from "../../components/common/MediScanIcon";
 import { loginUser } from "../../services/authApi";
-
-// import { loginUser } from "../../services/authService";
+import { requestFCMToken } from "../../services/fcmService"; // ✅ FCM token ke liye
 
 export default function Login() {
   const navigate = useNavigate();
@@ -172,6 +171,16 @@ export default function Login() {
       const res = await loginUser(email, password);
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
+      
+      // ✅ FCM Token generate karo login ke baad
+      try {
+        await requestFCMToken();
+        console.log('✅ FCM token requested after login');
+      } catch (fcmError) {
+        console.error('⚠️ FCM token generation failed:', fcmError);
+        // Login successful hai, FCM fail hone se block nahi karna
+      }
+      
       navigate("/dashboard");
     }
     catch (err) {

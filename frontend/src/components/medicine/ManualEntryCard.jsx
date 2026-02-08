@@ -89,88 +89,97 @@ export default function ManualEntryCard({ mode }) {
   }, [showModal]);
 
 
-/* ---------------- AI ANALYZE ---------------- */
+  /* ---------------- AI ANALYZE ---------------- */
 
 
-// const handleAnalyze = async () => {
-//   if (!name) return;
+  // const handleAnalyze = async () => {
+  //   if (!name) return;
 
-//   try {
-//     console.log("🟡 ANALYZE CLICKED", { mode, name });
+  //   try {
+  //     console.log("🟡 ANALYZE CLICKED", { mode, name });
 
-//     let aiData;
+  //     let aiData;
 
-//     if (mode === "guest") {
-//       console.log("calling guest manual api");
-//       aiData = await guestManualSearch({ name });
-//     } else {
-//       console.log(" calling auth manual api");
-//       aiData = await manualSearch({ name });
-//     }
+  //     if (mode === "guest") {
+  //       console.log("calling guest manual api");
+  //       aiData = await guestManualSearch({ name });
+  //     } else {
+  //       console.log(" calling auth manual api");
+  //       aiData = await manualSearch({ name });
+  //     }
 
-//     console.log(" AI RESPONSE:", aiData);
+  //     console.log(" AI RESPONSE:", aiData);
 
-//     openAIExplanation(aiData);
-//     setShowModal(false); //  VERY IMPORTANT
+  //     openAIExplanation(aiData);
+  //     setShowModal(false); //  VERY IMPORTANT
 
-//     navigate("/dashboard/ai-explanation", {
-//       state: {
-//         from: mode === "guest" ? "landing" : "dashboard",
-//       },
-//     });
+  //     navigate("/dashboard/ai-explanation", {
+  //       state: {
+  //         from: mode === "guest" ? "landing" : "dashboard",
+  //       },
+  //     });
 
-//   } 
-//   catch (error) {
-//     console.error(" Manual analyze failed:", error);
-//     alert("AI service not available (backend off?)");
-//   }
-// };
-
-
-const handleAnalyze = async () => {
-  if (!name) return;
-
-  let aiData;
-
-  if (mode === "guest") {
-    aiData = await guestManualSearch({ name });
-  } else {
-    aiData = await manualSearch({ name });
-  }
-
-  openAIExplanation(aiData);
-
-  navigate("/dashboard/ai-explanation", {
-    state: {
-      from: mode === "guest" ? "landing" : "dashboard",
-    },
-  });
-};
+  //   } 
+  //   catch (error) {
+  //     console.error(" Manual analyze failed:", error);
+  //     alert("AI service not available (backend off?)");
+  //   }
+  // };
 
 
+  const handleAnalyze = async () => {
+    if (!name) return;
+
+    try {
+      let response;
+
+      if (mode === "guest") {
+        response = await guestManualSearch({ text: name });
+      } else {
+        response = await manualSearch({ name });
+      }
+
+      const aiData = response.data?.aiExplanation || response.data;
+
+      openAIExplanation(aiData);
+
+      setShowModal(false);
+
+      navigate("/dashboard/ai-explanation", {
+        state: {
+          from: mode === "guest" ? "landing" : "dashboard",
+        },
+      });
+    } catch (error) {
+      console.error("Manual search failed:", error);
+      alert("Failed to get medicine info. Check backend.");
+    }
+  };
 
 
-//   const handleAnalyze = () => {
-//   if (!name) return;
 
-//   openAIExplanation({
-//     name,
-//     usage: "Pain & fever relief",
-//     dosage: "500mg twice daily",
-//     sideEffects: "Rare nausea",
-//     source: "manual",
-//   });
 
-//   setShowModal(false);
+  //   const handleAnalyze = () => {
+  //   if (!name) return;
 
-//   const isLoggedIn = !!localStorage.getItem("user");
+  //   openAIExplanation({
+  //     name,
+  //     usage: "Pain & fever relief",
+  //     dosage: "500mg twice daily",
+  //     sideEffects: "Rare nausea",
+  //     source: "manual",
+  //   });
 
-//   navigate("/dashboard/ai-explanation", {
-//   state: {
-//     from: mode === "guest" ? "landing" : "dashboard",
-//   },
-// });
-// };
+  //   setShowModal(false);
+
+  //   const isLoggedIn = !!localStorage.getItem("user");
+
+  //   navigate("/dashboard/ai-explanation", {
+  //   state: {
+  //     from: mode === "guest" ? "landing" : "dashboard",
+  //   },
+  // });
+  // };
 
 
   return (

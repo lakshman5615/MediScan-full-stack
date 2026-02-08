@@ -1,56 +1,7 @@
-const cron = require('node-cron');
-const Medicine = require('../models/Medicine');
-const ProductionFCMService = require('../services/production-fcm.service');
+// ❌ DISABLED - Using alerts.cron.js instead to prevent duplicates
+// This file is kept for reference only
 
-// Run every minute to check for medicine reminders
-cron.schedule('* * * * *', async () => {
-    try {
-        console.log('🔔 Checking medicine reminders...');
-        
-        const now = new Date();
-        const currentTime = now.toTimeString().slice(0, 5); // HH:MM format
-        const today = now.toDateString();
-        
-        // Find medicines with schedules that match current time
-        const medicines = await Medicine.find({
-            'schedule.time': currentTime,
-            quantity: { $gt: 0 },
-            expiryDate: { $gte: today },
-            isActive: { $ne: false }
-        }).populate('userId', 'fcmToken name');
-        
-        for (const medicine of medicines) {
-            if (!medicine.userId?.fcmToken) continue;
-            
-            try {
-                // Send reminder with action buttons (YouTube-style)
-                await ProductionFCMService.sendNotificationWithAlert(medicine.userId._id, {
-                    title: '💊 Medicine Reminder',
-                    message: `Time to take ${medicine.medicineName} - ${medicine.dosage || '1 dose'}`,
-                    alertType: 'REMINDER',
-                    medicineId: medicine._id,
-                    medicineName: medicine.medicineName,
-                    dosage: medicine.dosage,
-                    severity: 'NORMAL',
-                    meta: {
-                        scheduledTime: currentTime,
-                        medicineId: medicine._id
-                    }
-                });
-                
-                console.log(`✅ Reminder sent: ${medicine.medicineName} to ${medicine.userId.name} at ${currentTime}`);
-                
-            } catch (notificationError) {
-                console.error(`❌ Failed to send reminder for ${medicine.medicineName}:`, notificationError);
-            }
-        }
-        
-    } catch (error) {
-        console.error('❌ Medicine reminder cron error:', error);
-    }
-});
-
-console.log('🔔 Medicine reminder cron job started - runs every minute');
+console.log('⚠️ medicine-reminder.cron.js is DISABLED - Using alerts.cron.js instead');
 
 // OLD CODE (Commented for backup)
 /*

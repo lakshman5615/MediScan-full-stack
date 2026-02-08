@@ -40,9 +40,10 @@ export default function Signup() {
       const res = await signupUser(
         name,
         email,
+        mobile.trim(),
         Number(age),
         password,
-        mobile.trim(),
+        
       );
 
 

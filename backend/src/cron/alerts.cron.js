@@ -1,12 +1,15 @@
+// ============================================
+// CRON JOBS - Automatic Alerts System
+// ============================================
 const cron = require('node-cron');
 const Medicine = require('../models/Medicine');
-const ProductionFCMService = require('../services/production-fcm.service');
+const AlertService = require('../services/alert.service'); // ✅ AlertService use kar rahe hain proper alert creation ke liye
 
 const reminderInterval = 24 * 60 * 60 * 1000; // 1 day
 
-// ----------------------
-// Medicine Reminders (every minute)
-// ----------------------
+// ============================================
+// Medicine Reminders (every minute check hota hai)
+// ============================================
 cron.schedule('* * * * *', async () => {
   try {
     const now = new Date();
@@ -39,10 +42,16 @@ cron.schedule('* * * * *', async () => {
 
     for (const med of medicines) {
       const { schedule, name, userId, _id, lastReminderSent } = med;
-      if (!userId) continue;
+      if (!userId) {
+        console.log(`⚠️ Skipping ${name} - No user found`);
+        continue;
+      }
 
-      // Prevent duplicate reminders (within 1 hour)
-      if (lastReminderSent && now - lastReminderSent < 60 * 60 * 1000) continue;
+      // ⚠️ Duplicate prevention - 1 hour cooldown
+      if (lastReminderSent && now - lastReminderSent < 60 * 60 * 1000) {
+        console.log(`⏭️ Skipping ${name} - Already sent within 1 hour`);
+        continue;
+      }
 
       // Determine which schedule slot matched
       let scheduleType = '';
@@ -51,22 +60,25 @@ cron.schedule('* * * * *', async () => {
       else if (schedule.evening.enabled && schedule.evening.time === currentTime) scheduleType = 'Evening';
       else if (schedule.night.enabled && schedule.night.time === currentTime) scheduleType = 'Night';
 
-      if (scheduleType) {
-        await ProductionFCMService.sendReminderWithActions(
-          userId._id,
-          `💊 ${scheduleType} Medicine Reminder`,
-          `It's time to take your medicine: ${name}`,
-          { 
-            medicineId: _id,
-            medicineName: name,
-            userId: userId._id
-          }
-        );
-
-        // Update lastReminderSent
-        med.lastReminderSent = now;
-        await med.save();
+      if (!scheduleType) {
+        console.log(`⚠️ No schedule type matched for ${name}`);
+        continue;
       }
+
+      // ✅ AlertService.createReminderAlert() use kar rahe hain
+      // Yeh automatically Alert + Notification + FCM sab create kar deta hai
+      console.log(`🔔 Creating reminder alert for ${name} (${scheduleType})...`);
+      
+      try {
+        await AlertService.createReminderAlert(med, scheduleType.toLowerCase());
+        console.log(`✅ Reminder alert created successfully for ${name}`);
+      } catch (alertError) {
+        console.error(`❌ Failed to create reminder alert for ${name}:`, alertError);
+      }
+
+      // Update lastReminderSent to prevent duplicate alerts
+      med.lastReminderSent = now;
+      await med.save();
     }
 
     console.log('✅ Medicine reminders checked at', currentTime);
@@ -75,57 +87,62 @@ cron.schedule('* * * * *', async () => {
   }
 });
 
-// ----------------------
-// Low Quantity & Expiry Alerts (every hour)
-// ----------------------
+// ============================================
+// Low Quantity & Expiry Alerts (every hour check hota hai)
+// ============================================
 cron.schedule('0 * * * *', async () => {
   try {
     const now = new Date();
-    const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const fiveDaysFromNow = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000); // ✅ 5 din baad
 
-    // ----- Low Quantity Alerts (≤ lowStockThreshold) -----
+    console.log(`🔍 Checking low stock & expiry alerts at ${now.toLocaleTimeString()}`);
+
+    // ============================================
+    // ✅ Low Stock Alerts - Use medicine's lowStockThreshold
+    // ============================================
     const lowQuantityMedicines = await Medicine.find({
-      $expr: { $lte: ['$remainingQuantity', '$lowStockThreshold'] },
-      remainingQuantity: { $gt: 0 }
+      $expr: { 
+        $and: [
+          { $lte: ['$remainingQuantity', '$lowStockThreshold'] },
+          { $gt: ['$remainingQuantity', 0] }
+        ]
+      }
     }).populate('userId');
+
+    console.log(`📦 Found ${lowQuantityMedicines.length} low stock medicines`);
 
     for (const med of lowQuantityMedicines) {
       if (!med.userId) continue;
 
-      const lowStockInterval = 24 * 60 * 60 * 1000; // 1 day
-      if (med.lastLowStockAlert && now - med.lastLowStockAlert < lowStockInterval) continue;
+      // ✅ Din me 1 baar - 24 hour cooldown
+      const lowStockInterval = 24 * 60 * 60 * 1000;
+      if (med.lastLowStockAlert && now - med.lastLowStockAlert < lowStockInterval) {
+        console.log(`⏭️ Skipping ${med.name} - Low stock alert already sent today`);
+        continue;
+      }
 
-      await ProductionFCMService.sendNotification(
-        med.userId._id,
-        '⚠️ Low Stock Alert',
-        `Low stock for medicine: ${med.name} (${med.remainingQuantity} doses left)`,
-        { medicineId: med._id, type: 'low_quantity' }
-      );
+      console.log(`🔔 Creating low stock alert for ${med.name} (${med.remainingQuantity}/${med.lowStockThreshold})`);
       
-      // Store in notifications for UI
-      await require('../models/Notification').create({
-        userId: med.userId._id,
-        medicineId: med._id,
-        title: '⚠️ Low Stock Alert',
-        message: `Low stock for medicine: ${med.name} (${med.remainingQuantity} doses left)`,
-        medicineId: med._id,
-        type: 'low_stock',
-        alertType: 'LOW_STOCK',
-        status: 'PENDING',
-        severity: 'WARNING',
-        showInUI: true,
-        deliveryStatus: 'delivered'
-      });
-
-      med.lastLowStockAlert = now;
-      await med.save();
+      try {
+        await AlertService.createLowStockAlert(med);
+        console.log(`✅ Low stock alert created for ${med.name}`);
+        
+        med.lastLowStockAlert = now;
+        await med.save();
+      } catch (err) {
+        console.error(`❌ Failed to create low stock alert for ${med.name}:`, err);
+      }
     }
 
-    // ----- Expiry Alerts (≤7 days) -----
+    // ============================================
+    // ✅ Expiry Alerts - 5 din baaki (din me 1 baar) + Expiry day alert
+    // ============================================
     const expiringMedicines = await Medicine.find({
-      expiryDate: { $gt: now, $lte: sevenDaysFromNow }, // Only future dates
+      expiryDate: { $gt: now, $lte: fiveDaysFromNow }, // ✅ 5 din ke andar expire hone wali
       remainingQuantity: { $gt: 0 }
     }).populate('userId');
+
+    console.log(`📅 Found ${expiringMedicines.length} expiring medicines (within 5 days)`);
 
     for (const med of expiringMedicines) {
       if (!med.userId) continue;
@@ -133,34 +150,58 @@ cron.schedule('0 * * * *', async () => {
       const daysLeft = Math.ceil((med.expiryDate - now) / (1000 * 60 * 60 * 24));
       if (daysLeft <= 0) continue; // Already expired
 
-      // Prevent duplicate expiry alerts
-      if (med.lastExpiryAlert && now - med.lastExpiryAlert < 24 * 60 * 60 * 1000) continue;
+      // ✅ Din me 1 baar - 24 hour cooldown
+      if (med.lastExpiryAlert && now - med.lastExpiryAlert < 24 * 60 * 60 * 1000) {
+        console.log(`⏭️ Skipping ${med.name} - Expiry alert already sent today`);
+        continue;
+      }
 
-      await ProductionFCMService.sendNotification(
-        med.userId._id,
-        '📅 Expiry Alert',
-        `${med.name} will expire in ${daysLeft} day(s)`,
-        { medicineId: med._id, type: 'expiry_warning' }
-      );
+      console.log(`🔔 Creating expiry alert for ${med.name} (${daysLeft} days left)`);
       
-      // Store in notifications for UI
-      const severity = daysLeft <= 1 ? 'CRITICAL' : 'WARNING';
-      await require('../models/Notification').create({
-        userId: med.userId._id,
-        medicineId: med._id,
-        title: '📅 Expiry Alert',
-        message: `${med.name} will expire in ${daysLeft} day(s)`,
-        medicineId: med._id,
-        type: 'expiry_alert',
-        alertType: 'EXPIRY',
-        status: 'PENDING',
-        severity,
-        showInUI: true,
-        deliveryStatus: 'delivered'
-      });
+      try {
+        await AlertService.createExpiryAlert(med);
+        console.log(`✅ Expiry alert created for ${med.name}`);
+        
+        med.lastExpiryAlert = now;
+        await med.save();
+      } catch (err) {
+        console.error(`❌ Failed to create expiry alert for ${med.name}:`, err);
+      }
+    }
 
-      med.lastExpiryAlert = now;
-      await med.save();
+    // ============================================
+    // ✅ EXPIRED TODAY - Final warning
+    // ============================================
+    const expiredToday = await Medicine.find({
+      expiryDate: { $lte: now }, // Already expired
+      remainingQuantity: { $gt: 0 }
+    }).populate('userId');
+
+    console.log(`🚨 Found ${expiredToday.length} expired medicines`);
+
+    for (const med of expiredToday) {
+      if (!med.userId) continue;
+
+      // ✅ Check if already sent today
+      const todayStr = now.toISOString().split('T')[0];
+      const lastAlertDate = med.lastExpiryAlert ? new Date(med.lastExpiryAlert).toISOString().split('T')[0] : null;
+      
+      if (lastAlertDate === todayStr) {
+        console.log(`⏭️ Skipping ${med.name} - Expired alert already sent today`);
+        continue;
+      }
+
+      console.log(`🔔 Creating EXPIRED alert for ${med.name}`);
+      
+      try {
+        await AlertService.createExpiryAlert(med);
+        console.log(`✅ Expired alert created for ${med.name}`);
+        
+        med.lastExpiryAlert = now;
+        await med.save();
+      } catch (err) {
+        console.error(`❌ Failed to create expired alert for ${med.name}:`, err);
+      }
     }
 
     console.log('✅ Low quantity and expiry alerts checked at', now.toLocaleTimeString());

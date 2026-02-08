@@ -137,10 +137,8 @@ exports.updateMedicine = async (req, res) => {
         if (dosage !== undefined) medicine.dosage = dosage;
         if (totalQuantity !== undefined) {
             medicine.totalQuantity = totalQuantity;
-            // Adjust remaining quantity if total changed
-            if (totalQuantity < medicine.remainingQuantity) {
-                medicine.remainingQuantity = totalQuantity;
-            }
+            // ✅ Always sync remainingQuantity when totalQuantity changes
+            medicine.remainingQuantity = totalQuantity;
         }
         if (expiryDate) medicine.expiryDate = new Date(expiryDate);
         if (lowStockThreshold !== undefined) medicine.lowStockThreshold = lowStockThreshold;

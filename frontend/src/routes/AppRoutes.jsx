@@ -141,7 +141,8 @@ export default function AppRoutes() {
         {/* Routes without common sidebar */}
         <Route path="/dashboard/cabinet" element={<Cabinet />} />
         <Route path="/dashboard/alerts" element={<Alerts />} />
-<Route path="/dashboard/emergency" element={<Emergency />} />
+        <Route path="/dashboard/emergency" element={<Emergency />} />
+        
         {/* ================= DASHBOARD (PROTECTED) ================= */}
         <Route
           path="/dashboard"

@@ -70,7 +70,7 @@ exports.manualSearch = async (req, res) => {
 
         await AIHistory.create({
             userId: req.user._id,
-            inputText: req.body.text,
+            inputText: req.body.name,
             queryType: "text",
             status: "failed"
         });
@@ -84,7 +84,7 @@ exports.manualSearch = async (req, res) => {
 exports.scanSearch = async (req, res) => {
     try {
 
-        const userID = req.user.id;
+        const userID = req.user._id;
         const image = req.file;
 
         if (!image) {
@@ -192,5 +192,26 @@ exports.guestScanSearch = async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Scan failed" });
+    }
+};
+
+exports.getHistory = async (req, res) => {
+    try {
+        const userId = req.user._id;
+
+        const history = await AIHistory.find({
+            userId,
+            status: "success"
+        })
+            .sort({ createdAt: -1 })
+            .limit(50)
+            .select("aiSnapshot queryType createdAt");
+
+        const formattedHistory = history.map(item => item.aiSnapshot);
+
+        res.json({ data: formattedHistory });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Failed to fetch history" });
     }
 };

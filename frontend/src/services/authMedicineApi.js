@@ -1,11 +1,22 @@
+
+
 import axiosInstance from "./axios";
 
 // 🔐 logged-in IMAGE scan
-export const scanSearch = async (data) => {
+export const scanSearch = async (file) => {
+  const formData = new FormData();
+  formData.append("image", file); // 👈 MUST be "image"
+
   const res = await axiosInstance.post(
     "/api/ai/scan-search",
-    data
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
   );
+
   return res.data;
 };
 
@@ -15,5 +26,11 @@ export const manualSearch = async (data) => {
     "/api/ai/manual-search",
     data
   );
+  return res.data;
+};
+
+// 🔐 GET history
+export const getAIHistory = async () => {
+  const res = await axiosInstance.get("/api/ai/history");
   return res.data;
 };

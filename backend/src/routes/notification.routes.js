@@ -93,6 +93,13 @@ router.post('/action', authMiddleware, async (req, res) => {
     }
     
     await notification.save();
+
+    // Sync Alert model
+    const Alert = require('../models/Alert');
+    await Alert.findOneAndUpdate(
+      { medicineId: notification.medicineId, userId, status: 'PENDING' },
+      { status: action, resolvedAt: new Date(), showInUI: false }
+    );
     
     res.json({ 
       success: true, 
@@ -217,6 +224,56 @@ router.delete('/:id', authMiddleware, async (req, res) => {
     }
     
     res.json({ success: true, message: 'Notification deleted' });
+    
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+// Alert Dashboard API for UI
+router.get('/alerts/dashboard', authMiddleware, async (req, res) => {
+  try {
+    const { _id: userId } = req.user;
+    
+    const Alert = require('../models/Alert');
+    
+    const pendingDoses = await Alert.find({ 
+      userId, 
+      type: 'REMINDER', 
+      status: 'PENDING',
+      showInUI: true 
+    }).populate('medicineId', 'name dosage').sort({ createdAt: -1 });
+    
+    const expiryMedicines = await Alert.find({ 
+      userId, 
+      type: 'EXPIRY', 
+      status: 'PENDING',
+      showInUI: true 
+    }).populate('medicineId', 'name expiryDate').sort({ createdAt: -1 });
+    
+    const lowStockMedicines = await Alert.find({ 
+      userId, 
+      type: 'LOW_STOCK', 
+      status: 'PENDING',
+      showInUI: true 
+    }).populate('medicineId', 'name remainingQuantity').sort({ createdAt: -1 });
+    
+    res.json({
+      success: true,
+      data: {
+        pendingDoses: {
+          count: pendingDoses.length,
+          items: pendingDoses
+        },
+        expiryMedicines: {
+          count: expiryMedicines.length,
+          items: expiryMedicines
+        },
+        lowStockMedicines: {
+          count: lowStockMedicines.length,
+          items: lowStockMedicines
+        }
+      }
+    });
     
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });

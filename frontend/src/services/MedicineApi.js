@@ -2,7 +2,7 @@ import axios from "./axios";
 
 // ➕ Add medicine
 export const addMedicine = (data) => {
-  return axios.post("/medicine", data);
+  return axios.post("/medicine/add", data);
 };
 
 // 📋 Get all medicines
@@ -12,10 +12,10 @@ export const getMedicines = () => {
 
 // ✏️ Update medicine
 export const updateMedicine = (id, data) => {
-  return axios.put(`/medicine/${id}`, data);
+  return axios.put(`/medicine/update/${id}`, data);
 };
 
 // 🗑 Delete medicine
 export const deleteMedicine = (id) => {
-  return axios.delete(`/medicine/${id}`);
+  return axios.delete(`/medicine/delete/${id}`);
 };

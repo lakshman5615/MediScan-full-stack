@@ -57,44 +57,98 @@ import { useRef, useState, useEffect } from "react";
 import { UploadCloud, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAI } from "../../context/AIContext";
+import { scanSearch } from "../../services/authMedicineApi";
+import { guestScanSearch } from "../../services/guestApi";
 
 export default function UploadCard({ mode }) {
   const fileRef = useRef(null);
   const navigate = useNavigate();
   const { openAIExplanation } = useAI();
-
   const [preview, setPreview] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
 
   useEffect(() => {
     document.body.style.overflow = showModal ? "hidden" : "auto";
   }, [showModal]);
 
-  const handleUpload = (e) => {
+
+  const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    setPreview(URL.createObjectURL(file));
+
+    setSelectedFile(file);              // 🔥 backend ke liye actual file
+    setPreview(URL.createObjectURL(file)); // 👀 UI preview ke liye
     setShowModal(true);
   };
 
-  const handleAnalyze = () => {
-  openAIExplanation({
-    name: "Cetirizine",
-    usage: "Allergy relief",
-    dosage: "Once daily",
-    source: "upload",
-  });
+  const handleAnalyze = async () => {
+    if (!selectedFile) {
+      alert("Please select an image");
+      return;
+    }
 
-  setShowModal(false);
+    try {
+      let response;
 
-  const isLoggedIn = !!localStorage.getItem("user");
+      if (mode === "guest") {
+        response = await guestScanSearch(selectedFile);
+      } else {
+        response = await scanSearch(selectedFile);
+      }
 
-  navigate("/dashboard/ai-explanation", {
-  state: {
-    from: mode === "guest" ? "landing" : "dashboard",
-  },
-});
-};
+      console.log("✅ AI RESPONSE:", response);
+
+      const aiData = response.data || response;
+      openAIExplanation(aiData);
+      setShowModal(false);
+
+      navigate("/dashboard/ai-explanation", {
+        state: {
+          from: mode === "guest" ? "landing" : "dashboard",
+        },
+      });
+
+    } catch (error) {
+      console.error("❌ Upload analyze failed:", error.response?.data || error);
+      alert(error.response?.data?.message || "Upload failed");
+    }
+  };
+
+  // const handleAnalyze = async () => {
+  //   if (!selectedFile) {
+  //     alert("Please select an image");
+  //     return;
+  //   }
+
+  //   try {
+  //     const formData = new FormData();
+  //     formData.append("image", selectedFile);
+  //     let aiData;
+
+  //     if (mode === "guest") {
+  //       aiData = await guestScanSearch(formData);
+  //     } else {
+  //       aiData = await scanSearch(formData);
+  //     }
+
+  //     console.log("✅ AI RESPONSE:", aiData);
+
+  //     openAIExplanation(aiData);
+  //     setShowModal(false);
+
+  //     navigate("/dashboard/ai-explanation", {
+  //       state: {
+  //         from: mode === "guest" ? "landing" : "dashboard",
+  //       },
+  //     });
+
+  //   } catch (error) {
+  //     console.error(" Upload analyze failed:", error);
+  //     alert("AI service error");
+  //   }
+  // };
+
 
   return (
     <>
@@ -111,7 +165,7 @@ export default function UploadCard({ mode }) {
           type="file"
           accept="image/*"
           hidden
-          onChange={handleUpload}
+          onChange={handleFileChange}
         />
       </div>
 

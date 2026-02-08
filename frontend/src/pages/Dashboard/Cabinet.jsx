@@ -52,6 +52,8 @@ import {
   isMedicineExpired,
   getMedicineStatus
 } from "../../utils/medicineUtils";
+// ✅ Alert API import - Notification count ke liye
+import { getAlerts } from "../../services/alertApi";
 
 import EditMedicineModal from '../../components/common/EditMedicineModal';
 
@@ -145,6 +147,7 @@ const loadMedicines = async () => {
 
     if (!Array.isArray(medicinesArray)) {
       console.error("Medicines is not an array", res);
+      setMedicines([]);
       return;
     }
 
@@ -182,56 +185,29 @@ const loadMedicines = async () => {
     });
 
     setMedicines(formatted);
-    calculateNotificationCount(formatted);
+    await calculateNotificationCount(); // ✅ Backend se notification count load karo
   } catch (err) {
     console.error("Failed to load medicines", err);
+    setMedicines([]);
   }
 };
 
 
-  // Calculate notification count
-  const calculateNotificationCount = (medicinesList) => {
-    let count = 0;
-    const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
-    const now = new Date();
-    const savedActions = localStorage.getItem('medicineActions') || '{}';
-    const actionHistory = JSON.parse(savedActions);
-    
-    medicinesList.forEach(medicine => {
-      // Check for schedule alerts (at exact time or after until action taken)
-      if (medicine.schedule && medicine.scheduleEnabled) {
-        Object.entries(medicine.schedule).forEach(([period, time]) => {
-          if (medicine.scheduleEnabled[period] && time) {
-            const [hours, minutes] = time.split(':').map(Number);
-            const alertTime = new Date();
-            alertTime.setHours(hours, minutes, 0, 0);
-
-            const alertId = `${medicine.id}-${period}-${todayStr}`;
-            const actionKey = `${alertId}-action`;
-
-            // Count if scheduled time has passed and no action has been taken
-            if (now >= alertTime && !actionHistory[actionKey]) {
-              count++;
-            }
-          }
-        });
-      }
+  // ✅ Calculate notification count from BACKEND API
+  const calculateNotificationCount = async () => {
+    try {
+      const res = await getAlerts();
       
-      // Check for expiry alerts (within 30 days)
-      const expiryDate = new Date(medicine.expiryDate);
-      const daysUntilExpiry = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
-      if (daysUntilExpiry <= 30) {
-        count++;
-      }
+      // Count pending reminders + expiry alerts + low stock alerts
+      const count = 
+        res.data.reminders.filter(a => a.status === 'PENDING').length +
+        res.data.expiry.length +
+        res.data.lowStock.length;
       
-      // Check for low stock alerts
-      if (medicine.quantity <= 10) {
-        count++;
-      }
-    });
-    
-    setNotificationCount(count);
+      setNotificationCount(count);
+    } catch (err) {
+      console.error("Failed to load notification count", err);
+    }
   };
 
   // Handle adding/editing medicine
@@ -269,8 +245,9 @@ const loadMedicines = async () => {
         schedule
       });
 
-      await loadMedicines(); // ✅ DB se fresh data load
-      alert(`${medicineData.name} updated in database!`);
+      resetForm();
+      await loadMedicines(); //  DB se update data load
+      alert(`${medicineData.name} updated successfully!`);
       
     } else {
       // ✅ ADD NEW MEDICINE
@@ -306,15 +283,14 @@ const loadMedicines = async () => {
         schedule
       });
 
+      resetForm();
       await loadMedicines(); // ✅ DB se fresh data load
-      alert(`${medicineData.name} added to database!`);
+      alert(`${medicineData.name} added successfully!`);
     }
   } catch (error) {
     console.error('Error saving medicine:', error);
     alert('Failed to save medicine. Check console for details.');
   }
-  
-  resetForm();
 };
 
   // const handleSaveMedicine = async (medicineData) => {
@@ -461,9 +437,21 @@ const loadMedicines = async () => {
   const prescriptionCount = medicines.filter(m => m.quantity > 2).length;
 
   const handleViewMedicine = (medicine) => {
-    setSelectedMedicine(medicine);
+    // ✅ Always fetch latest data from medicines state
+    const freshMedicine = medicines.find(m => m.id === medicine.id) || medicine;
+    setSelectedMedicine(freshMedicine);
     setShowMedicineModal(true);
   };
+
+  // ✅ Refresh modal data when medicines update
+  useEffect(() => {
+    if (showMedicineModal && selectedMedicine) {
+      const freshMedicine = medicines.find(m => m.id === selectedMedicine.id);
+      if (freshMedicine) {
+        setSelectedMedicine(freshMedicine);
+      }
+    }
+  }, [medicines]);
 
 
 
@@ -477,13 +465,15 @@ const loadMedicines = async () => {
   //   }
   // };
   const handleDiscard = async (medicineId) => {
-  if (!window.confirm("Delete this medicine?")) return;
+  if (!window.confirm("Are you sure you want to delete this medicine?")) return;
 
   try {
     await deleteMedicine(medicineId);
-    loadMedicines();
+    await loadMedicines();
+    alert('Medicine deleted successfully!');
   } catch (err) {
     console.error("Delete failed", err);
+    alert('Failed to delete medicine. Please try again.');
   }
 };
 
@@ -739,7 +729,6 @@ const loadMedicines = async () => {
                           <td className="px-3 lg:px-6 py-4">
                             <div>
                               <div className="font-medium text-gray-900 text-sm lg:text-base">{medicine.name}</div>
-                              <div className="text-xs lg:text-sm text-gray-500">{medicine.strength}</div>
                               {/* Mobile: Show status and quantity inline */}
                               <div className="sm:hidden mt-2 space-y-1">
                                 <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${statusConfig.color}`}>
@@ -829,7 +818,6 @@ const loadMedicines = async () => {
                       <div className="flex justify-between items-start mb-4">
                         <div className="flex-1 min-w-0">
                           <h3 className="font-bold text-gray-900 text-base lg:text-lg truncate">{medicine.name}</h3>
-                        <p className="text-gray-600 text-xs lg:text-sm truncate">{medicine.strength}</p>
                         </div>
                         <span className={`inline-flex items-center gap-1 px-2 lg:px-3 py-1 rounded-full text-xs font-medium ${statusConfig.color} ml-2 flex-shrink-0`}>
                           {statusConfig.text}
