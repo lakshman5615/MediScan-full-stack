@@ -278,6 +278,15 @@
 
 // module.exports = new ProductionFCMService();
 
+// ============================================
+// PRODUCTION FCM SERVICE
+// ============================================
+// Yeh service 3 kaam karti hai:
+// 1. Alert create karti hai (Database me save hota hai - Alert UI ke liye)
+// 2. Notification create karti hai (Database me save hota hai - Sync ke liye)
+// 3. FCM push notification bhejti hai (Device pe notification dikhta hai)
+// ============================================
+
 // src/services/production-fcm.service.js
 const Notification = require('../models/Notification');
 const Alert = require('../models/Alert');
@@ -327,16 +336,14 @@ class ProductionFCMService {
       const user = await User.findById(userId);
       if (!user) return { success: false, error: 'User not found' };
 
-      // 1. Create Alert in DB (for Alert UI)
-      const alert = await this.createAlert(userId, notificationData);
+      // ❌ DON'T create Alert here - AlertService already created it
+      // ✅ ONLY create Notification in DB (for sync)
+      const notification = await this.createNotification(userId, notificationData, notificationData.alertId);
       
-      // 2. Create Notification in DB (for sync)
-      const notification = await this.createNotification(userId, notificationData, alert._id);
+      // ✅ Send FCM push notification (device notification)
+      await this.sendFCMNotification(user, notificationData, notificationData.alertId);
       
-      // 3. Send FCM push notification (device notification)
-      await this.sendFCMNotification(user, notificationData, alert._id);
-      
-      return { success: true, alertId: alert._id, notificationId: notification._id };
+      return { success: true, notificationId: notification._id };
       
     } catch (error) {
       console.error('❌ Notification+Alert error:', error);
@@ -344,61 +351,90 @@ class ProductionFCMService {
     }
   }
 
-  // Create Alert (for Alert UI)
+  // ============================================
+  // CREATE ALERT (Database me save - Alert UI ke liye)
+  // ============================================
   async createAlert(userId, data) {
-    const alert = new Alert({
-      userId,
-      type: data.alertType || 'REMINDER',
-      medicineId: data.medicineId,
-      medicineName: data.medicineName,
-      dosage: data.dosage,
-      status: 'PENDING',
-      actionRequired: data.alertType === 'REMINDER',
-      severity: data.severity || 'NORMAL',
-      meta: data.meta || {},
-      showInUI: true,
-      sentToDevice: false,
-      uniqueKey: `${userId}_${data.medicineId}_${data.alertType}_${new Date().toDateString()}`
-    });
-    
-    return await alert.save();
+    try {
+      const alert = new Alert({
+        userId,
+        type: data.alertType || 'REMINDER',
+        medicineId: data.medicineId,
+        medicineName: data.medicineName,
+        dosage: data.dosage,
+        status: 'PENDING',
+        actionRequired: data.alertType === 'REMINDER',
+        severity: data.severity || 'NORMAL',
+        meta: data.meta || {},
+        showInUI: true,
+        sentToDevice: false,
+        uniqueKey: `${userId}_${data.medicineId}_${data.alertType}_${new Date().toDateString()}`
+      });
+      
+      const savedAlert = await alert.save();
+      console.log(`✅ Alert created in DB: ${savedAlert._id}`);
+      return savedAlert;
+      
+    } catch (error) {
+      console.error('❌ Alert creation failed:', error.message);
+      throw error;
+    }
   }
 
-  // Create Notification (for sync)
+  // ============================================
+  // CREATE NOTIFICATION (Database me save - Sync ke liye)
+  // ============================================
   async createNotification(userId, data, alertId) {
-    const notification = new Notification({
-      userId,
-      title: data.title,
-      message: data.message,
-      type: data.type || 'medicine_reminder',
-      alertType: data.alertType || 'REMINDER',
-      status: 'PENDING',
-      severity: data.severity || 'NORMAL',
-      medicineId: data.medicineId,
-      isRead: false,
-      showInUI: true,
-      deliveryStatus: 'pending',
-      deliveryMethod: 'fcm'
-    });
-    
-    return await notification.save();
+    try {
+      const notification = new Notification({
+        userId,
+        title: data.title,
+        message: data.message,
+        type: data.type || 'medicine_reminder',
+        alertType: data.alertType || 'REMINDER',
+        status: 'PENDING',
+        severity: data.severity || 'NORMAL',
+        medicineId: data.medicineId,
+        isRead: false,
+        showInUI: true,
+        deliveryStatus: 'pending',
+        deliveryMethod: 'fcm'
+      });
+      
+      const savedNotification = await notification.save();
+      console.log(`✅ Notification created in DB: ${savedNotification._id}`);
+      return savedNotification;
+      
+    } catch (error) {
+      console.error('❌ Notification creation failed:', error.message);
+      throw error;
+    }
   }
 
   // Send FCM Push Notification (device notification with action buttons)
   async sendFCMNotification(user, data, alertId) {
+    // ✅ Testing: Console log for debugging
+    console.log(`\n🔔 FCM NOTIFICATION ATTEMPT:`);
+    console.log(`👤 User: ${user.name} (${user.email})`);
+    console.log(`📱 FCM Token: ${user.fcmToken ? 'EXISTS (' + user.fcmToken.length + ' chars)' : 'NOT FOUND'}`);
+    console.log(`💊 Medicine: ${data.medicineName}`);
+    console.log(`📋 Title: ${data.title}`);
+    console.log(`💬 Message: ${data.message}`);
+    
     if (!user.fcmToken || user.fcmToken.length < MIN_FCM_TOKEN_LENGTH) {
-      if (this.isDev) console.log(`⚠️ No valid FCM token for user ${user._id}`);
+      console.log(`⚠️ No valid FCM token for user ${user._id} - Notification saved to DB only`);
+      console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
       return;
     }
 
     try {
       const message = {
         token: user.fcmToken,
-        notification: {
-          title: data.title,
-          body: data.message
-        },
+        // ❌ Remove notification field - only send data
+        // This prevents Chrome's default notification
         data: {
+          title: data.title, // ✅ Move to data
+          body: data.message, // ✅ Move to data
           alertId: String(alertId),
           medicineId: String(data.medicineId || ''),
           type: data.alertType || 'REMINDER',
@@ -413,10 +449,13 @@ class ProductionFCMService {
       // Update alert as sent to device
       await Alert.findByIdAndUpdate(alertId, { sentToDevice: true });
       
-      if (this.isDev) console.log(`✅ FCM notification sent to ${user._id}`);
+      console.log(`✅ FCM notification sent successfully to ${user.name}`);
+      console.log(`📨 Message ID: ${message}`);
+      console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
       
     } catch (error) {
-      console.error(`❌ FCM send error for user ${user._id}:`, error);
+      console.error(`❌ FCM send error for user ${user._id}:`, error.message);
+      console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
     }
   }
 
@@ -448,7 +487,11 @@ class ProductionFCMService {
     }
   }
 
-  // Legacy method for backward compatibility
+  // ============================================
+  // LEGACY METHODS - Backward compatibility ke liye
+  // ============================================
+  
+  // sendNotification - Purane code ke liye compatibility
   async sendNotification(userId, title, body, data = {}) {
     return await this.sendNotificationWithAlert(userId, {
       title,
@@ -456,6 +499,37 @@ class ProductionFCMService {
       alertType: 'REMINDER',
       ...data
     });
+  }
+
+  // ✅ sendReminderWithActions - Cron jobs ke liye (alerts.cron.js me use hota hai)
+  // Yeh function medicine reminders ke liye Alert + Notification + FCM create karta hai
+  async sendReminderWithActions(userId, title, message, medicineData = {}) {
+    console.log(`\n🔔 REMINDER WITH ACTIONS CALLED:`);
+    console.log(`👤 User ID: ${userId}`);
+    console.log(`💊 Medicine: ${medicineData.medicineName}`);
+    console.log(`📋 Title: ${title}`);
+    console.log(`💬 Message: ${message}`);
+    
+    try {
+      // ✅ ONLY create notification + FCM (Alert already created by AlertService)
+      const result = await this.sendNotificationWithAlert(userId, {
+        title,
+        message,
+        alertType: 'REMINDER',
+        medicineId: medicineData.medicineId,
+        medicineName: medicineData.medicineName,
+        dosage: medicineData.dosage,
+        severity: 'NORMAL',
+        meta: { scheduledTime: medicineData.scheduledTime }
+      });
+      
+      console.log(`✅ Reminder with actions completed:`, result);
+      return result;
+      
+    } catch (error) {
+      console.error(`❌ sendReminderWithActions error:`, error);
+      throw error;
+    }
   }
 }
 
