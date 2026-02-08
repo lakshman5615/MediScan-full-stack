@@ -945,12 +945,7 @@ const loadMedicines = async () => {
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-3">Details</h3>
                   <div className="space-y-4">
-                    <div>
-                      <label className="text-sm text-gray-500">Active Ingredients</label>
-                      <p className="text-gray-900">{selectedMedicine.activeIngredients}</p>
-                    </div>
                     <div>
                       <label className="text-sm text-gray-500">Schedule</label>
                       {selectedMedicine.schedule && (
@@ -966,6 +961,25 @@ const loadMedicines = async () => {
                             }
                             return null;
                           })}
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <label className="text-sm text-gray-500">Expiry Date</label>
+                      <p className="text-gray-900">
+                        {new Date(selectedMedicine.expiryDate).toLocaleDateString('en-US', { 
+                          weekday: 'long', 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        })}
+                      </p>
+                      {isMedicineExpired(selectedMedicine.expiryDate) && (
+                        <div className="mt-2 p-2 bg-red-50 border border-red-100 rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <AlertTriangle size={14} className="text-red-600" />
+                            <p className="text-red-700 text-sm font-medium">This medicine has expired</p>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -986,25 +1000,6 @@ const loadMedicines = async () => {
                     <div>
                       <label className="text-sm text-gray-500">Quantity Remaining</label>
                       <p className="text-gray-900 text-lg font-medium">{selectedMedicine.remaining}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm text-gray-500">Expiry Date</label>
-                      <p className="text-gray-900">
-                        {new Date(selectedMedicine.expiryDate).toLocaleDateString('en-US', { 
-                          weekday: 'long', 
-                          year: 'numeric', 
-                          month: 'long', 
-                          day: 'numeric' 
-                        })}
-                      </p>
-                      {isMedicineExpired(selectedMedicine.expiryDate) && (
-                        <div className="mt-2 p-2 bg-red-50 border border-red-100 rounded-lg">
-                          <div className="flex items-center gap-2">
-                            <AlertTriangle size={14} className="text-red-600" />
-                            <p className="text-red-700 text-sm font-medium">This medicine has expired</p>
-                          </div>
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
