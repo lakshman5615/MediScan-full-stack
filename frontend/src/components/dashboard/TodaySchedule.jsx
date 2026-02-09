@@ -97,79 +97,140 @@
 
 
 
-import { Clock } from "lucide-react";
+
+import { useEffect, useState } from "react";
+import { getTodaySchedule } from "../../services/dashboardApi";
 
 export default function TodaySchedule() {
-  const schedule = [
-    {
-      time: "08:00 AM",
-      name: "Multivitamin",
-      dose: "1 Tablet with breakfast",
-      active: true,
-    },
-    {
-      time: "01:00 PM",
-      name: "Amoxicillin",
-      dose: "1 Capsule after lunch",
-      active: true,
-    },
-    {
-      time: "08:00 PM",
-      name: "Amoxicillin",
-      dose: "1 Capsule before bed",
-      active: false,
-    },
-  ];
+  
+  const [schedule, setSchedule] = useState([]);
+  const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    const fetchTodaySchedule = async () => {
+      try {
+        const res = await getTodaySchedule();
+        setSchedule(res.data || []); 
+      } catch (err) {
+        console.error("Today schedule error", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTodaySchedule();
+  }, []);
+
+  if (loading) {
+    return (
+      <p className="text-sm text-slate-400">
+        Loading today’s schedule...
+      </p>
+    );
+  }
+
+  if (schedule.length === 0) {
+    return (
+      <p className="text-sm text-slate-400">
+        No medicines scheduled today
+      </p>
+    );
+  }
   return (
     <div>
-      {/* Heading box ke bahar */}
       <h3 className="mt-4 text-lg font-semibold text-slate-900 mb-2">
         Today’s Schedule
       </h3>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 mb-5 transition-all duration-300  hover:shadow-lg  hover:-translate-y-1">
-        {/* Timeline */}
-        <div className="relative space-y-6 ">
-          {/* Vertical line */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 mb-5">
+        {/* <div className="relative space-y-6"> */}
+        <div className="relative space-y-6 max-h-[210px] overflow-y-auto pr-2">
+
           <div className="absolute left-[10px] top-0 h-full w-px bg-sky-200" />
 
           {schedule.map((item, index) => (
-            <div key={index} className="relative flex gap-5 ">
+            <div key={index} className="relative flex gap-5">
               {/* Dot */}
-              <div
-                className={`mt-1 h-3 w-3 rounded-full  ${
-                  item.active ? "bg-sky-500" : "bg-slate-300"
-                }`}
-              />
+              <div className="mt-1 h-3 w-3 rounded-full bg-sky-500" />
 
               {/* Content */}
               <div className="flex-1">
-                {/* Time upar */}
                 <p className="text-xs font-medium text-sky-600">
-                  {item.time}
+                  {formatTime(item.time)} • {item.slot.toUpperCase()}
                 </p>
 
-                {/* Tablet name */}
                 <p className="text-sm font-medium text-slate-900">
                   {item.name}
                 </p>
 
-                {/* Dose */}
                 <p className="text-xs text-slate-400">
-                  {item.dose}
+                  {item.dosage || "As prescribed"}
                 </p>
               </div>
             </div>
           ))}
         </div>
-
-        {/* Footer */}
-        {/* <button className="mt-6 w-full rounded-xl bg-slate-100 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200">
-          Full Calendar View
-        </button> */}
       </div>
     </div>
   );
 }
+
+function formatTime(time) {
+  const [h, m] = time.split(":");
+  const hour = (+h % 12) || 12;
+  const ampm = +h >= 12 ? "PM" : "AM";
+  return `${hour}:${m} ${ampm}`;
+}
+
+//   return (
+//     <div>
+//       {/* Heading box ke bahar */}
+//       <h3 className="mt-4 text-lg font-semibold text-slate-900 mb-2">
+//         Today’s Schedule
+//       </h3>
+
+//       <div className="rounded-2xl border border-slate-200 bg-white p-6 mb-5 transition-all duration-300  hover:shadow-lg  hover:-translate-y-1">
+//         {/* Timeline */}
+//         <div className="relative space-y-6 ">
+//           {/* Vertical line */}
+//           <div className="absolute left-[10px] top-0 h-full w-px bg-sky-200" />
+
+//           {schedule.map((item, index) => (
+//             <div key={index} className="relative flex gap-5 ">
+//               {/* Dot */}
+//               <div
+//                 className={`mt-1 h-3 w-3 rounded-full  ${
+//                   item.active ? "bg-sky-500" : "bg-slate-300"
+//                 }`}
+//               />
+
+//               {/* Content */}
+//               <div className="flex-1">
+//                 {/* Time upar */}
+//                 <p className="text-xs font-medium text-sky-600">
+//                   {item.time}
+//                 </p>
+
+//                 {/* Tablet name */}
+//                 <p className="text-sm font-medium text-slate-900">
+//                   {item.name}
+//                 </p>
+
+//                 {/* Dose */}
+//                 <p className="text-xs text-slate-400">
+//                   {item.dose}
+//                 </p>
+//               </div>
+//             </div>
+//           ))}
+//         </div>
+
+//         {/* Footer */}
+//         {/* <button className="mt-6 w-full rounded-xl bg-slate-100 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200">
+//           Full Calendar View
+//         </button> */}
+//       </div>
+//     </div>
+//   );
+// }
 
