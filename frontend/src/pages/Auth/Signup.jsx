@@ -5,6 +5,7 @@ import { Mail, Lock, User, Calendar, Eye, EyeOff } from "lucide-react";
 import AuthLayout from "../../components/layout/AuthLayout";
 import MediScanIcon from "../../components/common/MediScanIcon";
 import { signupUser } from "../../services/authApi";
+import { requestFCMToken } from "../../services/fcmService"; // ✅ FCM token ke liye
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -55,7 +56,15 @@ export default function Signup() {
       // 🔐 SAME AS LOGIN
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
-
+      
+      // ✅ FCM Token generate karo signup ke baad
+      try {
+        await requestFCMToken();
+        console.log('✅ FCM token requested after signup');
+      } catch (fcmError) {
+        console.error('⚠️ FCM token generation failed:', fcmError);
+        // Signup successful hai, FCM fail hone se block nahi karna
+      }
 
       navigate("/dashboard");
     } catch (err) {

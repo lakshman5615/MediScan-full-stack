@@ -128,7 +128,7 @@ exports.profile = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "User not found"
+        message: "Invalid email or password"
       });
     }
 
@@ -150,21 +150,21 @@ exports.profile = async (req, res) => {
 exports.saveFCMToken = async (req, res) => {
   try {
     const { fcmToken } = req.body;
-    
+
     if (!fcmToken || fcmToken.length < 50) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Invalid FCM token' 
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid FCM token'
       });
     }
-    
+
     console.log(`💾 Saving NEW FCM token for user ${req.user._id}`);
     console.log(`   Token: ${fcmToken.substring(0, 30)}...`);
-    
+
     await User.findByIdAndUpdate(req.user._id, { fcmToken });
-    
+
     console.log(`✅ FCM Token saved successfully`);
-    
+
     res.status(200).json({
       success: true,
       message: 'FCM Token saved successfully'

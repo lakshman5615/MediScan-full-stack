@@ -450,11 +450,11 @@ class ProductionFCMService {
       await Alert.findByIdAndUpdate(alertId, { sentToDevice: true });
       
       console.log(`✅ FCM notification sent successfully to ${user.name}`);
-      console.log(`📨 Message ID: ${message}`);
       console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
       
     } catch (error) {
       console.error(`❌ FCM send error for user ${user._id}:`, error.message);
+      console.log(`⚠️ Notification saved to DB but not delivered to device`);
       console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
     }
   }
@@ -526,7 +526,7 @@ class ProductionFCMService {
       return result;
       
     } catch (error) {
-      console.error(`❌ sendReminderWithActions error:`, error);
+      console.log(`❌ sendReminderWithActions error:`, error.message);
       throw error;
     }
   }

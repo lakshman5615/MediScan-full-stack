@@ -65,7 +65,7 @@ cron.schedule('* * * * *', async () => {
       
       try {
         await AlertService.createReminderAlert(med, scheduleType.toLowerCase());
-        console.log(`✅ Reminder alert created successfully for ${name}`);
+        console.log(`✅ Alert created for ${name} (${scheduleType})`);
       } catch (alertError) {
         console.error(`❌ Failed to create reminder alert for ${name}:`, alertError);
       }
