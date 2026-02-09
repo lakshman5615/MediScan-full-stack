@@ -77,7 +77,7 @@ class AlertService {
 
     let severity = 'NORMAL';
     if (daysLeft <= 0) severity = 'CRITICAL';
-    else if (daysLeft <= 7) severity = 'WARNING';
+    else if (daysLeft <= 5) severity = 'WARNING';
 
     // ✅ UniqueKey: medicineId + today's date (din me 1 baar)
     const uniqueKey = `EXPIRY_${medicine._id}_${todayStr}`;
