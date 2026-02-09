@@ -2,7 +2,7 @@ const AIHistory = require("../models/AIHistory");
 const Medicine = require("../models/Medicine");
 exports.getRecentSearches = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = req.user._id;
 
         const history = await AIHistory.find({ userId })
             .sort({ createdAt: -1 })
@@ -20,7 +20,7 @@ exports.getRecentSearches = async (req, res) => {
             source: "Database",
             data: formatted
         });
-    } catch (err) {
+    } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Failed to load recent searches" });
     }
@@ -57,6 +57,32 @@ exports.getExpirySoonCount = async (req, res) => {
         res.status(500).json({
             success: false,
             message: "Failed to fetch expiry data"
+        });
+    }
+};
+
+
+exports.getLowStockCount = async (req, res) => {
+    try {
+        const userId = req.user._id;
+
+        const count = await Medicine.countDocuments({
+            userId,
+            $expr: {
+                $lte: ["$remainingQuantity", "$lowStockThreshold"]
+            }
+        });
+
+        res.json({
+            success: true,
+            lowStockCount: count
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch low stock data"
         });
     }
 };
