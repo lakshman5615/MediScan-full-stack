@@ -5,7 +5,7 @@
 //     // <header className="flex items-center justify-between bg-white px-6 py-4 border-b h-16">
 //       //  <header className="flex   flex-col sm:flex-row gap-3 sm:items-center sm:justify-between bg-white px-4 py-3 border-b w-full">
 //       <header
-      
+
 //    className="
 //   flex items-center gap-2
 //   bg-sky-500 text-white
@@ -16,7 +16,7 @@
 //   min-w-fit
 // "
 // >
-    
+
 
 
 //         <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
@@ -160,7 +160,7 @@ export default function Navbar({ onMenuClick }) {
           className="bg-sky-500 text-white px-4 py-2 rounded-xl hover:bg-sky-600 flex items-center gap-2"
         >
           <Plus size={18} />
-          <span className="hidden sm:block">New Entry</span>
+          <span className="hidden sm:block">Add Medicine</span>
         </button>
       </header>
 

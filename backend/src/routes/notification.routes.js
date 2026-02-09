@@ -51,7 +51,8 @@ router.post('/action', authMiddleware, async (req, res) => {
     }
     
     notification.status = action;
-    notification.showInUI = action === 'DISMISSED' ? false : true;
+    notification.showInUI = false; // ✅ Hide from UI after action
+    notification.isRead = true; // ✅ Mark as read
     
     // Handle TAKEN action for reminders
     if (action === 'TAKEN' && notification.alertType === 'REMINDER') {

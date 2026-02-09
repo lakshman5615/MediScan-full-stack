@@ -60,6 +60,7 @@ class AlertService {
       console.log(`✅ FCM notification sent for ${medicine.name}`);
     } catch (fcmError) {
       console.error(`❌ FCM notification failed for ${medicine.name}:`, fcmError.message);
+      console.log(`⚠️ Alert saved to DB but not delivered to device`);
     }
 
     return alert;
