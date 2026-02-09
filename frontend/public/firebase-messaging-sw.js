@@ -44,7 +44,12 @@ self.addEventListener('notificationclick', async (event) => {
   if (action === 'taken' || action === 'missed') {
     const token = localStorage.getItem('token');
     if (token && alertId) {
-      fetch('http://localhost:5000/api/notifications/action', {
+      // Auto-detect backend URL
+      const API_URL = self.location.origin.includes('localhost') 
+        ? 'http://localhost:5000'
+        : self.location.origin.replace('5173', '5000'); // Same network different port
+      
+      fetch(`${API_URL}/api/notifications/action`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -60,7 +65,9 @@ self.addEventListener('notificationclick', async (event) => {
         .catch(err => console.error('❌ Action failed:', err));
     }
   } else {
-    event.waitUntil(clients.openWindow('http://localhost:5173'));
+    // Auto-detect frontend URL
+    const FRONTEND_URL = self.location.origin;
+    event.waitUntil(clients.openWindow(FRONTEND_URL));
   }
 });
 
