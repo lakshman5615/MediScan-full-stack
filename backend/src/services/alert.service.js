@@ -20,6 +20,15 @@ class AlertService {
       return existing;
     }
 
+    // 🔍 CHECK: Medicine abhi abhi create hui hai? (last 2 minutes me)
+    const medicineAge = Date.now() - new Date(medicine.createdAt).getTime();
+    const twoMinutes = 2 * 60 * 1000;
+    
+    if (medicineAge < twoMinutes) {
+      console.log(`⏭️ Medicine ${medicine.name} was just created (${Math.floor(medicineAge/1000)}s ago) - Skipping first reminder`);
+      return null;
+    }
+
     console.log(`💾 Creating alert in database for ${medicine.name}...`);
     const alert = await Alert.create({
       userId: medicine.userId,
@@ -139,33 +148,90 @@ class AlertService {
 
   /* =====================================================
      4️⃣ HANDLE ACTION (FROM UI OR NOTIFICATION)
+     🔍 YAHAN QUANTITY -1 HOTI HAI
   ===================================================== */
   static async handleAction(alertId, action, userId) {
+    console.log(`\n🛠️ AlertService.handleAction() START:`);
+    console.log(`   Alert ID: ${alertId}`);
+    console.log(`   Action: ${action}`);
+    console.log(`   User ID: ${userId}`);
+    
+    // 🔍 STEP 1: Alert database se fetch karo
     const alert = await Alert.findOne({ _id: alertId, userId });
-    if (!alert || alert.status !== 'PENDING') return alert;
-
-    alert.status = action;
-    alert.resolvedAt = new Date();
-    alert.showInUI = false;
-    await alert.save();
-
-    if (alert.type === 'REMINDER') {
-      await DoseHistory.create({
-        userId,
-        medicineId: alert.medicineId,
-        medicineName: alert.medicineName,
-        scheduledTime: alert.meta.scheduledTime,
-        scheduledAt: new Date(),
-        status: action
-      });
-
-      if (action === 'TAKEN') {
-        await Medicine.findByIdAndUpdate(alert.medicineId, {
-          $inc: { remainingQuantity: -1 }
-        });
-      }
+    if (!alert) {
+      console.log(`❌ Alert not found in database`);
+      return null;
+    }
+    
+    console.log(`📋 Alert found:`);
+    console.log(`   Medicine: ${alert.medicineName}`);
+    console.log(`   Type: ${alert.type}`);
+    console.log(`   Current Status: ${alert.status}`);
+    console.log(`   ShowInUI: ${alert.showInUI}`);
+    
+    // 🔍 STEP 2: Check if already resolved (DUPLICATE PREVENTION)
+    if (alert.status !== 'PENDING') {
+      console.log(`⏭️ Alert already resolved with status: ${alert.status}`);
+      console.log(`⚠️ SKIPPING - No quantity change\n`);
+      return alert;
     }
 
+    // 🔍 STEP 3: Update alert status and hide from UI
+    console.log(`🔄 Updating alert status to: ${action}`);
+    alert.status = action;
+    alert.resolvedAt = new Date();
+    alert.showInUI = false; // 🔍 YAHAN ALERT UI SE HAT JAYEGA
+    await alert.save();
+    console.log(`✅ Alert updated - showInUI = false`);
+
+    // 🔍 STEP 4: REMINDER type ke liye dose history aur quantity update
+    if (alert.type === 'REMINDER') {
+      console.log(`💊 REMINDER type - Checking dose history...`);
+      
+      // Check if dose history already exists for today
+      const existingDose = await DoseHistory.findOne({
+        userId,
+        medicineId: alert.medicineId,
+        scheduledTime: alert.meta.scheduledTime,
+        scheduledAt: { 
+          $gte: new Date(new Date().setHours(0, 0, 0, 0)),
+          $lt: new Date(new Date().setHours(23, 59, 59, 999))
+        }
+      });
+
+      if (!existingDose) {
+        console.log(`🆕 Creating new dose history...`);
+        await DoseHistory.create({
+          userId,
+          medicineId: alert.medicineId,
+          medicineName: alert.medicineName,
+          scheduledTime: alert.meta.scheduledTime,
+          scheduledAt: new Date(),
+          status: action
+        });
+        console.log(`✅ Dose history created`);
+
+        // 🔍 STEP 5: YAHAN QUANTITY -1 HOTI HAI (sirf TAKEN action pe)
+        if (action === 'TAKEN') {
+          console.log(`🔽 Decreasing medicine quantity by 1...`);
+          const medicine = await Medicine.findByIdAndUpdate(
+            alert.medicineId, 
+            { $inc: { remainingQuantity: -1 } },
+            { new: true }
+          );
+          console.log(`✅ Medicine quantity updated:`);
+          console.log(`   Medicine: ${medicine.name}`);
+          console.log(`   New Quantity: ${medicine.remainingQuantity}`);
+        } else {
+          console.log(`⏭️ Action is MISSED - No quantity change`);
+        }
+      } else {
+        console.log(`⏭️ Dose history already exists for ${alert.medicineName} today`);
+        console.log(`⚠️ SKIPPING - No quantity change\n`);
+      }
+    }
+    
+    console.log(`✅ AlertService.handleAction() COMPLETE\n`);
     return alert;
   }
 
