@@ -49,8 +49,8 @@ const authMiddleware = (req, res, next) => {
         req.user = {
             _id: decoded._id,
             userId: decoded._id // changes login singup
-            _id: decoded._id,
-            userId: decoded._id // changes login singup
+            // _id: decoded._id,
+            // userId: decoded._id // changes login singup
         };
         next();
     } catch (err) {
