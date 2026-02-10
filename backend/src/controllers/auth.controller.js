@@ -37,7 +37,7 @@ exports.signup = async (req, res) => {
       throw new Error('JWT_SECRET not defined');
     }
     const token = jwt.sign(
-      { id: user._id },
+      { _id: user._id },   // ✅ SAME AS LOGIN
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
@@ -77,7 +77,7 @@ exports.login = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: 'Invalid email or password'
       });
     }
 
