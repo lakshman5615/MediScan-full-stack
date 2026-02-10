@@ -74,7 +74,7 @@ import { addMedicine } from "../../services/medicine.service";
 import { getAlerts } from "../../services/alertApi";
 
 
-export default function Navbar({ onMenuClick }) {
+export default function Navbar({ onMenuClick, searchQuery, onSearchChange }) {
   const [notificationCount, setNotificationCount] = useState(0);
   const [openEntry, setOpenEntry] = useState(false);
 
@@ -138,7 +138,6 @@ export default function Navbar({ onMenuClick }) {
       });
 
       setOpenEntry(false);
-      alert(`${medicineData.name} added successfully!`);
     } catch (error) {
       console.error("Error saving medicine:", error);
       alert("Failed to save medicine. Check console for details.");
@@ -155,31 +154,21 @@ export default function Navbar({ onMenuClick }) {
           <Menu size={22} />
         </button>
 
-        {/* <div className="relative flex-1">
-          <Search
-            size={16}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-          />
-          <input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search medicine..."
-            className="w-full pl-9 pr-3 py-2 rounded-xl bg-gray-50 border text-sm outline-none focus:ring-2 focus:ring-sky-500"
-            placeholder="Search medicine..."
-          />
-        </div> */}
-          <div className="flex-1">
-                        <div className="relative">
-                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                          <input
-                            type="text"
-                            placeholder="Search your medicine cabinet (Name, Symptoms, Active ingredients...)"
-                            className="text-gray-400 w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400 transition-colors text-sm lg:text-base"
-                            // value={searchQuery}
-                            // onChange={(e) => setSearchQuery(e.target.value)}
-                          />
-                        </div>
-                      </div>
+        <div className="flex-1">
+          <div className="relative">
+            <Search
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              size={20}
+            />
+            <input
+              type="text"
+              placeholder="Search your medicine cabinet"
+              className="text-gray-900 w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400 transition-colors text-sm lg:text-base"
+              value={searchQuery || ""}
+              onChange={(e) => onSearchChange?.(e.target.value)}
+            />
+          </div>
+        </div>
 
         <div className="flex items-center gap-2">
           <button

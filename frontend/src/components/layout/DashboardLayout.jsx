@@ -73,6 +73,7 @@ import Navbar from "./Navbar";
 
 export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   return (
     <div className="min-h-screen w-full bg-slate-100">
@@ -82,10 +83,14 @@ export default function DashboardLayout() {
       {/* Main Area */}
       <div className="lg:ml-64">
         {/* bg-gray-50 */}
-        <Navbar onMenuClick={() => setSidebarOpen(true)} />
+        <Navbar
+          onMenuClick={() => setSidebarOpen(true)}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+        />
 
         <main className="pt-20 px-4 md:px-6 max-w-full">
-          <Outlet />
+          <Outlet context={{ searchQuery }} />
         </main>
       </div>
     </div>
