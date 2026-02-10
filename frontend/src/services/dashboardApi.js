@@ -9,3 +9,12 @@ export const getRecentSearches = async () => {
     const res = await axiosInstance.get("/api/dashboard/recent-search");
     return res.data;
 }
+
+export const getLowStockCount = async () => {
+    const res = await axiosInstance.get("/api/dashboard/low-stock");
+    return res.data;
+};
+export const getTodaySchedule = async () => {
+    const res = await axiosInstance.get("/api/dashboard/today-schedule");
+    return res.data;
+}

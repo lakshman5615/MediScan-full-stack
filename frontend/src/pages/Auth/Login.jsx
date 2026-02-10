@@ -144,7 +144,7 @@
 
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Mail, Lock } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 
 import AuthLayout from "../../components/layout/AuthLayout";
 import MediScanIcon from "../../components/common/MediScanIcon";
@@ -157,6 +157,8 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -184,7 +186,7 @@ export default function Login() {
       navigate("/dashboard");
     }
     catch (err) {
-      setError(err.response?.data?.message ||  "Login failed");
+      setError(err.response?.data?.message || "Login failed");
     }
     finally {
       setLoading(false);
@@ -207,27 +209,37 @@ export default function Login() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Email */}
-        <div className="relative">
-          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+        <div className="relative flex items-center border rounded-xl h-11 bg-gray-50 
+                px-3 focus-within:ring-2 focus-within:ring-cyan-400">
+          <Mail className="text-gray-400" size={18} />
           <input
             type="email"
             placeholder="Enter your email"
-            className="w-full pl-10 py-3 border rounded-lg bg-gray-50 focus:ring-2 focus:ring-cyan-400"
+            className="w-full ml-3 bg-transparent outline-none text-sm text-gray-800"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
         </div>
 
         {/* Password */}
-        <div className="relative">
-          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+        <div className="relative flex items-center border rounded-xl h-11 bg-gray-50 
+                px-3 focus-within:ring-2 focus-within:ring-cyan-400">
+          <Lock className="text-gray-400" size={18} />
           <input
-            type="password"
+            type={showPassword ? "text" : "password"}
             placeholder="Enter your password"
-            className="w-full pl-10 py-3 border rounded-lg bg-gray-50 focus:ring-2 focus:ring-cyan-400"
+            className="w-full ml-3 pr-10 bg-transparent outline-none text-sm text-gray-800"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+          >
+            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+
         </div>
 
         <button

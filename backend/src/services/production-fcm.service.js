@@ -450,11 +450,11 @@ class ProductionFCMService {
       await Alert.findByIdAndUpdate(alertId, { sentToDevice: true });
       
       console.log(`✅ FCM notification sent successfully to ${user.name}`);
-      console.log(`📨 Message ID: ${message}`);
       console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
       
     } catch (error) {
       console.error(`❌ FCM send error for user ${user._id}:`, error.message);
+      console.log(`⚠️ Notification saved to DB but not delivered to device`);
       console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
     }
   }
@@ -501,8 +501,6 @@ class ProductionFCMService {
     });
   }
 
-  // ✅ sendReminderWithActions - Cron jobs ke liye (alerts.cron.js me use hota hai)
-  // Yeh function medicine reminders ke liye Alert + Notification + FCM create karta hai
   async sendReminderWithActions(userId, title, message, medicineData = {}) {
     console.log(`\n🔔 REMINDER WITH ACTIONS CALLED:`);
     console.log(`👤 User ID: ${userId}`);
@@ -520,14 +518,15 @@ class ProductionFCMService {
         medicineName: medicineData.medicineName,
         dosage: medicineData.dosage,
         severity: 'NORMAL',
-        meta: { scheduledTime: medicineData.scheduledTime }
+        meta: { scheduledTime: medicineData.scheduledTime },
+        alertId: medicineData.alertId // ✅ Pass alertId
       });
       
       console.log(`✅ Reminder with actions completed:`, result);
       return result;
       
     } catch (error) {
-      console.error(`❌ sendReminderWithActions error:`, error);
+      console.log(`❌ sendReminderWithActions error:`, error.message);
       throw error;
     }
   }

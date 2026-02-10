@@ -111,8 +111,8 @@ const AlertsPage = () => {
     
     loadAlertsFromBackend();
     
-    // Refresh alerts every 2 seconds for instant sync
-    const intervalId = setInterval(loadAlertsFromBackend, 2000);
+    // 🔍 Refresh alerts every 1 second for instant sync (notification se action lene par turant update)
+    const intervalId = setInterval(loadAlertsFromBackend, 1000);
     
     return () => clearInterval(intervalId);
   }, []);
@@ -120,25 +120,32 @@ const AlertsPage = () => {
   // ✅ Handle dose action - Backend API call (TAKEN/MISSED)
   const handleDoseAction = async (alertId, action) => {
     try {
-      // Backend ko action bhejo - yeh medicine quantity bhi update karega
-      await handleAlertAction(alertId, action.toUpperCase());
+      console.log(`\n🎯 UI ACTION CLICKED:`);
+      console.log(`   Alert ID: ${alertId}`);
+      console.log(`   Action: ${action}`);
       
-      // Immediately update local state
+      // 🔍 STEP 1: Backend ko action bhejo - yeh medicine quantity bhi update karega
+      console.log(`📤 Calling handleAlertAction API...`);
+      const response = await handleAlertAction(alertId, action.toUpperCase());
+      console.log(`✅ API Response:`, response);
+      
+      // 🔍 STEP 2: Local state immediately update karo (UI se hat jayega)
       setAlerts(prev => prev.map(alert => 
         alert._id === alertId 
           ? { ...alert, status: action.toUpperCase(), showInUI: false }
           : alert
       ));
+      console.log(`✅ Local state updated - alert hidden from UI`);
       
       // Success message
       const message = action === 'taken' 
         ? '✅ Dose marked as taken! Medicine quantity updated.'
         : '⏭️ Dose marked as missed.';
       
-      // Show toast notification instead of alert
       console.log(message);
       
-      // Refresh alerts from backend after 1 second
+      // 🔍 STEP 3: Backend se fresh alerts fetch karo (1 second baad)
+      console.log(`🔄 Refreshing alerts from backend in 1 second...`);
       setTimeout(async () => {
         const res = await getAlerts();
         const payload = normalizeAlertsPayload(res);
@@ -148,6 +155,7 @@ const AlertsPage = () => {
           ...payload.lowStock.map(a => ({ ...a, type: 'low_stock' }))
         ];
         setAlerts(allAlerts);
+        console.log(`✅ Alerts refreshed - total: ${allAlerts.length}\n`);
       }, 1000);
       
     } catch (err) {

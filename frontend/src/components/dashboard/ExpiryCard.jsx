@@ -125,7 +125,7 @@ export default function ExpiryCard() {
   }, []);
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 transition-all duration-300
+    <div className="rounded-2xl  bg-white p-6 transition-all duration-300
                     hover:shadow-lg  hover:-translate-y-1        ">
 
       {/* Top */}
@@ -133,7 +133,12 @@ export default function ExpiryCard() {
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-100">
           <Clock size={20} className="text-orange-500" />
         </div>
-        <p className="text-xs font-semibold tracking-wide text-slate-400">
+
+
+        <p className="text-xs font-semibold tracking-wide text-orange-500">
+
+        {/* <p className="text-xs font-semibold tracking-wide text-slate-400"> */}
+
           EXPIRES SOON
         </p>
       </div>

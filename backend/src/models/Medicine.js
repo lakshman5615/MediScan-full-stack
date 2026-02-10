@@ -37,7 +37,7 @@ const medicineSchema = new mongoose.Schema({
     },
     lowStockThreshold: {
         type: Number,
-        default: 2 // ✅ Quantity ≤ 2 pe alert jayega
+        default: 2
     },
 
     // 📅 Expiry

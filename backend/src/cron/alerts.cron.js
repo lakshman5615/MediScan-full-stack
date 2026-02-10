@@ -41,15 +41,9 @@ cron.schedule('* * * * *', async () => {
     }
 
     for (const med of medicines) {
-      const { schedule, name, userId, _id, lastReminderSent } = med;
+      const { schedule, name, userId, _id } = med;
       if (!userId) {
         console.log(`⚠️ Skipping ${name} - No user found`);
-        continue;
-      }
-
-      // ⚠️ Duplicate prevention - 1 hour cooldown
-      if (lastReminderSent && now - lastReminderSent < 60 * 60 * 1000) {
-        console.log(`⏭️ Skipping ${name} - Already sent within 1 hour`);
         continue;
       }
 
@@ -71,14 +65,10 @@ cron.schedule('* * * * *', async () => {
       
       try {
         await AlertService.createReminderAlert(med, scheduleType.toLowerCase());
-        console.log(`✅ Reminder alert created successfully for ${name}`);
+        console.log(`✅ Alert created for ${name} (${scheduleType})`);
       } catch (alertError) {
         console.error(`❌ Failed to create reminder alert for ${name}:`, alertError);
       }
-
-      // Update lastReminderSent to prevent duplicate alerts
-      med.lastReminderSent = now;
-      await med.save();
     }
 
     console.log('✅ Medicine reminders checked at', currentTime);

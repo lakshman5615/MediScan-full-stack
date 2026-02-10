@@ -15,10 +15,27 @@
 
 import { AlertTriangle } from "lucide-react";
 import { Link } from "react-router-dom";
+import { getLowStockCount } from "../../services/dashboardApi";
+import { useEffect, useState } from "react";
 
 export default function LowStockCard() {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    const fetchLowStock = async () => {
+      try {
+        const res = await getLowStockCount();
+        setCount(res.lowStockCount);
+      } catch (err) {
+        console.error("Low stock error", err);
+      }
+    };
+
+    fetchLowStock();
+  }, []);
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 transition-all duration-300
+    // border border-slate-200
+    <div className="rounded-2xl  bg-white p-6 transition-all duration-300
                     hover:shadow-lg  hover:-translate-y-1 ">
 
       {/* Top */}
@@ -27,14 +44,14 @@ export default function LowStockCard() {
           <AlertTriangle size={20} className="text-red-500" />
         </div>
 
-        <p className="text-xs font-semibold tracking-wide text-slate-400">
+        <p className=" text-xs font-semibold tracking-wide text-red-500">
           LOW STOCK
         </p>
       </div>
 
       {/* Count */}
       <h2 className="mt-5 text-4xl font-bold text-slate-900">
-        05
+        {count < 10 ? `0${count}` : count}
       </h2>
 
       <p className="mt-1 text-sm text-slate-500">

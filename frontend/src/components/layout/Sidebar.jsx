@@ -105,17 +105,7 @@
 import { getProfile } from "../../services/authApi";
 import { useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import {
-  Home,
-  Archive,
-  Calendar,
-  Bell,
-  AlertTriangle,
-  X,
-  ChevronDown,
-  LogOut,
-  UserCircle,
-} from "lucide-react";
+import { Home, Archive, Calendar, Bell, AlertTriangle, X, ChevronDown, LogOut, UserCircle, Pill } from "lucide-react";
 
 export default function Sidebar({ open, setOpen }) {
   const navigate = useNavigate();
@@ -149,23 +139,23 @@ export default function Sidebar({ open, setOpen }) {
 
 
   useEffect(() => {
-  const fetchProfile = async () => {
-    try {
-      const res = await getProfile();
-      console.log("PROFILE 👉", res.data);
+    const fetchProfile = async () => {
+      try {
+        const res = await getProfile();
+        console.log("PROFILE 👉", res.data);
 
-      // ⚠️ backend ke response ke hisaab se
-      setUser(res.data.user || res.data);
-    } catch (err) {
-      console.error("Profile fetch failed", err);
-      navigate("/login");
-    } finally {
-      setLoadingUser(false);
-    }
-  };
+        // ⚠️ backend ke response ke hisaab se
+        setUser(res.data.user || res.data);
+      } catch (err) {
+        console.error("Profile fetch failed", err);
+        navigate("/login");
+      } finally {
+        setLoadingUser(false);
+      }
+    };
 
-  fetchProfile();
-}, []);
+    fetchProfile();
+  }, []);
 
 
   const handleLogout = () => {
@@ -194,24 +184,35 @@ export default function Sidebar({ open, setOpen }) {
         `}
       >
         {/* Header */}
-        <div className="h-16 flex items-center justify-between px-4">
-          <h1 className="font-semibold text-lg text-gray-800">
-            Medicine App
-          </h1>
-          <button
-            onClick={() => setOpen(false)}
-            className="lg:hidden p-2 rounded hover:bg-sky-100"
-          >
-            <X size={20} />
-          </button>
+        <div className="h-16 flex items-center px-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-sky-500  rounded-lg flex items-center justify-center">
+              <Pill className="text-white" size={20} />
+            </div>
+
+            <h1 className="font-bold text-gray-900 text-lg">
+              Mediscan
+            </h1>
+          </div>
         </div>
 
+        {/* <div className="flex items-center gap-3 mb-5">
+          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+            <Pill className="text-white" size={20} />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="font-bold text-gray-900 text-lg">Mediscan</h1>
+            </div>
+          </div>
+        </div> */}
+
         {/* MENU */}
-        <nav className=" lexend p-3 space-y-1 flex-1">
+        <nav className=" lexend  p-3 space-y-1 flex-1">
           {[
             { to: "/dashboard", icon: Home, label: "Home" },
             { to: "/dashboard/cabinet", icon: Archive, label: "Cabinet" },
-            { to: "/dashboard/schedule", icon: Calendar, label: "Schedule" },
+            // { to: "/dashboard/schedule", icon: Calendar, label: "Schedule" },
             { to: "/dashboard/alerts", icon: Bell, label: "Alerts" },
           ].map(({ to, icon: Icon, label }) => (
             <NavLink
@@ -234,7 +235,7 @@ export default function Sidebar({ open, setOpen }) {
 
           <NavLink
             to="/dashboard/emergency"
-            className="flex items-center gap-3 px-4 py-2 rounded-xl
+            className="flex items-center  gap-3 px-4 py-2 rounded-xl
                        text-red-600 hover:bg-red-50 transition"
           >
             <AlertTriangle size={18} />
@@ -275,7 +276,7 @@ export default function Sidebar({ open, setOpen }) {
                   setOpenProfile(true);
                   setOpenAccount(false);
                 }}
-                className="w-full flex items-center gap-2 px-4 py-2 text-sm
+                className="w-full flex font-semibold items-center gap-2 px-4 py-2 text-sm
              text-gray-700 hover:bg-sky-50 focus:bg-sky-50
              active:bg-sky-100 focus:outline-none transition"
               >
@@ -288,7 +289,7 @@ export default function Sidebar({ open, setOpen }) {
                   setOpenLogoutConfirm(true);
                   setOpenAccount(false);
                 }}
-                className="w-full flex items-center gap-2 px-4 py-2 text-sm
+                className="w-full flex font-semibold items-center gap-2 px-4 py-2 text-sm
              text-red-600 hover:bg-red-50 transition"
               >
                 <LogOut size={16} />
@@ -313,110 +314,110 @@ export default function Sidebar({ open, setOpen }) {
       {/* PROFILE MODAL */}
 
 
-     {openProfile && (
-  <div className="fixed inset-0 bg-sky-50/80 backdrop-blur-sm flex items-center justify-center z-[60]">
-    <div className="bg-white w-[420px] rounded-2xl p-6 shadow-xl relative">
+      {openProfile && (
+        <div className="fixed inset-0 bg-sky-50/80 backdrop-blur-sm flex items-center justify-center z-[60]">
+          <div className="bg-white w-[420px] rounded-2xl p-6 shadow-xl relative">
 
-      {/* Close */}
-      <button
-        onClick={() => setOpenProfile(false)}
-        className="absolute top-3 right-3 p-1 rounded hover:bg-sky-100"
-      >
-        <X size={18} />
-      </button>
+            {/* Close */}
+            <button
+              onClick={() => setOpenProfile(false)}
+              className="absolute top-3 right-3 p-1 rounded hover:bg-sky-100"
+            >
+              <X size={18} />
+            </button>
 
-      {/* Avatar */}
-      <div className="flex flex-col items-center gap-4 mb-6">
-        <div className="h-20 w-20 rounded-full bg-sky-500 text-white flex items-center justify-center text-2xl font-bold">
-          {user?.name?.[0]}
+            {/* Avatar */}
+            <div className="flex flex-col items-center gap-4 mb-6">
+              <div className="h-20 w-20 rounded-full bg-sky-500 text-white flex items-center justify-center text-2xl font-bold">
+                {user?.name?.[0]}
+              </div>
+              <p className="text-sm text-gray-500">User Profile</p>
+            </div>
+
+            {/* PROFILE INFO */}
+            <div className="space-y-4">
+
+              {/* Name */}
+              <div>
+                <p className="text-sm font-medium text-gray-700">Full Name</p>
+                <p className="mt-1 px-4 py-2 rounded-xl bg-sky-50 text-gray-600">
+                  {user?.name || "—"}
+                </p>
+              </div>
+
+              {/* Email */}
+              <div>
+                <p className="text-sm font-medium text-gray-700">Email</p>
+                <p className="mt-1 px-4 py-2 rounded-xl bg-sky-50 text-gray-600">
+                  {user?.email || "—"}
+                </p>
+              </div>
+
+              {/* Phone */}
+              <div>
+                <p className="text-sm font-medium text-gray-700">Phone</p>
+                <p className="mt-1 px-4 py-2 rounded-xl bg-sky-50 text-gray-600">
+                  {user?.phone || "Not provided"}
+                </p>
+              </div>
+
+              {/* Age */}
+              <div>
+                <p className="text-sm font-medium text-gray-700">Age</p>
+                <p className="mt-1 px-4 py-2 rounded-xl bg-sky-50 text-gray-600">
+                  {user?.age ? `${user.age} years` : "—"}
+                </p>
+              </div>
+
+            </div>
+
+            {/* Footer */}
+            <div className="flex justify-center mt-6">
+              <button
+                onClick={() => setOpenProfile(false)}
+                className="px-6 py-2 rounded-xl bg-sky-500 text-white hover:bg-sky-600"
+              >
+                Close
+              </button>
+            </div>
+
+          </div>
         </div>
-        <p className="text-sm text-gray-500">User Profile</p>
-      </div>
-
-      {/* PROFILE INFO */}
-      <div className="space-y-4">
-
-        {/* Name */}
-        <div>
-          <p className="text-sm font-medium text-gray-700">Full Name</p>
-          <p className="mt-1 px-4 py-2 rounded-xl bg-sky-50 text-gray-600">
-            {user?.name || "—"}
-          </p>
-        </div>
-
-        {/* Email */}
-        <div>
-          <p className="text-sm font-medium text-gray-700">Email</p>
-          <p className="mt-1 px-4 py-2 rounded-xl bg-sky-50 text-gray-600">
-            {user?.email || "—"}
-          </p>
-        </div>
-
-        {/* Phone */}
-        <div>
-          <p className="text-sm font-medium text-gray-700">Phone</p>
-          <p className="mt-1 px-4 py-2 rounded-xl bg-sky-50 text-gray-600">
-            {user?.phone || "Not provided"}
-          </p>
-        </div>
-
-        {/* Age */}
-        <div>
-          <p className="text-sm font-medium text-gray-700">Age</p>
-          <p className="mt-1 px-4 py-2 rounded-xl bg-sky-50 text-gray-600">
-            {user?.age ? `${user.age} years` : "—"}
-          </p>
-        </div>
-
-      </div>
-
-      {/* Footer */}
-      <div className="flex justify-center mt-6">
-        <button
-          onClick={() => setOpenProfile(false)}
-          className="px-6 py-2 rounded-xl bg-sky-500 text-white hover:bg-sky-600"
-        >
-          Close
-        </button>
-      </div>
-
-    </div>
-  </div>
-)}
+      )}
 
 
       {/* ===== LOGOUT CONFIRM MODAL ===== */}
-{openLogoutConfirm && (
-  <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[70]">
-    <div className="bg-white w-80 rounded-2xl p-6 shadow-xl text-center">
+      {openLogoutConfirm && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[70]">
+          <div className="bg-white w-80 rounded-2xl p-6 shadow-xl text-center">
 
-      <h2 className="text-lg font-semibold text-gray-800">
-        Confirm Logout
-      </h2>
+            <h2 className="text-lg font-semibold text-gray-800">
+              Confirm Logout
+            </h2>
 
-      <p className="text-sm text-gray-500 mt-2">
-        Are you sure you want to logout?
-      </p>
+            <p className="text-sm text-gray-500 mt-2">
+              Are you sure you want to logout?
+            </p>
 
-      <div className="flex gap-3 mt-6">
-        <button
-          onClick={() => setOpenLogoutConfirm(false)}
-          className="px-4 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100"
-        >
-          Cancel
-        </button>
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setOpenLogoutConfirm(false)}
+                className="px-4 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100"
+              >
+                Cancel
+              </button>
 
-        <button
-          onClick={handleLogout}
-          className="flex-1 px-4 py-2 rounded-xl
+              <button
+                onClick={handleLogout}
+                className="flex-1 px-4 py-2 rounded-xl
                      bg-red-600 text-white hover:bg-red-700"
-        >
-          Logout
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
 
     </>
