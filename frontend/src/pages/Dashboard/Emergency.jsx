@@ -143,7 +143,7 @@ export default function Emergency() {
     <div className="min-h-screen bg-gradient-to-b from-blue-50/30 to-white flex flex-col">
       
       {/* Header - Medical Professional Design */}
-      <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-blue-100 px-4 py-3">
+      {/* <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-blue-100 px-4 py-3">
         <div className="flex items-center justify-between max-w-6xl mx-auto">
           <div className="flex items-center gap-3">
             <button
@@ -166,7 +166,7 @@ export default function Emergency() {
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Main Content */}
       <div className="flex-1 px-4 py-6 max-w-6xl mx-auto w-full">

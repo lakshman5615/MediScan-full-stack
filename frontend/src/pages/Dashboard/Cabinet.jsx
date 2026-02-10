@@ -1,20 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { NavLink } from "react-router-dom";
+import { Hourglass } from "lucide-react";
 
-
-import {
-  Search, Hourglass,
-  Filter,
-  AlertCircle,
-  Calendar,
-  Pill,
+import { 
+  AlertCircle, 
+  Calendar, 
   ChevronDown,
-  Plus,
   Edit,
   Trash2,
   Eye,
   Download,
-  Bell,
   History,
   Package,
   AlertTriangle,
@@ -36,7 +30,6 @@ import {
   Sun,
   Moon,
   Save,
-  ArrowLeft,
   CalendarDays
 } from 'lucide-react';
 
@@ -54,15 +47,12 @@ import {
   getMedicineStatus
 } from "../../utils/medicineUtils";
 
-// ✅ Alert API import - Notification count ke liye
-import { getAlerts } from "../../services/alertApi";
-
 import EditMedicineModal from '../../components/common/EditMedicineModal';
 
 
 const MedicineCabinet = () => {
   const [medicines, setMedicines] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  
   const [viewMode, setViewMode] = useState('table');
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [showMedicineModal, setShowMedicineModal] = useState(false);
@@ -70,7 +60,6 @@ const MedicineCabinet = () => {
   const [showAddMedicineModal, setShowAddMedicineModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingMedicineId, setEditingMedicineId] = useState(null);
-  const [notificationCount, setNotificationCount] = useState(0);
   const [showAllMedicines, setShowAllMedicines] = useState(false);
 
   // Load medicines from backend
@@ -186,31 +175,14 @@ const MedicineCabinet = () => {
         };
       });
 
-      setMedicines(formatted);
-      await calculateNotificationCount(); // ✅ Backend se notification count load karo
-    } catch (err) {
-      console.error("Failed to load medicines", err);
-      setMedicines([]);
-    }
-  };
+    setMedicines(formatted);
+  } catch (err) {
+    console.error("Failed to load medicines", err);
+    setMedicines([]);
+  }
+};
 
 
-  // ✅ Calculate notification count from BACKEND API
-  const calculateNotificationCount = async () => {
-    try {
-      const res = await getAlerts();
-
-      // Count pending reminders + expiry alerts + low stock alerts
-      const count =
-        res.data.reminders.filter(a => a.status === 'PENDING').length +
-        res.data.expiry.length +
-        res.data.lowStock.length;
-
-      setNotificationCount(count);
-    } catch (err) {
-      console.error("Failed to load notification count", err);
-    }
-  };
 
   // Handle adding/editing medicine
   const handleSaveMedicine = async (medicineData) => {
@@ -415,10 +387,8 @@ const MedicineCabinet = () => {
   };
 
   const filteredMedicines = medicines.filter(medicine => {
-    const matchesSearch = searchQuery === '' ||
-      medicine.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (medicine.activeIngredients && medicine.activeIngredients.toLowerCase().includes(searchQuery.toLowerCase()));
-
+    const matchesSearch = true;
+    
     if (selectedFilter === 'all') return matchesSearch;
     if (selectedFilter === 'low_stock') return matchesSearch && medicine.quantity <= 2;
     if (selectedFilter === 'expiring') return matchesSearch && isMedicineExpired(medicine.expiryDate);
@@ -481,132 +451,9 @@ const MedicineCabinet = () => {
 
 
   return (
-    // <div className="min-h-screen bg-gray-50 flex">
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Fixed Sidebar */}
-      {/* <div className="w-64 bg-white border-r border-gray-200 fixed h-screen overflow-y-auto hidden lg:block">
-        <div className="p-6"> */}
-      {/* Back Button */}
-      {/* <div>
-            <button 
-              onClick={() => window.history.back()}
-              className="group flex items-center gap-2 px-4 py-2.5 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all duration-200 border border-gray-200 hover:border-blue-200 shadow-sm hover:shadow-md mb-4"
-            >
-              <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform duration-200" />
-              <span className="font-medium">Back to Home</span>
-            </button>
-          </div>
-          
-          <div className="flex items-center gap-3 mb-5">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <Pill className="text-white" size={20} />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="font-bold text-gray-900 text-lg">Mediscan</h1>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-8">
-            <div>
-              <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                INVENTORY VIEW
-              </h2>
-              <nav className="space-y-2">
-                <button
-                  onClick={() => {
-                    setSelectedFilter('all');
-                    setShowAllMedicines(false);
-                  }}
-                  className="flex items-center gap-3 w-full p-2 rounded-lg bg-blue-50 text-blue-700"
-                >
-                  <Package size={18} />
-                  <span className="font-medium">All Medicines</span>
-                  <ChevronRight className="ml-auto" size={16} />
-                </button>
-              </nav>
-            </div>
-
-            <div>
-              <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                QUICK FILTERS
-              </h2>
-              <nav className="space-y-2">
-                <button 
-                  onClick={() => {
-                    setSelectedFilter('low_stock');
-                    setShowAllMedicines(false);
-                  }}
-                  className={`flex items-center justify-between w-full p-2 rounded-lg transition-colors duration-200 ${selectedFilter === 'low_stock' ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' : 'text-gray-700 hover:bg-gray-100'}`}
-                >
-                  <span>Low Stock</span>
-                  <span className="text-sm font-medium bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
-                    {lowStockCount}
-                  </span>
-                </button>
-                <button 
-                  onClick={() => {
-                    setSelectedFilter('expiring');
-                    setShowAllMedicines(false);
-                  }}
-                  className={`flex items-center justify-between w-full p-2 rounded-lg transition-colors duration-200 ${selectedFilter === 'expiring' ? 'bg-orange-50 text-orange-700 border border-orange-200' : 'text-gray-700 hover:bg-gray-100'}`}
-                >
-                  <span>Expired/Expiring</span>
-                  <span className="text-sm font-medium bg-orange-100 text-orange-800 px-2 py-1 rounded-full">
-                    {expiringSoonCount}
-                  </span>
-                </button>
-                <button 
-                  onClick={() => {
-                    setSelectedFilter('prescription');
-                    setShowAllMedicines(false);
-                  }}
-                  className={`flex items-center justify-between w-full p-2 rounded-lg transition-colors duration-200 ${selectedFilter === 'prescription' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'text-gray-700 hover:bg-gray-100'}`}
-                >
-                  <span>High Stock</span>
-                  <span className="text-sm font-medium bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                    {prescriptionCount}
-                  </span>
-                </button>
-              </nav>
-            </div>
-          </div>
-        </div>
-      </div> */}
-
-      {/* Main Content */}
-      <div className="flex-1  p-4 lg:p-6">
-        {/* Mobile Header */}
-        <div className="lg:hidden flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => window.history.back()}
-              className="group flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all duration-200 border border-gray-200 hover:border-blue-200 shadow-sm"
-            >
-              <ArrowLeft size={18} className="group-hover:-translate-x-0.5 transition-transform duration-200" />
-            </button>
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <Pill className="text-white" size={20} />
-            </div>
-            <h1 className="font-bold text-gray-900 text-lg">Medicine Cabinet</h1>
-          </div>
-          <div className="relative">
-            <NavLink to="/dashboard/alerts"
-              className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-200 hover:shadow-sm relative"
-            >
-              <Bell size={18} />
-              {notificationCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                  {notificationCount}
-                </span>
-              )}
-            </NavLink>
-          </div>
-        </div>
-
-        {/* Header */}
-        <div className="mb-8">
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="mb-8">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
             <div>
               <h1 className="text-xl lg:text-2xl font-bold text-gray-900">Medicine Cabinet</h1>
@@ -614,73 +461,69 @@ const MedicineCabinet = () => {
                 Showing {filteredMedicines.length} items. {medicinesRequiringAttention} require your attention.
               </p>
               <p className="text-xs lg:text-sm text-gray-500 mt-1">
-                Today's Date: {new Date().toLocaleDateString('en-US', {
-                  weekday: 'long',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
+                Today's Date: {new Date().toLocaleDateString('en-US', { 
+                  weekday: 'long', 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
                 })}
               </p>
             </div>
 
             <div className="flex gap-3 w-full lg:w-auto">
-              {/* Add Medicine Button */}
-              <button
+              <button 
                 onClick={() => {
-                  resetForm();
-                  setShowAddMedicineModal(true);
+                  setSelectedFilter('all');
+                  setShowAllMedicines(false);
                 }}
                 className="flex items-center justify-center gap-2 px-3 lg:px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 hover:shadow-lg shadow-blue-200 flex-1 lg:flex-none text-sm lg:text-base"
               >
-                <Plus size={18} />
-                <span className="hidden sm:inline">Add Medicine</span>
-                <span className="sm:hidden">Add</span>
+                <Package size={18} />
+                <span className="hidden sm:inline">All Medicines</span>
+                <span className="sm:hidden">All</span>
               </button>
-
-              {/* Notification Bell Button - Hidden on mobile (shown in mobile header) */}
-              <div className="relative hidden lg:block">
-                <NavLink to="/dashboard/alerts"
-                  className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-200 hover:shadow-sm relative"
-                >
-                  <Bell size={18} />
-                  {notificationCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                      {notificationCount}
-                    </span>
-                  )}
-                </NavLink>
-              </div>
             </div>
           </div>
 
-          {/* Search Bar */}
-          {/* <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6 shadow-sm"> */}
-          <div className="sticky top-20 z-30 bg-white rounded-xl border border-gray-200 p-4 mb-6 shadow-sm">
-
-            <div className="flex flex-col lg:flex-row gap-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                  <input
-                    type="text"
-                    placeholder="Search your medicine cabinet (Name, Symptoms, Active ingredients...)"
-                    className="text-gray-400 w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400 transition-colors text-sm lg:text-base"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-              </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => {
-                    setSelectedFilter('all');
-                    setShowAllMedicines(false);
-                  }}
-                  className={`px-3 lg:px-4 py-2 rounded-lg transition-all duration-200 text-sm lg:text-base ${selectedFilter === 'all' ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:shadow-sm'}`}
-                >
-                  All Medicines
-                </button>
-              </div>
+          {/* Filters */}
+          <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6 shadow-sm">
+            <div className="flex flex-wrap gap-3">
+              <button 
+                onClick={() => {
+                  setSelectedFilter('low_stock');
+                  setShowAllMedicines(false);
+                }}
+                className={`flex items-center gap-2 px-3 lg:px-4 py-2 rounded-lg transition-all duration-200 text-sm lg:text-base ${selectedFilter === 'low_stock' ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+              >
+                Low Stock
+                <span className="text-xs font-semibold bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">
+                  {lowStockCount}
+                </span>
+              </button>
+              <button 
+                onClick={() => {
+                  setSelectedFilter('expiring');
+                  setShowAllMedicines(false);
+                }}
+                className={`flex items-center gap-2 px-3 lg:px-4 py-2 rounded-lg transition-all duration-200 text-sm lg:text-base ${selectedFilter === 'expiring' ? 'bg-orange-50 text-orange-700 border border-orange-200' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+              >
+                Expired/Expiring
+                <span className="text-xs font-semibold bg-orange-100 text-orange-800 px-2 py-0.5 rounded-full">
+                  {expiringSoonCount}
+                </span>
+              </button>
+              <button 
+                onClick={() => {
+                  setSelectedFilter('prescription');
+                  setShowAllMedicines(false);
+                }}
+                className={`flex items-center gap-2 px-3 lg:px-4 py-2 rounded-lg transition-all duration-200 text-sm lg:text-base ${selectedFilter === 'prescription' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+              >
+                High Stock
+                <span className="text-xs font-semibold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+                  {prescriptionCount}
+                </span>
+              </button>
             </div>
           </div>
         </div>
@@ -1014,8 +857,6 @@ const MedicineCabinet = () => {
             </button>
           </div>
         )}
-      </div>
-
       {/* Medicine Detail Modal */}
       {showMedicineModal && selectedMedicine && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
