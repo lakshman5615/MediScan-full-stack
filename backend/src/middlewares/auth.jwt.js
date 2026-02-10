@@ -1,5 +1,3 @@
-
-
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
@@ -19,7 +17,8 @@ const authMiddleware = (req, res, next) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         // req.user = decoded; // {_id, email}
         req.user = {
-            _id: decoded._id
+            _id: decoded._id,
+            userId: decoded._id // changes login singup
         };
         next();
     } catch (err) {
