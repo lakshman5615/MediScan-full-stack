@@ -72,6 +72,16 @@ const AlertsPage = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedMedicine, setSelectedMedicine] = useState(null);
   
+  const normalizeAlertsPayload = (res) => {
+    const data = res?.data ?? res ?? {};
+    const payload = data.data ?? data;
+    return {
+      reminders: Array.isArray(payload.reminders) ? payload.reminders : [],
+      expiry: Array.isArray(payload.expiry) ? payload.expiry : [],
+      lowStock: Array.isArray(payload.lowStock) ? payload.lowStock : []
+    };
+  };
+
   // ✅ Load alerts from BACKEND API (not localStorage)
   useEffect(() => {
     const loadAlertsFromBackend = async () => {
@@ -79,18 +89,19 @@ const AlertsPage = () => {
         console.log('🔄 Fetching alerts from backend...');
         const res = await getAlerts();
         console.log('✅ Backend response:', res);
+        const payload = normalizeAlertsPayload(res);
         
         // Backend response: { success: true, data: { reminders: [], expiry: [], lowStock: [] } }
         const allAlerts = [
-          ...res.data.reminders.map(a => ({ ...a, type: 'schedule' })),
-          ...res.data.expiry.map(a => ({ ...a, type: 'expiry' })),
-          ...res.data.lowStock.map(a => ({ ...a, type: 'low_stock' }))
+          ...payload.reminders.map(a => ({ ...a, type: 'schedule' })),
+          ...payload.expiry.map(a => ({ ...a, type: 'expiry' })),
+          ...payload.lowStock.map(a => ({ ...a, type: 'low_stock' }))
         ];
         
         console.log('📋 Total alerts:', allAlerts.length);
-        console.log('  - Reminders:', res.data.reminders.length);
-        console.log('  - Expiry:', res.data.expiry.length);
-        console.log('  - Low Stock:', res.data.lowStock.length);
+        console.log('  - Reminders:', payload.reminders.length);
+        console.log('  - Expiry:', payload.expiry.length);
+        console.log('  - Low Stock:', payload.lowStock.length);
         
         setAlerts(allAlerts);
       } catch (err) {
@@ -130,10 +141,11 @@ const AlertsPage = () => {
       // Refresh alerts from backend after 1 second
       setTimeout(async () => {
         const res = await getAlerts();
+        const payload = normalizeAlertsPayload(res);
         const allAlerts = [
-          ...res.data.reminders.map(a => ({ ...a, type: 'schedule' })),
-          ...res.data.expiry.map(a => ({ ...a, type: 'expiry' })),
-          ...res.data.lowStock.map(a => ({ ...a, type: 'low_stock' }))
+          ...payload.reminders.map(a => ({ ...a, type: 'schedule' })),
+          ...payload.expiry.map(a => ({ ...a, type: 'expiry' })),
+          ...payload.lowStock.map(a => ({ ...a, type: 'low_stock' }))
         ];
         setAlerts(allAlerts);
       }, 1000);

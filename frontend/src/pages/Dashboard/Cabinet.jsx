@@ -50,7 +50,9 @@ import {
 import {
   getStatusConfig,
   isMedicineExpired,
-  getMedicineStatus
+  getMedicineStatus,
+  isMedicineExpiringSoon,
+  getDaysUntilExpiry
 } from "../../utils/medicineUtils";
 // ✅ Alert API import - Notification count ke liye
 import { getAlerts } from "../../services/alertApi";
@@ -197,12 +199,19 @@ const loadMedicines = async () => {
   const calculateNotificationCount = async () => {
     try {
       const res = await getAlerts();
-      
-      // Count pending reminders + expiry alerts + low stock alerts
-      const count = 
-        res.data.reminders.filter(a => a.status === 'PENDING').length +
-        res.data.expiry.length +
-        res.data.lowStock.length;
+      const data = res?.data ?? res ?? { reminders: [], expiry: [], lowStock: [] };
+      const reminders = Array.isArray(data.reminders) ? data.reminders : [];
+      const expiry = Array.isArray(data.expiry) ? data.expiry : [];
+      const lowStock = Array.isArray(data.lowStock) ? data.lowStock : [];
+
+      const countPending = (items) =>
+        items.filter(a => !a.status || a.status === 'PENDING').length;
+
+      // Count pending reminders + pending expiry alerts + pending low stock alerts
+      const count =
+        countPending(reminders) +
+        countPending(expiry) +
+        countPending(lowStock);
       
       setNotificationCount(count);
     } catch (err) {
@@ -419,7 +428,7 @@ const loadMedicines = async () => {
     
     if (selectedFilter === 'all') return matchesSearch;
     if (selectedFilter === 'low_stock') return matchesSearch && medicine.quantity <= 2;
-    if (selectedFilter === 'expiring') return matchesSearch && isMedicineExpired(medicine.expiryDate);
+    if (selectedFilter === 'expiring') return matchesSearch && isMedicineExpiringSoon(medicine.expiryDate);
     if (selectedFilter === 'prescription') return matchesSearch && medicine.quantity > 2;
     return matchesSearch;
   });
@@ -433,7 +442,7 @@ const loadMedicines = async () => {
 
   const medicinesRequiringAttention = medicines.filter(m => m.requiresAttention).length;
   const lowStockCount = medicines.filter(m => m.quantity <= 2).length;
-  const expiringSoonCount = medicines.filter(m => isMedicineExpired(m.expiryDate)).length;
+  const expiringSoonCount = medicines.filter(m => isMedicineExpiringSoon(m.expiryDate)).length;
   const prescriptionCount = medicines.filter(m => m.quantity > 2).length;
 
   const handleViewMedicine = (medicine) => {
@@ -723,6 +732,8 @@ const loadMedicines = async () => {
                     displayedMedicines.map(medicine => {
                       const statusConfig = getStatusConfig(medicine.status);
                       const isExpired = isMedicineExpired(medicine.expiryDate);
+                      const isExpiringSoon = isMedicineExpiringSoon(medicine.expiryDate);
+                      const daysUntilExpiry = getDaysUntilExpiry(medicine.expiryDate);
                       
                       return (
                         <tr key={medicine.id} className="hover:bg-gray-50 transition-colors duration-150">
@@ -738,6 +749,11 @@ const loadMedicines = async () => {
                                 {isExpired && (
                                   <div className="text-xs text-red-600">Expired on {new Date(medicine.expiryDate).toLocaleDateString()}</div>
                                 )}
+                                {!isExpired && isExpiringSoon && daysUntilExpiry !== null && (
+                                  <div className="text-xs text-orange-600">
+                                    Expiring in {daysUntilExpiry} day{daysUntilExpiry === 1 ? '' : 's'}
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </td>
@@ -748,6 +764,11 @@ const loadMedicines = async () => {
                             {isExpired && (
                               <div className="text-xs text-red-600 mt-1">Expired on {new Date(medicine.expiryDate).toLocaleDateString()}</div>
                             )}
+                            {!isExpired && isExpiringSoon && daysUntilExpiry !== null && (
+                              <div className="text-xs text-orange-600 mt-1">
+                                Expiring in {daysUntilExpiry} day{daysUntilExpiry === 1 ? '' : 's'}
+                              </div>
+                            )}
                           </td>
                           <td className="px-3 lg:px-6 py-4 hidden md:table-cell">
                             <div className="text-gray-900 text-sm lg:text-base">{medicine.remaining}</div>
@@ -757,8 +778,8 @@ const loadMedicines = async () => {
                               <div className="text-gray-900 text-sm lg:text-base">
                                 {new Date(medicine.expiryDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                               </div>
-                              <div className={`text-sm ${isExpired ? 'text-red-600 font-bold' : 'text-gray-500'}`}>
-                                {isExpired ? 'Expired' : 'Valid'}
+                              <div className={`text-sm ${isExpired ? 'text-red-600 font-bold' : isExpiringSoon ? 'text-orange-600 font-semibold' : 'text-gray-500'}`}>
+                                {isExpired ? 'Expired' : isExpiringSoon ? 'Expiring' : 'Valid'}
                               </div>
                             </div>
                           </td>
@@ -812,6 +833,7 @@ const loadMedicines = async () => {
                 {displayedGridMedicines.map(medicine => {
                   const statusConfig = getStatusConfig(medicine.status);
                   const isExpired = isMedicineExpired(medicine.expiryDate);
+                  const isExpiringSoon = isMedicineExpiringSoon(medicine.expiryDate);
                   
                   return (
                     <div key={medicine.id} className={`bg-white rounded-xl border ${isExpired ? 'border-red-200' : 'border-gray-200'} p-4 lg:p-5 hover:shadow-lg transition-all duration-300`}>
@@ -853,6 +875,14 @@ const loadMedicines = async () => {
                             <div className="flex items-center gap-2">
                               <AlertTriangle size={12} className="text-red-600 flex-shrink-0" />
                               <p className="text-red-700 text-xs lg:text-sm font-medium">Expired Medicine</p>
+                            </div>
+                          </div>
+                        )}
+                        {!isExpired && isExpiringSoon && (
+                          <div className="p-2 bg-orange-50 border border-orange-100 rounded-lg">
+                            <div className="flex items-center gap-2">
+                              <AlertTriangle size={12} className="text-orange-600 flex-shrink-0" />
+                              <p className="text-orange-700 text-xs lg:text-sm font-medium">Expiring Soon (≤ 5 days)</p>
                             </div>
                           </div>
                         )}

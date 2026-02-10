@@ -5,10 +5,10 @@ export const getTodayDate = () => {
 };
 
 export const calculateExpiryText = (expiryDate) => {
-  const today = new Date();
-  const expiry = new Date(expiryDate);
+  const today = toStartOfDay(new Date());
+  const expiry = toStartOfDay(expiryDate);
   const diffTime = expiry - today;
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  const diffDays = Math.ceil(diffTime / MS_PER_DAY);
   
   if (diffDays < 0) return 'EXPIRED';
   if (diffDays < 30) return `${diffDays} DAYS LEFT`;
@@ -17,24 +17,24 @@ export const calculateExpiryText = (expiryDate) => {
 };
 
 export const isMedicineExpired = (expiryDate) => {
-  const today = new Date();
-  const expiry = new Date(expiryDate);
+  const today = toStartOfDay(new Date());
+  const expiry = toStartOfDay(expiryDate);
   return expiry < today;
 };
 
 export const getMedicineStatus = (medicine) => {
-  const today = new Date();
-  const expiryDate = new Date(medicine.expiryDate);
-  const daysUntilExpiry = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
+  const today = toStartOfDay(new Date());
+  const expiryDate = toStartOfDay(medicine.expiryDate);
+  const daysUntilExpiry = Math.ceil((expiryDate - today) / MS_PER_DAY);
   
   if (daysUntilExpiry <= 0) {
     return 'expired';
   }
-  if (medicine.quantity <= 10) {
-    return 'low_stock';
-  }
-  if (daysUntilExpiry <= 30) {
+  if (daysUntilExpiry <= 5) {
     return 'expiring';
+  }
+  if (medicine.quantity <= 2) {
+    return 'low_stock';
   }
   if (medicine.quantity > 10) {
     return 'stocked';

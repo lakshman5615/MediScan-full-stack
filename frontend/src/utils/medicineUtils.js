@@ -1,10 +1,32 @@
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
+
+const toStartOfDay = (dateLike) => {
+  const d = new Date(dateLike);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+};
+
+export const getDaysUntilExpiry = (expiryDate) => {
+  if (!expiryDate) return null;
+  const today = toStartOfDay(new Date());
+  const expiry = toStartOfDay(expiryDate);
+  return Math.ceil((expiry - today) / MS_PER_DAY);
+};
+
 export const isMedicineExpired = (expiryDate) => {
-  if (!expiryDate) return false;
-  return new Date(expiryDate) < new Date();
+  const daysUntilExpiry = getDaysUntilExpiry(expiryDate);
+  if (daysUntilExpiry === null) return false;
+  return daysUntilExpiry < 0;
+};
+
+export const isMedicineExpiringSoon = (expiryDate, thresholdDays = 5) => {
+  const daysUntilExpiry = getDaysUntilExpiry(expiryDate);
+  if (daysUntilExpiry === null) return false;
+  return daysUntilExpiry >= 0 && daysUntilExpiry <= thresholdDays;
 };
 
 export const getMedicineStatus = (medicine) => {
   if (isMedicineExpired(medicine.expiryDate)) return "expired";
+  if (isMedicineExpiringSoon(medicine.expiryDate)) return "expiring";
   if (medicine.quantity === 0) return "out_of_stock";
   if (medicine.quantity <= 2) return "low_stock";
   return "high_stock";
