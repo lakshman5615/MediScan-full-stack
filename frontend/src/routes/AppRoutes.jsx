@@ -169,48 +169,12 @@ import { AIProvider } from "../context/AIContext";
 export default function AppRoutes() {
   return (
     <AIProvider>
-<<<<<<< HEAD
-    <CabinetProvider>
-      <Routes>
-        {/* ================= LANDING ================= */}
-        <Route path="/" element={<LandingPage />} />
-
-        {/* ================= AUTH ================= */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-
-        {/* ================= DASHBOARD (PROTECTED) ================= */}
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <DashboardLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<Home />} />
-          <Route path="scan" element={<Scan />} />
-          <Route path="cabinet" element={<Cabinet />} />
-          <Route path="alerts" element={<Alerts />} />
-          <Route path="emergency" element={<Emergency />} />
-        </Route>
-
-        {/* ================= BLANK LAYOUT ================= */}
-        {/* ❗ ai-explanation guest + logged dono ke liye */}
-        <Route element={<BlankLayout />}>
-          <Route path="/dashboard/schedule" element={
-            <ProtectedRoute>
-              <Schedule />
-            </ProtectedRoute>
-          } />
-=======
       <CabinetProvider>
         <Routes>
           {/* ================= PUBLIC ================= */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
->>>>>>> 6b4986a538d9cc0c717f12225544257cf185a44c
 
           {/* ================= DASHBOARD (WITH SIDEBAR) ================= */}
           <Route
