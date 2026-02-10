@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink } from "react-router-dom";
 
-import { 
-  Search, 
-  Filter, 
-  AlertCircle, 
-  Calendar, 
-  Pill, 
+
+import {
+  Search, Hourglass,
+  Filter,
+  AlertCircle,
+  Calendar,
+  Pill,
   ChevronDown,
   Plus,
   Edit,
@@ -52,6 +53,7 @@ import {
   isMedicineExpired,
   getMedicineStatus
 } from "../../utils/medicineUtils";
+
 // ✅ Alert API import - Notification count ke liye
 import { getAlerts } from "../../services/alertApi";
 
@@ -70,7 +72,7 @@ const MedicineCabinet = () => {
   const [editingMedicineId, setEditingMedicineId] = useState(null);
   const [notificationCount, setNotificationCount] = useState(0);
   const [showAllMedicines, setShowAllMedicines] = useState(false);
-  
+
   // Load medicines from backend
   // useEffect(() => {
   //   const loadMedicines = async () => {
@@ -101,109 +103,109 @@ const MedicineCabinet = () => {
   //       }
   //     }
   //   };
-    
+
   //   loadMedicines();
-    
+
   //   // Refresh every minute for real-time updates
   //   const interval = setInterval(() => {
   //     loadMedicines();
   //   }, 60000);
-    
+
   //   return () => clearInterval(interval);
   // }, []);
 
 
   useEffect(() => {
-  loadMedicines();
-}, []);
+    loadMedicines();
+  }, []);
 
-// const loadMedicines = async () => {
-//   try {
-//     const res = await getMedicines();
+  // const loadMedicines = async () => {
+  //   try {
+  //     const res = await getMedicines();
 
-//     const formatted = res.data.map((med) => ({
-//       ...med,
-//       id: med._id,
-//       name: med.medicineName,
-//       remaining: `${med.quantity} units`,
-//       status: getMedicineStatus({
-//         expiryDate: med.expiryDate,
-//         quantity: med.quantity,
-//       }),
-//     }));
+  //     const formatted = res.data.map((med) => ({
+  //       ...med,
+  //       id: med._id,
+  //       name: med.medicineName,
+  //       remaining: `${med.quantity} units`,
+  //       status: getMedicineStatus({
+  //         expiryDate: med.expiryDate,
+  //         quantity: med.quantity,
+  //       }),
+  //     }));
 
-//     setMedicines(formatted);
-//     calculateNotificationCount(formatted);
-//   } catch (err) {
-//     console.error("Failed to load medicines", err);
-//   }
-// };
-const loadMedicines = async () => {
-  try {
-    const res = await getMedicines();
+  //     setMedicines(formatted);
+  //     calculateNotificationCount(formatted);
+  //   } catch (err) {
+  //     console.error("Failed to load medicines", err);
+  //   }
+  // };
+  const loadMedicines = async () => {
+    try {
+      const res = await getMedicines();
 
-    // 🔥 SAFE extraction
-    const medicinesArray = res?.data || res?.medicines || [];
+      // 🔥 SAFE extraction
+      const medicinesArray = res?.data || res?.medicines || [];
 
-    if (!Array.isArray(medicinesArray)) {
-      console.error("Medicines is not an array", res);
-      setMedicines([]);
-      return;
-    }
+      if (!Array.isArray(medicinesArray)) {
+        console.error("Medicines is not an array", res);
+        setMedicines([]);
+        return;
+      }
 
-    const formatted = medicinesArray.map((med) => {
-      const schedule = med.schedule || {};
-      const scheduleEnabled = {
-        morning: !!schedule.morning?.enabled,
-        afternoon: !!schedule.afternoon?.enabled,
-        evening: !!schedule.evening?.enabled,
-        night: !!schedule.night?.enabled
-      };
+      const formatted = medicinesArray.map((med) => {
+        const schedule = med.schedule || {};
+        const scheduleEnabled = {
+          morning: !!schedule.morning?.enabled,
+          afternoon: !!schedule.afternoon?.enabled,
+          evening: !!schedule.evening?.enabled,
+          night: !!schedule.night?.enabled
+        };
 
-      return {
-        id: med._id,
-        name: med.name || med.medicineName,
-        brand: med.brand || "",
-        type: med.medicineType || med.type,
-        strength: med.dosage || "",
-        quantity: med.remainingQuantity ?? med.totalQuantity ?? med.quantity ?? 0,
-        totalQuantity: med.totalQuantity ?? 0,
-        expiryDate: med.expiryDate,
-        schedule: {
-          morning: schedule.morning?.time || "08:00",
-          afternoon: schedule.afternoon?.time || "13:00",
-          evening: schedule.evening?.time || "18:00",
-          night: schedule.night?.time || "22:00"
-        },
-        scheduleEnabled,
-        remaining: `${med.remainingQuantity ?? med.totalQuantity ?? med.quantity ?? 0} units`,
-        status: getMedicineStatus({
+        return {
+          id: med._id,
+          name: med.name || med.medicineName,
+          brand: med.brand || "",
+          type: med.medicineType || med.type,
+          strength: med.dosage || "",
+          quantity: med.remainingQuantity ?? med.totalQuantity ?? med.quantity ?? 0,
+          totalQuantity: med.totalQuantity ?? 0,
           expiryDate: med.expiryDate,
-          quantity: med.remainingQuantity ?? med.totalQuantity ?? med.quantity ?? 0
-        })
-      };
-    });
+          schedule: {
+            morning: schedule.morning?.time || "08:00",
+            afternoon: schedule.afternoon?.time || "13:00",
+            evening: schedule.evening?.time || "18:00",
+            night: schedule.night?.time || "22:00"
+          },
+          scheduleEnabled,
+          remaining: `${med.remainingQuantity ?? med.totalQuantity ?? med.quantity ?? 0} units`,
+          status: getMedicineStatus({
+            expiryDate: med.expiryDate,
+            quantity: med.remainingQuantity ?? med.totalQuantity ?? med.quantity ?? 0
+          })
+        };
+      });
 
-    setMedicines(formatted);
-    await calculateNotificationCount(); // ✅ Backend se notification count load karo
-  } catch (err) {
-    console.error("Failed to load medicines", err);
-    setMedicines([]);
-  }
-};
+      setMedicines(formatted);
+      await calculateNotificationCount(); // ✅ Backend se notification count load karo
+    } catch (err) {
+      console.error("Failed to load medicines", err);
+      setMedicines([]);
+    }
+  };
 
 
   // ✅ Calculate notification count from BACKEND API
   const calculateNotificationCount = async () => {
     try {
       const res = await getAlerts();
-      
+
       // Count pending reminders + expiry alerts + low stock alerts
-      const count = 
+      const count =
         res.data.reminders.filter(a => a.status === 'PENDING').length +
         res.data.expiry.length +
         res.data.lowStock.length;
-      
+
       setNotificationCount(count);
     } catch (err) {
       console.error("Failed to load notification count", err);
@@ -212,92 +214,92 @@ const loadMedicines = async () => {
 
   // Handle adding/editing medicine
   const handleSaveMedicine = async (medicineData) => {
-  try {
-    if (isEditing && editingMedicineId) {
-      // ✅ UPDATE VIA API
-      const schedule = {
-        morning: {
-          enabled: !!medicineData.scheduleEnabled?.morning,
-          time: medicineData.schedule?.morning || "08:00"
-        },
-        afternoon: {
-          enabled: !!medicineData.scheduleEnabled?.afternoon,
-          time: medicineData.schedule?.afternoon || "13:00"
-        },
-        evening: {
-          enabled: !!medicineData.scheduleEnabled?.evening,
-          time: medicineData.schedule?.evening || "18:00"
-        },
-        night: {
-          enabled: !!medicineData.scheduleEnabled?.night,
-          time: medicineData.schedule?.night || "22:00"
-        }
-      };
+    try {
+      if (isEditing && editingMedicineId) {
+        // ✅ UPDATE VIA API
+        const schedule = {
+          morning: {
+            enabled: !!medicineData.scheduleEnabled?.morning,
+            time: medicineData.schedule?.morning || "08:00"
+          },
+          afternoon: {
+            enabled: !!medicineData.scheduleEnabled?.afternoon,
+            time: medicineData.schedule?.afternoon || "13:00"
+          },
+          evening: {
+            enabled: !!medicineData.scheduleEnabled?.evening,
+            time: medicineData.schedule?.evening || "18:00"
+          },
+          night: {
+            enabled: !!medicineData.scheduleEnabled?.night,
+            time: medicineData.schedule?.night || "22:00"
+          }
+        };
 
-      await updateMedicine(editingMedicineId, {
-        name: medicineData.name,
-        brand: medicineData.brand || "",
-        medicineType: medicineData.type,
-        dosage: medicineData.dosage || "",
-        totalQuantity: parseInt(medicineData.totalQuantity),
-        expiryDate: medicineData.expiryDate,
-        lowStockThreshold: medicineData.lowStockThreshold || 5,
-        schedule
-      });
+        await updateMedicine(editingMedicineId, {
+          name: medicineData.name,
+          brand: medicineData.brand || "",
+          medicineType: medicineData.type,
+          dosage: medicineData.dosage || "",
+          totalQuantity: parseInt(medicineData.totalQuantity),
+          expiryDate: medicineData.expiryDate,
+          lowStockThreshold: medicineData.lowStockThreshold || 5,
+          schedule
+        });
 
-      resetForm();
-      await loadMedicines(); //  DB se update data load
-      alert(`${medicineData.name} updated successfully!`);
-      
-    } else {
-      // ✅ ADD NEW MEDICINE
-      const normalizedType = medicineData.type === "Prescription" ? "OTC" : (medicineData.type || "OTC");
-      
-      const schedule = {
-        morning: {
-          enabled: !!medicineData.scheduleEnabled?.morning,
-          time: medicineData.schedule?.morning || "08:00"
-        },
-        afternoon: {
-          enabled: !!medicineData.scheduleEnabled?.afternoon,
-          time: medicineData.schedule?.afternoon || "13:00"
-        },
-        evening: {
-          enabled: !!medicineData.scheduleEnabled?.evening,
-          time: medicineData.schedule?.evening || "18:00"
-        },
-        night: {
-          enabled: !!medicineData.scheduleEnabled?.night,
-          time: medicineData.schedule?.night || "22:00"
-        }
-      };
+        resetForm();
+        await loadMedicines(); //  DB se update data load
+        alert(`${medicineData.name} updated successfully!`);
 
-      await addMedicine({
-        name: medicineData.name,
-        brand: medicineData.brand || "",
-        medicineType: normalizedType,
-        dosage: medicineData.dosage || "",
-        totalQuantity: Number(medicineData.totalQuantity),
-        expiryDate: medicineData.expiryDate,
-        lowStockThreshold: medicineData.lowStockThreshold || 5,
-        schedule
-      });
+      } else {
+        // ✅ ADD NEW MEDICINE
+        const normalizedType = medicineData.type === "Prescription" ? "OTC" : (medicineData.type || "OTC");
 
-      resetForm();
-      await loadMedicines(); // ✅ DB se fresh data load
-      alert(`${medicineData.name} added successfully!`);
+        const schedule = {
+          morning: {
+            enabled: !!medicineData.scheduleEnabled?.morning,
+            time: medicineData.schedule?.morning || "08:00"
+          },
+          afternoon: {
+            enabled: !!medicineData.scheduleEnabled?.afternoon,
+            time: medicineData.schedule?.afternoon || "13:00"
+          },
+          evening: {
+            enabled: !!medicineData.scheduleEnabled?.evening,
+            time: medicineData.schedule?.evening || "18:00"
+          },
+          night: {
+            enabled: !!medicineData.scheduleEnabled?.night,
+            time: medicineData.schedule?.night || "22:00"
+          }
+        };
+
+        await addMedicine({
+          name: medicineData.name,
+          brand: medicineData.brand || "",
+          medicineType: normalizedType,
+          dosage: medicineData.dosage || "",
+          totalQuantity: Number(medicineData.totalQuantity),
+          expiryDate: medicineData.expiryDate,
+          lowStockThreshold: medicineData.lowStockThreshold || 5,
+          schedule
+        });
+
+        resetForm();
+        await loadMedicines(); // ✅ DB se fresh data load
+        alert(`${medicineData.name} added successfully!`);
+      }
+    } catch (error) {
+      console.error('Error saving medicine:', error);
+      alert('Failed to save medicine. Check console for details.');
     }
-  } catch (error) {
-    console.error('Error saving medicine:', error);
-    alert('Failed to save medicine. Check console for details.');
-  }
-};
+  };
 
   // const handleSaveMedicine = async (medicineData) => {
   //   try {
 
   //     ///
-      
+
   //     ///
   //     if (isEditing && editingMedicineId) {
   //       // For editing, we'll update locally for now
@@ -324,7 +326,7 @@ const loadMedicines = async () => {
   //           })
   //         } : medicine
   //       );
-        
+
   //       setMedicines(updatedMedicines);
   //       localStorage.setItem('medicines', JSON.stringify(updatedMedicines));
   //       calculateNotificationCount(updatedMedicines);
@@ -334,7 +336,7 @@ const loadMedicines = async () => {
   //       const unit = medicineData.dosage.includes('mg') ? 'tablets' : 
   //                   medicineData.dosage.includes('ml') ? 'ml' : 'units';
   //       const normalizedType = medicineData.type === "Prescription" ? "OTC" : (medicineData.type || "OTC");
-                    
+
   //       const newMedicineData = {
   //         name: medicineData.name,
   //         brand: medicineData.brand,
@@ -348,7 +350,7 @@ const loadMedicines = async () => {
   //         schedule: medicineData.schedule,
   //         scheduleEnabled: medicineData.scheduleEnabled
   //       };
-        
+
   //       // await addToCabinet(newMedicineData);
   //       // await addMedicine({
   //       //   medicineName: medicineData.name,
@@ -394,7 +396,7 @@ const loadMedicines = async () => {
   //     console.error('Error saving medicine:', error);
   //     alert('Error saving medicine. Please try again.');
   //   }
-    
+
   //   resetForm();
   // };
 
@@ -413,10 +415,10 @@ const loadMedicines = async () => {
   };
 
   const filteredMedicines = medicines.filter(medicine => {
-    const matchesSearch = searchQuery === '' || 
+    const matchesSearch = searchQuery === '' ||
       medicine.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (medicine.activeIngredients && medicine.activeIngredients.toLowerCase().includes(searchQuery.toLowerCase()));
-    
+
     if (selectedFilter === 'all') return matchesSearch;
     if (selectedFilter === 'low_stock') return matchesSearch && medicine.quantity <= 2;
     if (selectedFilter === 'expiring') return matchesSearch && isMedicineExpired(medicine.expiryDate);
@@ -465,26 +467,27 @@ const loadMedicines = async () => {
   //   }
   // };
   const handleDiscard = async (medicineId) => {
-  if (!window.confirm("Are you sure you want to delete this medicine?")) return;
+    if (!window.confirm("Are you sure you want to delete this medicine?")) return;
 
-  try {
-    await deleteMedicine(medicineId);
-    await loadMedicines();
-    alert('Medicine deleted successfully!');
-  } catch (err) {
-    console.error("Delete failed", err);
-    alert('Failed to delete medicine. Please try again.');
-  }
-};
+    try {
+      await deleteMedicine(medicineId);
+      await loadMedicines();
+      alert('Medicine deleted successfully!');
+    } catch (err) {
+      console.error("Delete failed", err);
+      alert('Failed to delete medicine. Please try again.');
+    }
+  };
 
 
   return (
+    // <div className="min-h-screen bg-gray-50 flex">
     <div className="min-h-screen bg-gray-50 flex">
       {/* Fixed Sidebar */}
-      <div className="w-64 bg-white border-r border-gray-200 fixed h-screen overflow-y-auto hidden lg:block">
-        <div className="p-6">
-          {/* Back Button */}
-          <div>
+      {/* <div className="w-64 bg-white border-r border-gray-200 fixed h-screen overflow-y-auto hidden lg:block">
+        <div className="p-6"> */}
+      {/* Back Button */}
+      {/* <div>
             <button 
               onClick={() => window.history.back()}
               className="group flex items-center gap-2 px-4 py-2.5 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all duration-200 border border-gray-200 hover:border-blue-200 shadow-sm hover:shadow-md mb-4"
@@ -570,14 +573,14 @@ const loadMedicines = async () => {
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Main Content */}
-      <div className="flex-1 lg:ml-64 p-4 lg:p-6">
+      <div className="flex-1  p-4 lg:p-6">
         {/* Mobile Header */}
         <div className="lg:hidden flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <button 
+            <button
               onClick={() => window.history.back()}
               className="group flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all duration-200 border border-gray-200 hover:border-blue-200 shadow-sm"
             >
@@ -611,18 +614,18 @@ const loadMedicines = async () => {
                 Showing {filteredMedicines.length} items. {medicinesRequiringAttention} require your attention.
               </p>
               <p className="text-xs lg:text-sm text-gray-500 mt-1">
-                Today's Date: {new Date().toLocaleDateString('en-US', { 
-                  weekday: 'long', 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
+                Today's Date: {new Date().toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
                 })}
               </p>
             </div>
 
             <div className="flex gap-3 w-full lg:w-auto">
               {/* Add Medicine Button */}
-              <button 
+              <button
                 onClick={() => {
                   resetForm();
                   setShowAddMedicineModal(true);
@@ -633,7 +636,7 @@ const loadMedicines = async () => {
                 <span className="hidden sm:inline">Add Medicine</span>
                 <span className="sm:hidden">Add</span>
               </button>
-              
+
               {/* Notification Bell Button - Hidden on mobile (shown in mobile header) */}
               <div className="relative hidden lg:block">
                 <NavLink to="/dashboard/alerts"
@@ -651,7 +654,9 @@ const loadMedicines = async () => {
           </div>
 
           {/* Search Bar */}
-          <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6 shadow-sm">
+          {/* <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6 shadow-sm"> */}
+          <div className="sticky top-20 z-30 bg-white rounded-xl border border-gray-200 p-4 mb-6 shadow-sm">
+
             <div className="flex flex-col lg:flex-row gap-4">
               <div className="flex-1">
                 <div className="relative">
@@ -666,7 +671,7 @@ const loadMedicines = async () => {
                 </div>
               </div>
               <div className="flex gap-3">
-                <button 
+                <button
                   onClick={() => {
                     setSelectedFilter('all');
                     setShowAllMedicines(false);
@@ -680,17 +685,117 @@ const loadMedicines = async () => {
           </div>
         </div>
 
+
+        {/* QUICK FILTERS */}
+        <div className="bg-white border border-gray-200 rounded-xl p-4 mb-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+            Quick Filters
+          </h2>
+
+          {/* RESPONSIVE ROW */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+
+            {/* LOW STOCK */}
+            <div
+              onClick={() => {
+                setSelectedFilter("low_stock");
+                setShowAllMedicines(false);
+              }}
+              className={`flex items-center justify-between p-4 rounded-xl cursor-pointer
+        transition-all duration-300 hover:scale-[1.02]
+        ${selectedFilter === "low_stock"
+                  ? "bg-red-100 border border-red-300 shadow"
+                  : "bg-red-50 hover:shadow-md"}`}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 flex items-center justify-center rounded-lg bg-red-200">
+                  <AlertTriangle className="text-red-600" size={20} />
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-800">Low Stock</p>
+                  <p className="text-sm text-gray-600">
+                    {lowStockCount} Medicines
+                  </p>
+                </div>
+              </div>
+              <span className="text-xs font-semibold text-red-600">
+                LOW
+              </span>
+            </div>
+
+            {/* EXPIRING */}
+            <div
+              onClick={() => {
+                setSelectedFilter("expiring");
+                setShowAllMedicines(false);
+              }}
+              className={`flex items-center justify-between p-4 rounded-xl cursor-pointer
+        transition-all duration-300 hover:scale-[1.02]
+        ${selectedFilter === "expiring"
+                  ? "bg-orange-100 border border-orange-300 shadow"
+                  : "bg-orange-50 hover:shadow-md"}`}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 flex items-center justify-center rounded-lg bg-orange-200">
+                  <Hourglass className="text-orange-600" size={20} />
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-800">Expiring Soon</p>
+                  <p className="text-sm text-gray-600">
+                    {expiringSoonCount} Medicines
+                  </p>
+                </div>
+              </div>
+              <span className="text-xs font-semibold text-orange-600">
+                SOON
+              </span>
+            </div>
+
+            {/* HIGH STOCK */}
+            <div
+              onClick={() => {
+                setSelectedFilter("prescription");
+                setShowAllMedicines(false);
+              }}
+              className={`flex items-center justify-between p-4 rounded-xl cursor-pointer
+        transition-all duration-300 hover:scale-[1.02]
+        ${selectedFilter === "prescription"
+                  ? "bg-green-100 border border-green-300 shadow"
+                  : "bg-green-50 hover:shadow-md"}`}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 flex items-center justify-center rounded-lg bg-green-200">
+                  <CheckCircle className="text-green-600" size={20} />
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-800">High Stock</p>
+                  <p className="text-sm text-gray-600">
+                    {prescriptionCount} Medicines
+                  </p>
+                </div>
+              </div>
+              <span className="text-xs font-semibold text-green-600">
+                OK
+              </span>
+            </div>
+
+          </div>
+        </div>
+
+
+
+
         {/* View Toggle */}
         <div className="flex justify-between items-center mb-6">
           <div className="flex gap-2">
-            <button 
+            <button
               onClick={() => setViewMode('table')}
               className={`px-3 lg:px-4 py-2 rounded-lg transition-all duration-200 text-sm lg:text-base ${viewMode === 'table' ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:shadow-sm'}`}
             >
               <span className="hidden sm:inline">Table View</span>
               <span className="sm:hidden">Table</span>
             </button>
-            <button 
+            <button
               onClick={() => setViewMode('grid')}
               className={`px-3 lg:px-4 py-2 rounded-lg transition-all duration-200 text-sm lg:text-base ${viewMode === 'grid' ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:shadow-sm'}`}
             >
@@ -723,7 +828,7 @@ const loadMedicines = async () => {
                     displayedMedicines.map(medicine => {
                       const statusConfig = getStatusConfig(medicine.status);
                       const isExpired = isMedicineExpired(medicine.expiryDate);
-                      
+
                       return (
                         <tr key={medicine.id} className="hover:bg-gray-50 transition-colors duration-150">
                           <td className="px-3 lg:px-6 py-4">
@@ -764,21 +869,21 @@ const loadMedicines = async () => {
                           </td>
                           <td className="px-3 lg:px-6 py-4">
                             <div className="flex gap-1 lg:gap-2">
-                              <button 
+                              <button
                                 onClick={() => handleEditMedicine(medicine)}
                                 className="p-1.5 lg:p-2 text-gray-400 hover:text-yellow-600 hover:bg-yellow-50 rounded-lg transition-colors duration-200"
                                 title="Edit"
                               >
                                 <Edit size={16} className="lg:w-[18px] lg:h-[18px]" />
                               </button>
-                              <button 
+                              <button
                                 onClick={() => handleViewMedicine(medicine)}
                                 className="p-1.5 lg:p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
                                 title="View Details"
                               >
                                 <Eye size={16} className="lg:w-[18px] lg:h-[18px]" />
                               </button>
-                              <button 
+                              <button
                                 onClick={() => handleDiscard(medicine.id)}
                                 className="p-1.5 lg:p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
                                 title="Delete"
@@ -812,7 +917,7 @@ const loadMedicines = async () => {
                 {displayedGridMedicines.map(medicine => {
                   const statusConfig = getStatusConfig(medicine.status);
                   const isExpired = isMedicineExpired(medicine.expiryDate);
-                  
+
                   return (
                     <div key={medicine.id} className={`bg-white rounded-xl border ${isExpired ? 'border-red-200' : 'border-gray-200'} p-4 lg:p-5 hover:shadow-lg transition-all duration-300`}>
                       <div className="flex justify-between items-start mb-4">
@@ -823,7 +928,7 @@ const loadMedicines = async () => {
                           {statusConfig.text}
                         </span>
                       </div>
-                      
+
                       <div className="space-y-2 lg:space-y-3 mb-4 lg:mb-6">
                         <div className="flex items-center gap-2">
                           <Package size={14} className="text-gray-400 flex-shrink-0" />
@@ -857,15 +962,15 @@ const loadMedicines = async () => {
                           </div>
                         )}
                       </div>
-                      
+
                       <div className="flex gap-2">
-                        <button 
+                        <button
                           onClick={() => handleEditMedicine(medicine)}
                           className="flex-1 py-2 lg:py-2.5 text-center border border-yellow-300 text-yellow-700 rounded-lg hover:bg-yellow-50 transition-colors duration-200 text-xs lg:text-sm"
                         >
                           Edit
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleViewMedicine(medicine)}
                           className="flex-1 py-2 lg:py-2.5 text-center border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200 text-xs lg:text-sm"
                         >
@@ -882,7 +987,7 @@ const loadMedicines = async () => {
                 <Package className="mx-auto text-gray-300 mb-4 lg:w-16 lg:h-16" size={48} />
                 <h3 className="text-lg lg:text-xl font-medium text-gray-900 mb-2">No medicines found</h3>
                 <p className="text-gray-600 mb-4 lg:mb-6 text-sm lg:text-base px-4">There are no medicines in this category. Add some medicines to get started.</p>
-                <button 
+                <button
                   onClick={() => {
                     resetForm();
                     setShowAddMedicineModal(true);
@@ -900,7 +1005,7 @@ const loadMedicines = async () => {
         {/* View All Button */}
         {!showAllMedicines && filteredMedicines.length > 4 && (
           <div className="text-center mb-8">
-            <button 
+            <button
               onClick={handleViewAllMedicines}
               className="text-blue-600 hover:text-blue-800 font-medium flex items-center justify-center gap-2 mx-auto hover:gap-3 transition-all duration-200"
             >
@@ -921,7 +1026,7 @@ const loadMedicines = async () => {
                   <h2 className="text-2xl font-bold text-gray-900">{selectedMedicine.name}</h2>
                   <p className="text-gray-600">{selectedMedicine.strength}</p>
                 </div>
-                <button 
+                <button
                   onClick={() => setShowMedicineModal(false)}
                   className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 >
@@ -929,7 +1034,7 @@ const loadMedicines = async () => {
                 </button>
               </div>
             </div>
-            
+
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -959,7 +1064,7 @@ const loadMedicines = async () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-3">Inventory</h3>
                   <div className="space-y-4">
@@ -978,11 +1083,11 @@ const loadMedicines = async () => {
                     <div>
                       <label className="text-sm text-gray-500">Expiry Date</label>
                       <p className="text-gray-900">
-                        {new Date(selectedMedicine.expiryDate).toLocaleDateString('en-US', { 
-                          weekday: 'long', 
-                          year: 'numeric', 
-                          month: 'long', 
-                          day: 'numeric' 
+                        {new Date(selectedMedicine.expiryDate).toLocaleDateString('en-US', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
                         })}
                       </p>
                       {isMedicineExpired(selectedMedicine.expiryDate) && (
@@ -997,7 +1102,7 @@ const loadMedicines = async () => {
                   </div>
                 </div>
               </div>
-              
+
               {selectedMedicine.requiresAttention && (
                 <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                   <div className="flex items-center gap-2">
@@ -1007,7 +1112,7 @@ const loadMedicines = async () => {
                   <p className="text-yellow-700 text-sm mt-1">{selectedMedicine.attentionText}</p>
                 </div>
               )}
-              
+
               <div className="mt-8 flex justify-end gap-3">
                 <button
                   onClick={() => setShowMedicineModal(false)}
