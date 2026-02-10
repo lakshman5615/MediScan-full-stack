@@ -6,10 +6,11 @@ exports.getAlerts = async (req, res) => {
     try {
         console.log(`\n🔍 GET /api/alerts called by user: ${req.user._id}`);
         
+        // 🔍 YAHAN FILTER: Sirf PENDING status aur showInUI = true wale alerts
         const alerts = await Alert.find({ 
             userId: req.user._id,
-            showInUI: true,
-            status: 'PENDING' // ✅ Only PENDING alerts
+            showInUI: true,  // ← NOTIFICATION SE ACTION LENE PAR YE FALSE HO JAYEGA
+            status: 'PENDING' // ← SIRF PENDING ALERTS
         })
         .populate('medicineId') // ✅ Medicine details populate karo
         .sort({ createdAt: -1 });
@@ -96,11 +97,30 @@ exports.handleAction = async (req, res) => {
     try {
         const { alertId, action } = req.body;
         
+        // 🔍 STEP 1: Validate action
+        console.log(`\n🎯 ACTION REQUEST:`);
+        console.log(`   Alert ID: ${alertId}`);
+        console.log(`   Action: ${action}`);
+        console.log(`   User: ${req.user._id}`);
+        
         if (!['TAKEN', 'MISSED', 'DISMISSED'].includes(action)) {
             return res.status(400).json({ success: false, error: 'Invalid action' });
         }
         
+        // 🔍 STEP 2: AlertService.handleAction() call - Yahan quantity -1 hoti hai
+        console.log(`📞 Calling AlertService.handleAction()...`);
         const alert = await AlertService.handleAction(alertId, action, req.user._id);
+        
+        if (!alert) {
+            console.log(`❌ Alert not found or already processed`);
+            return res.status(404).json({ success: false, error: 'Alert not found' });
+        }
+        
+        // 🔍 STEP 3: Response bhejo
+        console.log(`✅ Action completed:`);
+        console.log(`   Status: ${alert.status}`);
+        console.log(`   ShowInUI: ${alert.showInUI}`);
+        console.log(`   Resolved At: ${alert.resolvedAt}\n`);
         
         res.json({ 
             success: true, 
@@ -108,6 +128,7 @@ exports.handleAction = async (req, res) => {
             data: alert 
         });
     } catch (error) {
+        console.error('❌ handleAction error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 };
