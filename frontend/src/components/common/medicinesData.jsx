@@ -1,4 +1,12 @@
 // Common medicine data that can be used across components
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+const toStartOfDay = (value) => {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return new Date("Invalid");
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+};
+
 export const getTodayDate = () => {
   const today = new Date();
   return today.toISOString().split('T')[0];

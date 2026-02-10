@@ -131,18 +131,6 @@ export default function AppRoutes() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
 
-        {/* Dashboard Routes with Sidebar */}
-        <Route path="/dashboard" element={<DashboardLayout />}>
-          <Route index element={<Home />} />
-          <Route path="scan" element={<Scan />} />
-          <Route path="schedule" element={<Schedule />} />
-        </Route>
-
-        {/* Routes without common sidebar */}
-        <Route path="/dashboard/cabinet" element={<Cabinet />} />
-        <Route path="/dashboard/alerts" element={<Alerts />} />
-        <Route path="/dashboard/emergency" element={<Emergency />} />
-        
         {/* ================= DASHBOARD (PROTECTED) ================= */}
         <Route
           path="/dashboard"
@@ -156,6 +144,7 @@ export default function AppRoutes() {
           <Route path="scan" element={<Scan />} />
           <Route path="cabinet" element={<Cabinet />} />
           <Route path="alerts" element={<Alerts />} />
+          <Route path="emergency" element={<Emergency />} />
         </Route>
 
         {/* ================= BLANK LAYOUT ================= */}

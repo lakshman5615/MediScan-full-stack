@@ -127,11 +127,55 @@
 
 import { Menu, Search, Plus } from "lucide-react";
 import { useState } from "react";
-import NewEntryModal from "../dashboard/NewEntryModal";
+import EditMedicineModal from "../common/EditMedicineModal";
+import { addMedicine } from "../../services/medicine.service";
 
 
 export default function Navbar({ onMenuClick }) {
   const [openEntry, setOpenEntry] = useState(false); // ✅ ADD
+
+  const handleSaveMedicine = async (medicineData) => {
+    try {
+      const normalizedType =
+        medicineData.type === "Prescription" ? "OTC" : medicineData.type || "OTC";
+
+      const schedule = {
+        morning: {
+          enabled: !!medicineData.scheduleEnabled?.morning,
+          time: medicineData.schedule?.morning || "08:00",
+        },
+        afternoon: {
+          enabled: !!medicineData.scheduleEnabled?.afternoon,
+          time: medicineData.schedule?.afternoon || "13:00",
+        },
+        evening: {
+          enabled: !!medicineData.scheduleEnabled?.evening,
+          time: medicineData.schedule?.evening || "18:00",
+        },
+        night: {
+          enabled: !!medicineData.scheduleEnabled?.night,
+          time: medicineData.schedule?.night || "22:00",
+        },
+      };
+
+      await addMedicine({
+        name: medicineData.name,
+        brand: medicineData.brand || "",
+        medicineType: normalizedType,
+        dosage: medicineData.dosage || "",
+        totalQuantity: Number(medicineData.totalQuantity),
+        expiryDate: medicineData.expiryDate,
+        lowStockThreshold: medicineData.lowStockThreshold || 5,
+        schedule,
+      });
+
+      setOpenEntry(false);
+      alert(`${medicineData.name} added successfully!`);
+    } catch (error) {
+      console.error("Error saving medicine:", error);
+      alert("Failed to save medicine. Check console for details.");
+    }
+  };
 
   return (
     <>
@@ -143,7 +187,7 @@ export default function Navbar({ onMenuClick }) {
           <Menu size={22} />
         </button>
 
-        <div className="relative flex-1">
+        {/* <div className="relative flex-1">
           <Search
             size={16}
             className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
@@ -152,22 +196,39 @@ export default function Navbar({ onMenuClick }) {
             className="w-full pl-9 pr-3 py-2 rounded-xl bg-gray-50 border text-sm outline-none focus:ring-2 focus:ring-sky-500"
             placeholder="Search medicine..."
           />
-        </div>
+        </div> */}
+          <div className="flex-1">
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                          <input
+                            type="text"
+                            placeholder="Search your medicine cabinet (Name, Symptoms, Active ingredients...)"
+                            className="text-gray-400 w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400 transition-colors text-sm lg:text-base"
+                            // value={searchQuery}
+                            // onChange={(e) => setSearchQuery(e.target.value)}
+                          />
+                        </div>
+                      </div>
 
         {/* ✅ ONLY CHANGE HERE */}
         <button
           onClick={() => setOpenEntry(true)}
-          className="bg-sky-500 text-white px-4 py-2 rounded-xl hover:bg-sky-600 flex items-center gap-2"
-        >
+          // className="bg-sky-500 text-white px-4 py-2 rounded-xl hover:bg-sky-600 flex items-center gap-2"
+             className="flex items-center justify-center gap-2 px-3 lg:px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 hover:shadow-lg shadow-blue-200 flex-1 lg:flex-none text-sm lg:text-base"
+
+       >
           <Plus size={18} />
           <span className="hidden sm:block">Add Medicine</span>
         </button>
       </header>
 
       {/* ✅ MODAL */}
-      <NewEntryModal
+      <EditMedicineModal
+        medicine={null}
         isOpen={openEntry}
         onClose={() => setOpenEntry(false)}
+        onSave={handleSaveMedicine}
+        isEditing={false}
       />
     </>
   );
