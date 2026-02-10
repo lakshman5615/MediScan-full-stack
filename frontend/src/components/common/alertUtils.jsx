@@ -125,6 +125,7 @@ export const generateAlertsFromMedicines = (medicines) => {
 };
 
 export const getAlertStatusConfig = (status) => {
+  const key = (status || 'pending').toString().toLowerCase();
   const styles = {
     pending: { 
       bg: 'bg-yellow-50', 
@@ -148,7 +149,7 @@ export const getAlertStatusConfig = (status) => {
       label: 'Missed'
     }
   };
-  return styles[status] || styles.pending;
+  return styles[key] || styles.pending;
 };
 
 export const getExpiryStatusBadge = (days) => {
@@ -159,19 +160,19 @@ export const getExpiryStatusBadge = (days) => {
       border: 'border-red-200',
       label: 'EXPIRED'
     };
-  } else if (days <= 7) {
+  } else if (days <= 5) {
     return {
       bg: 'bg-orange-100',
       text: 'text-orange-800',
       border: 'border-orange-200',
-      label: 'CRITICAL'
+      label: 'EXPIRING'
     };
   } else if (days <= 30) {
     return {
       bg: 'bg-yellow-100',
       text: 'text-yellow-800',
       border: 'border-yellow-200',
-      label: 'WARNING'
+      label: 'UPCOMING'
     };
   } else {
     return {
@@ -184,7 +185,7 @@ export const getExpiryStatusBadge = (days) => {
 };
 
 export const getLowStockStatusBadge = (quantity) => {
-  if (quantity <= 3) {
+  if (quantity <= 2) {
     return {
       bg: 'bg-red-100',
       text: 'text-red-800',
@@ -216,11 +217,11 @@ export const getMedicineStatus = (medicine) => {
   if (daysUntilExpiry <= 0) {
     return 'expired';
   }
-  if (medicine.quantity <= 3) {
-    return 'low_stock';
-  }
-  if (medicine.quantity <= 10) {
+  if (daysUntilExpiry <= 5) {
     return 'expiring';
+  }
+  if (medicine.quantity <= 2) {
+    return 'low_stock';
   }
   if (medicine.quantity > 10) {
     return 'stocked';
