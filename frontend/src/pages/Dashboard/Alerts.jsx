@@ -243,7 +243,7 @@ const AlertsPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-2 lg:p-4">
       {/* Back Button */}
-      <div className="mb-4 lg:mb-6">
+      {/* <div className="mb-4 lg:mb-6">
         <NavLink 
           to="/dashboard"
           className="group inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl hover:bg-blue-50 hover:border-blue-200 transition-all duration-200 text-gray-700 hover:text-blue-600 shadow-sm hover:shadow-md text-sm lg:text-base font-medium"
@@ -251,7 +251,7 @@ const AlertsPage = () => {
           <ArrowLeft size={18} className="lg:w-5 lg:h-5 group-hover:-translate-x-0.5 transition-transform duration-200" />
           <span>Back to Home</span>
         </NavLink>
-      </div>
+      </div> */}
 
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-8">
