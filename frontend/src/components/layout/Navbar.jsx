@@ -125,14 +125,41 @@
 // }
 
 
-import { Menu, Search, Plus } from "lucide-react";
-import { useState } from "react";
+import { Menu, Search, Plus, Bell } from "lucide-react";
+import { useEffect, useState } from "react";
+import { NavLink } from "react-router-dom";
 import EditMedicineModal from "../common/EditMedicineModal";
 import { addMedicine } from "../../services/medicine.service";
+import { getAlerts } from "../../services/alertApi";
 
 
 export default function Navbar({ onMenuClick }) {
-  const [openEntry, setOpenEntry] = useState(false); // ✅ ADD
+  const [notificationCount, setNotificationCount] = useState(0);
+  const [openEntry, setOpenEntry] = useState(false);
+
+  useEffect(() => {
+    const loadNotificationCount = async () => {
+      try {
+        const res = await getAlerts();
+        const data = res?.data ?? res ?? { reminders: [], expiry: [], lowStock: [] };
+        const reminders = Array.isArray(data.reminders) ? data.reminders : [];
+        const expiry = Array.isArray(data.expiry) ? data.expiry : [];
+        const lowStock = Array.isArray(data.lowStock) ? data.lowStock : [];
+
+        const countPending = (items) =>
+          items.filter((alert) => !alert.status || alert.status === "PENDING").length;
+
+        const count =
+          countPending(reminders) + countPending(expiry) + countPending(lowStock);
+
+        setNotificationCount(count);
+      } catch (error) {
+        console.error("Failed to load notification count", error);
+      }
+    };
+
+    loadNotificationCount();
+  }, []);
 
   const handleSaveMedicine = async (medicineData) => {
     try {
@@ -210,16 +237,27 @@ export default function Navbar({ onMenuClick }) {
                         </div>
                       </div>
 
-        {/* ✅ ONLY CHANGE HERE */}
-        <button
-          onClick={() => setOpenEntry(true)}
-          // className="bg-sky-500 text-white px-4 py-2 rounded-xl hover:bg-sky-600 flex items-center gap-2"
-             className="flex items-center justify-center gap-2 px-3 lg:px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 hover:shadow-lg shadow-blue-200 flex-1 lg:flex-none text-sm lg:text-base"
-
-       >
-          <Plus size={18} />
-          <span className="hidden sm:block">Add Medicine</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setOpenEntry(true)}
+            // className="bg-sky-500 text-white px-4 py-2 rounded-xl hover:bg-sky-600 flex items-center gap-2"
+            className="flex items-center justify-center gap-2 px-3 lg:px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 hover:shadow-lg shadow-blue-200 text-sm lg:text-base"
+          >
+            <Plus size={18} />
+            <span className="hidden sm:block">Add Medicine</span>
+          </button>
+          <NavLink
+            to="/dashboard/alerts"
+            className="relative flex items-center justify-center w-10 h-10 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-all duration-200 hover:shadow-sm"
+          >
+            <Bell size={18} />
+            {notificationCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                {notificationCount}
+              </span>
+            )}
+          </NavLink>
+        </div>
       </header>
 
       {/* ✅ MODAL */}

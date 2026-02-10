@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { NavLink } from "react-router-dom";
-
 import { 
   AlertCircle, 
   Calendar, 
@@ -9,7 +7,6 @@ import {
   Trash2,
   Eye,
   Download,
-  Bell,
   History,
   Package,
   AlertTriangle,
@@ -49,8 +46,6 @@ import {
   isMedicineExpiringSoon,
   getDaysUntilExpiry
 } from "../../utils/medicineUtils";
-// ✅ Alert API import - Notification count ke liye
-import { getAlerts } from "../../services/alertApi";
 
 import EditMedicineModal from '../../components/common/EditMedicineModal';
 
@@ -65,7 +60,6 @@ const MedicineCabinet = () => {
   const [showAddMedicineModal, setShowAddMedicineModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingMedicineId, setEditingMedicineId] = useState(null);
-  const [notificationCount, setNotificationCount] = useState(0);
   const [showAllMedicines, setShowAllMedicines] = useState(false);
   
   // Load medicines from backend
@@ -182,7 +176,6 @@ const loadMedicines = async () => {
     });
 
     setMedicines(formatted);
-    await calculateNotificationCount(); // ✅ Backend se notification count load karo
   } catch (err) {
     console.error("Failed to load medicines", err);
     setMedicines([]);
@@ -190,29 +183,6 @@ const loadMedicines = async () => {
 };
 
 
-  // ✅ Calculate notification count from BACKEND API
-  const calculateNotificationCount = async () => {
-    try {
-      const res = await getAlerts();
-      const data = res?.data ?? res ?? { reminders: [], expiry: [], lowStock: [] };
-      const reminders = Array.isArray(data.reminders) ? data.reminders : [];
-      const expiry = Array.isArray(data.expiry) ? data.expiry : [];
-      const lowStock = Array.isArray(data.lowStock) ? data.lowStock : [];
-
-      const countPending = (items) =>
-        items.filter(a => !a.status || a.status === 'PENDING').length;
-
-      // Count pending reminders + pending expiry alerts + pending low stock alerts
-      const count =
-        countPending(reminders) +
-        countPending(expiry) +
-        countPending(lowStock);
-      
-      setNotificationCount(count);
-    } catch (err) {
-      console.error("Failed to load notification count", err);
-    }
-  };
 
   // Handle adding/editing medicine
   const handleSaveMedicine = async (medicineData) => {
@@ -512,19 +482,6 @@ const loadMedicines = async () => {
                 <span className="hidden sm:inline">All Medicines</span>
                 <span className="sm:hidden">All</span>
               </button>
-              {/* Notification Bell Button - Hidden on mobile (shown in mobile header) */}
-              <div className="relative hidden lg:block">
-                <NavLink to="/dashboard/alerts"
-                  className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all duration-200 hover:shadow-sm relative"
-                >
-                  <Bell size={18} />
-                  {notificationCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                      {notificationCount}
-                    </span>
-                  )}
-                </NavLink>
-              </div>
             </div>
           </div>
 
