@@ -284,7 +284,7 @@
 
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Mail, Lock, User, Calendar, Eye, EyeOff } from "lucide-react";
+import { Mail, Phone, Lock, User, Calendar, Eye, EyeOff } from "lucide-react";
 
 import AuthLayout from "../../components/layout/AuthLayout";
 import MediScanIcon from "../../components/common/MediScanIcon";
@@ -375,7 +375,7 @@ export default function Signup() {
       <form onSubmit={handleSubmit} className="space-y-3">
         <Input icon={User}  placeholder="User Name" value={name} onChange={(e) => setName(e.target.value)} />
         <Input icon={Mail} placeholder="Email " value={email} onChange={(e) => setEmail(e.target.value)} />
-        <Input icon={Mail} placeholder="Mobile " value={mobile} onChange={(e) => setMobile(e.target.value)} />
+        <Input icon={Phone} placeholder="Mobile " value={mobile} onChange={(e) => setMobile(e.target.value)} />
 
         <Input icon={Calendar} type="number" placeholder="Age" value={age} onChange={(e) => setAge(e.target.value)} />
         

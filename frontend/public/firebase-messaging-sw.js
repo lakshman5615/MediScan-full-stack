@@ -13,6 +13,37 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
+// Helper function to get auth token
+async function getAuthToken() {
+  try {
+    // Try to get from all open clients
+    const allClients = await clients.matchAll({ includeUncontrolled: true });
+    
+    for (const client of allClients) {
+      // Send message to client to get token
+      const response = await new Promise((resolve) => {
+        const channel = new MessageChannel();
+        channel.port1.onmessage = (event) => {
+          resolve(event.data);
+        };
+        client.postMessage({ type: 'GET_AUTH_TOKEN' }, [channel.port2]);
+        
+        // Timeout after 1 second
+        setTimeout(() => resolve(null), 1000);
+      });
+      
+      if (response?.token) {
+        return response.token;
+      }
+    }
+    
+    return null;
+  } catch (err) {
+    console.error('Error getting auth token:', err);
+    return null;
+  }
+}
+
 messaging.onBackgroundMessage((payload) => {
   console.log('📩 Background notification:', payload);
   
@@ -44,60 +75,85 @@ messaging.onBackgroundMessage((payload) => {
 self.addEventListener('notificationclick', async (event) => {
   console.log('\n👆 NOTIFICATION CLICKED:');
   console.log('   Action:', event.action);
+  console.log('   Notification data:', event.notification.data);
   console.log('   Alert ID:', event.notification.data?.alertId);
   
   event.notification.close();
   
   const alertId = event.notification.data?.alertId;
   const action = event.action || 'open';
+  const FRONTEND_URL = self.location.origin;
+
+  console.log('🔍 Processing action:', action);
+  console.log('🔍 Alert ID:', alertId);
+  console.log('🔍 Frontend URL:', FRONTEND_URL);
 
   // 🔍 STEP 1: User ne action button click kiya (taken/missed)
   if (action === 'taken' || action === 'missed') {
     console.log(`🎯 User clicked: ${action.toUpperCase()}`);
     
-    const token = localStorage.getItem('token');
-    if (token && alertId) {
-      // Auto-detect backend URL
-      const API_URL = self.location.origin.includes('localhost') 
-        ? 'http://localhost:5000'
-        : self.location.origin.replace('5173', '5000');
-      
-      console.log(`📤 Sending request to: ${API_URL}/api/alerts/action`);
-      console.log(`   Alert ID: ${alertId}`);
-      console.log(`   Action: ${action.toUpperCase()}`);
-      
-      // 🔍 STEP 2: Backend ko action bhejo - /api/alerts/action endpoint
-      fetch(`${API_URL}/api/alerts/action`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ alertId: alertId, action: action.toUpperCase() })
-      }).then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            console.log('✅ Action processed from notification:', action);
-            console.log('   Response:', data);
-            // 🔍 STEP 3: Backend ne alert.showInUI = false kar diya
-            // 🔍 STEP 4: Backend ne quantity -1 kar diya (agar TAKEN tha)
-            // 🔍 STEP 5: Alert UI automatically refresh hoga aur alert hat jayega
-            console.log('✅ Alert will disappear from UI on next refresh\n');
-          } else {
-            console.error('❌ Action failed:', data.error);
-          }
-        })
-        .catch(err => {
-          console.error('❌ Fetch error:', err);
-        });
-    } else {
-      console.log('⚠️ Missing token or alertId');
+    if (!alertId) {
+      console.error('❌ No alertId found in notification data!');
+      console.log('Available data:', event.notification.data);
+      return;
     }
+    
+    // 🔍 STEP 2: Process action in background via API
+    console.log(`📤 Processing ${action} action in background...`);
+    
+    event.waitUntil(
+      (async () => {
+        try {
+          // Get auth token from IndexedDB or localStorage
+          const token = await getAuthToken();
+          
+          if (!token) {
+            console.error('❌ No auth token found');
+            return;
+          }
+          
+          // Call backend API to process action
+          const response = await fetch(`${FRONTEND_URL}/api/alerts/${alertId}/action`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ action: action.toUpperCase() })
+          });
+          
+          if (response.ok) {
+            console.log(`✅ Action ${action} processed successfully`);
+            // Show success notification
+            self.registration.showNotification('✅ Success', {
+              body: `Medicine marked as ${action}`,
+              icon: '/logo.png',
+              tag: 'action-success',
+              requireInteraction: false
+            });
+          } else {
+            console.error('❌ Failed to process action:', response.status);
+          }
+        } catch (err) {
+          console.error('❌ Error processing action:', err);
+        }
+      })()
+    );
   } else {
     // User ne notification body click kiya (action button nahi)
-    console.log('🏠 Opening app...');
-    const FRONTEND_URL = self.location.origin;
-    event.waitUntil(clients.openWindow(FRONTEND_URL));
+    console.log('🏠 Opening alerts page (body clicked)...');
+    event.waitUntil(
+      clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
+        for (let client of windowClients) {
+          if (client.url.includes('/dashboard/alerts') && 'focus' in client) {
+            return client.focus();
+          }
+        }
+        if (clients.openWindow) {
+          return clients.openWindow(`${FRONTEND_URL}/dashboard/alerts`);
+        }
+      })
+    );
   }
 });
 

@@ -16,6 +16,10 @@ exports.addMedicine = async (req, res) => {
             schedule 
         } = req.body;
 
+        console.log('🔍 ADD MEDICINE REQUEST:');
+        console.log('   totalQuantity from frontend:', totalQuantity, typeof totalQuantity);
+        console.log('   lowStockThreshold from frontend:', lowStockThreshold, typeof lowStockThreshold);
+
         // Validation
         if (!name || !medicineType || !totalQuantity || !expiryDate) {
             return res.status(400).json({ 
@@ -31,9 +35,9 @@ exports.addMedicine = async (req, res) => {
             medicineType,
             dosage: dosage || '',
             totalQuantity,
-            remainingQuantity: totalQuantity, // Initially same as total
+            remainingQuantity: totalQuantity,
             expiryDate: new Date(expiryDate),
-            lowStockThreshold: lowStockThreshold || 5,
+            lowStockThreshold: lowStockThreshold || 2,
             schedule: schedule || {
                 morning: { enabled: false, time: '08:00' },
                 afternoon: { enabled: false, time: '13:00' },
@@ -42,9 +46,21 @@ exports.addMedicine = async (req, res) => {
             }
         });
 
+        console.log('💾 Saving medicine with:');
+        console.log('   totalQuantity:', medicine.totalQuantity);
+        console.log('   remainingQuantity:', medicine.remainingQuantity);
+        console.log('   lowStockThreshold:', medicine.lowStockThreshold);
+
         await medicine.save();
+        
+        console.log('✅ Medicine saved to DB:');
+        console.log('   totalQuantity:', medicine.totalQuantity);
+        console.log('   remainingQuantity:', medicine.remainingQuantity);
+        console.log('   lowStockThreshold:', medicine.lowStockThreshold);
+        
         res.status(201).json({ success: true, data: medicine });
     } catch (error) {
+        console.error('❌ Add medicine error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 };
@@ -136,15 +152,35 @@ exports.updateMedicine = async (req, res) => {
         if (medicineType) medicine.medicineType = medicineType;
         if (dosage !== undefined) medicine.dosage = dosage;
         if (totalQuantity !== undefined) {
+            const oldTotal = medicine.totalQuantity;
+            const oldRemaining = medicine.remainingQuantity;
             medicine.totalQuantity = totalQuantity;
-            // ✅ Always sync remainingQuantity when totalQuantity changes
-            medicine.remainingQuantity = totalQuantity;
+            // If increasing total, add difference to remaining
+            if (totalQuantity > oldTotal) {
+                medicine.remainingQuantity = oldRemaining + (totalQuantity - oldTotal);
+            } else {
+                // If decreasing, set remaining = new total
+                medicine.remainingQuantity = totalQuantity;
+            }
         }
         if (expiryDate) medicine.expiryDate = new Date(expiryDate);
         if (lowStockThreshold !== undefined) medicine.lowStockThreshold = lowStockThreshold;
-        if (schedule) medicine.schedule = { ...medicine.schedule, ...schedule };
+        if (schedule) {
+            medicine.schedule = { ...medicine.schedule, ...schedule };
+            console.log(`🕒 Updated schedule for ${medicine.name}:`, JSON.stringify(medicine.schedule, null, 2));
+        }
 
         await medicine.save();
+        
+        // 🗑️ Delete ALL alerts for this medicine today (including uniqueKey)
+        const Alert = require('../models/Alert');
+        const today = new Date().toISOString().split('T')[0];
+        const deleted = await Alert.deleteMany({
+            medicineId: medicine._id,
+            createdAt: { $gte: new Date(today) }
+        });
+        console.log(`🧹 Deleted ${deleted.deletedCount} alerts for ${medicine.name} after update`);
+        
         res.json({ success: true, data: medicine });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });

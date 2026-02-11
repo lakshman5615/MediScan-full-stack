@@ -119,6 +119,8 @@ export default function TodaySchedule() {
     };
 
     fetchTodaySchedule();
+    const interval = setInterval(fetchTodaySchedule, 1000);
+    return () => clearInterval(interval);
   }, []);
 
   if (loading) {

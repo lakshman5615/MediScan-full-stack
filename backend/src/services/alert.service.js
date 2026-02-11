@@ -20,11 +20,16 @@ class AlertService {
       return existing;
     }
 
-    // 🔍 CHECK: Medicine abhi abhi create hui hai? (last 2 minutes me)
+    // 🔍 CHECK: Medicine abhi abhi create hui hai? (last 30 seconds me)
+    // ⚠️ ONLY for NEW medicines - not for UPDATED medicines
     const medicineAge = Date.now() - new Date(medicine.createdAt).getTime();
-    const twoMinutes = 2 * 60 * 1000;
+    const updateAge = Date.now() - new Date(medicine.updatedAt).getTime();
+    const twoMinutes = 2 * 60 * 1000; // 2 minutes protection
     
-    if (medicineAge < twoMinutes) {
+    // Skip only if medicine is NEW (createdAt = updatedAt) and just created
+    const isNewMedicine = Math.abs(new Date(medicine.createdAt) - new Date(medicine.updatedAt)) < 1000;
+    
+    if (isNewMedicine && medicineAge < twoMinutes) {
       console.log(`⏭️ Medicine ${medicine.name} was just created (${Math.floor(medicineAge/1000)}s ago) - Skipping first reminder`);
       return null;
     }
@@ -188,7 +193,7 @@ class AlertService {
     if (alert.type === 'REMINDER') {
       console.log(`💊 REMINDER type - Checking dose history...`);
       
-      // Check if dose history already exists for today
+      // Check if dose history already exists for this specific scheduledTime today
       const existingDose = await DoseHistory.findOne({
         userId,
         medicineId: alert.medicineId,
@@ -226,7 +231,7 @@ class AlertService {
           console.log(`⏭️ Action is MISSED - No quantity change`);
         }
       } else {
-        console.log(`⏭️ Dose history already exists for ${alert.medicineName} today`);
+        console.log(`⏭️ Dose history already exists for ${alert.medicineName} (${alert.meta.scheduledTime}) today`);
         console.log(`⚠️ SKIPPING - No quantity change\n`);
       }
     }

@@ -36,15 +36,11 @@ export default function App() {
       setupForegroundListener();
       console.log('✅ FCM foreground listener setup');
       
-      // Send auth token to service worker
-      navigator.serviceWorker.ready.then((registration) => {
-        const token = localStorage.getItem('token');
-        if (token && registration.active) {
-          registration.active.postMessage({
-            type: 'SET_TOKEN',
-            token: token
-          });
-          console.log('✅ Auth token sent to service worker');
+      // Listen for token requests from service worker
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data?.type === 'GET_AUTH_TOKEN') {
+          const token = localStorage.getItem('token');
+          event.ports[0].postMessage({ token });
         }
       });
     }

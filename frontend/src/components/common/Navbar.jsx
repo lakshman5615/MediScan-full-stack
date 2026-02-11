@@ -73,7 +73,9 @@ const Navbar = () => {
           <img
             src={logo}
             alt="MediScan Logo"
-            className="w-10 h-10 md:w-14 md:h-14 object-contain"
+            // className="w-10 h-10 md:w-14 md:h-14 object-contain"
+            className="h-10 md:h-12 lg:h-14 w-auto object-contain"
+
           />
         </div>
 

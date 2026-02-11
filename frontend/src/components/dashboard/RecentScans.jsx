@@ -209,6 +209,8 @@ export default function RecentScans() {
     };
 
     fetchScans();
+    const interval = setInterval(fetchScans, 1000);
+    return () => clearInterval(interval);
   }, []);
 
 
