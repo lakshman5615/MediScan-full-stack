@@ -231,7 +231,7 @@ export default function Sidebar({ open, setOpen }) {
             { to: "/dashboard", icon: Home, label: "Home" },
             { to: "/dashboard/cabinet", icon: Archive, label: "Cabinet" },
             // { to: "/dashboard/schedule", icon: Calendar, label: "Schedule" },
-            { to: "/dashboard/alerts", icon: Bell, label: "Alerts" },
+            // { to: "/dashboard/alerts", icon: Bell, label: "Alerts" },
           ].map(({ to, icon: Icon, label }) => (
             <NavLink
               key={label}
