@@ -53,19 +53,21 @@ messaging.onBackgroundMessage((payload) => {
   
   const options = {
     body: body,
-    icon: '/logo.png',
-    badge: '/badge.png',
+    icon: '/icon-192.png',
+    badge: '/icon-192.png',
     data: payload.data,
     requireInteraction: true,
     tag: payload.data?.alertId || 'alert',
-    vibrate: [200, 100, 200]
+    vibrate: [200, 100, 200, 100, 200],
+    silent: false,
+    renotify: true
   };
 
   // ✅ Add action buttons for REMINDER type
   if (showActions) {
     options.actions = [
-      { action: 'taken', title: '✅ Confirm Taken' },
-      { action: 'missed', title: '⏭️ Mark Missed' }
+      { action: 'taken', title: '✅ Confirm Taken', icon: '/icon-192.png' },
+      { action: 'missed', title: '⏭️ Mark Missed', icon: '/icon-192.png' }
     ];
   }
 
@@ -124,12 +126,14 @@ self.addEventListener('notificationclick', async (event) => {
           
           if (response.ok) {
             console.log(`✅ Action ${action} processed successfully`);
-            // Show success notification
+            // Show success notification with vibration
             self.registration.showNotification('✅ Success', {
               body: `Medicine marked as ${action}`,
-              icon: '/logo.png',
+              icon: '/icon-192.png',
+              badge: '/icon-192.png',
               tag: 'action-success',
-              requireInteraction: false
+              requireInteraction: false,
+              vibrate: [100, 50, 100]
             });
           } else {
             console.error('❌ Failed to process action:', response.status);
