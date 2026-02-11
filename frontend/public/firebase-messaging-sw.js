@@ -13,6 +13,37 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
+// Helper function to get auth token
+async function getAuthToken() {
+  try {
+    // Try to get from all open clients
+    const allClients = await clients.matchAll({ includeUncontrolled: true });
+    
+    for (const client of allClients) {
+      // Send message to client to get token
+      const response = await new Promise((resolve) => {
+        const channel = new MessageChannel();
+        channel.port1.onmessage = (event) => {
+          resolve(event.data);
+        };
+        client.postMessage({ type: 'GET_AUTH_TOKEN' }, [channel.port2]);
+        
+        // Timeout after 1 second
+        setTimeout(() => resolve(null), 1000);
+      });
+      
+      if (response?.token) {
+        return response.token;
+      }
+    }
+    
+    return null;
+  } catch (err) {
+    console.error('Error getting auth token:', err);
+    return null;
+  }
+}
+
 messaging.onBackgroundMessage((payload) => {
   console.log('📩 Background notification:', payload);
   
@@ -67,32 +98,46 @@ self.addEventListener('notificationclick', async (event) => {
       return;
     }
     
-    // 🔍 STEP 2: Open alerts page with action data in URL
-    const alertsUrl = `${FRONTEND_URL}/dashboard/alerts?action=${action}&alertId=${alertId}`;
-    console.log(`📤 Opening alerts page with action: ${alertsUrl}`);
+    // 🔍 STEP 2: Process action in background via API
+    console.log(`📤 Processing ${action} action in background...`);
     
     event.waitUntil(
-      clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
-        console.log(`🔍 Found ${windowClients.length} open windows`);
-        
-        // Check if any window is already open
-        for (let client of windowClients) {
-          console.log(`🔍 Checking window: ${client.url}`);
-          if (client.url.includes('/dashboard') && 'focus' in client) {
-            console.log('✅ Focusing existing window and navigating...');
-            client.focus();
-            return client.navigate(alertsUrl);
+      (async () => {
+        try {
+          // Get auth token from IndexedDB or localStorage
+          const token = await getAuthToken();
+          
+          if (!token) {
+            console.error('❌ No auth token found');
+            return;
           }
+          
+          // Call backend API to process action
+          const response = await fetch(`${FRONTEND_URL}/api/alerts/${alertId}/action`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ action: action.toUpperCase() })
+          });
+          
+          if (response.ok) {
+            console.log(`✅ Action ${action} processed successfully`);
+            // Show success notification
+            self.registration.showNotification('✅ Success', {
+              body: `Medicine marked as ${action}`,
+              icon: '/logo.png',
+              tag: 'action-success',
+              requireInteraction: false
+            });
+          } else {
+            console.error('❌ Failed to process action:', response.status);
+          }
+        } catch (err) {
+          console.error('❌ Error processing action:', err);
         }
-        
-        // If no window open, open new one
-        console.log('🆕 Opening new window...');
-        if (clients.openWindow) {
-          return clients.openWindow(alertsUrl);
-        }
-      }).catch(err => {
-        console.error('❌ Error opening window:', err);
-      })
+      })()
     );
   } else {
     // User ne notification body click kiya (action button nahi)

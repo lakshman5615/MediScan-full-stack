@@ -152,8 +152,16 @@ exports.updateMedicine = async (req, res) => {
         if (medicineType) medicine.medicineType = medicineType;
         if (dosage !== undefined) medicine.dosage = dosage;
         if (totalQuantity !== undefined) {
+            const oldTotal = medicine.totalQuantity;
+            const oldRemaining = medicine.remainingQuantity;
             medicine.totalQuantity = totalQuantity;
-            medicine.remainingQuantity = totalQuantity;
+            // If increasing total, add difference to remaining
+            if (totalQuantity > oldTotal) {
+                medicine.remainingQuantity = oldRemaining + (totalQuantity - oldTotal);
+            } else {
+                // If decreasing, set remaining = new total
+                medicine.remainingQuantity = totalQuantity;
+            }
         }
         if (expiryDate) medicine.expiryDate = new Date(expiryDate);
         if (lowStockThreshold !== undefined) medicine.lowStockThreshold = lowStockThreshold;
