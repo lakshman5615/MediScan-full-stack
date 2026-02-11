@@ -109,6 +109,12 @@ const MedicineCabinet = () => {
 
   useEffect(() => {
     loadMedicines();
+    
+    const interval = setInterval(() => {
+      loadMedicines();
+    }, 1000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   // const loadMedicines = async () => {

@@ -114,7 +114,6 @@ export default function ExpiryCard() {
     const fetchCount = async () => {
       try {
         const res = await getExpirySoonCount();
-        // setCount(res.count);
         setCount(res.expiresSoonCount);
       } catch (err) {
         console.error("Expiry count error", err);
@@ -122,6 +121,8 @@ export default function ExpiryCard() {
     };
 
     fetchCount();
+    const interval = setInterval(fetchCount, 1000);
+    return () => clearInterval(interval);
   }, []);
 
   return (
