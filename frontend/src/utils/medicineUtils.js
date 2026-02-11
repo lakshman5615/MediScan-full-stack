@@ -26,7 +26,7 @@ export const isMedicineExpiringSoon = (expiryDate, thresholdDays = 5) => {
 
 export const getMedicineStatus = (medicine) => {
   if (isMedicineExpired(medicine.expiryDate)) return "expired";
-  if (isMedicineExpiringSoon(medicine.expiryDate)) return "expiring";
+  if (isMedicineExpiringSoon(medicine.expiryDate, 5)) return "expiring";
   if (medicine.quantity === 0) return "out_of_stock";
   if (medicine.quantity <= 2) return "low_stock";
   return "high_stock";

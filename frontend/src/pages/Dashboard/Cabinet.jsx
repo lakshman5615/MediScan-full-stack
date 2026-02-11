@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useOutletContext } from "react-router-dom";
 import { Hourglass } from "lucide-react";
 
 import { 
@@ -44,6 +45,7 @@ import {
 import {
   getStatusConfig,
   isMedicineExpired,
+  isMedicineExpiringSoon,
   getMedicineStatus
 } from "../../utils/medicineUtils";
 
@@ -61,6 +63,7 @@ const MedicineCabinet = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editingMedicineId, setEditingMedicineId] = useState(null);
   const [showAllMedicines, setShowAllMedicines] = useState(false);
+  const { searchQuery = "" } = useOutletContext() || {};
 
   // Load medicines from backend
   // useEffect(() => {
@@ -269,9 +272,12 @@ const MedicineCabinet = () => {
 
         console.log('✅ Medicine added, reloading list...');
         await loadMedicines(); // ✅ DB se fresh data load
+<<<<<<< HEAD
         
         resetForm();
         alert(`${medicineData.name} added successfully!`);
+=======
+>>>>>>> 1c78f4dca77f97c3cdbd8b648a5394654eacc055
       }
     } catch (error) {
       console.error('Error saving medicine:', error);
@@ -399,11 +405,24 @@ const MedicineCabinet = () => {
   };
 
   const filteredMedicines = medicines.filter(medicine => {
-    const matchesSearch = true;
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+    const matchesSearch =
+      normalizedQuery.length === 0 ||
+      [medicine.name, medicine.brand, medicine.type, medicine.strength]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(normalizedQuery));
     
     if (selectedFilter === 'all') return matchesSearch;
-    if (selectedFilter === 'low_stock') return matchesSearch && medicine.quantity <= 2;
-    if (selectedFilter === 'expiring') return matchesSearch && isMedicineExpired(medicine.expiryDate);
+    if (selectedFilter === 'low_stock') {
+      return matchesSearch && medicine.quantity <= 2;
+    }
+    if (selectedFilter === 'expiring') {
+      return (
+        matchesSearch &&
+        (isMedicineExpired(medicine.expiryDate) ||
+          isMedicineExpiringSoon(medicine.expiryDate, 5))
+      );
+    }
     if (selectedFilter === 'prescription') return matchesSearch && medicine.quantity > 2;
     return matchesSearch;
   });
@@ -417,7 +436,11 @@ const MedicineCabinet = () => {
 
   const medicinesRequiringAttention = medicines.filter(m => m.requiresAttention).length;
   const lowStockCount = medicines.filter(m => m.quantity <= 2).length;
-  const expiringSoonCount = medicines.filter(m => isMedicineExpired(m.expiryDate)).length;
+  const expiringSoonCount = medicines.filter(
+    m =>
+      isMedicineExpired(m.expiryDate) ||
+      isMedicineExpiringSoon(m.expiryDate, 5)
+  ).length;
   const prescriptionCount = medicines.filter(m => m.quantity > 2).length;
 
   const handleViewMedicine = (medicine) => {
@@ -498,7 +521,7 @@ const MedicineCabinet = () => {
           </div>
 
           {/* Filters */}
-          <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6 shadow-sm">
+          {/* <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6 shadow-sm">
             <div className="flex flex-wrap gap-3">
               <button 
                 onClick={() => {
@@ -537,7 +560,7 @@ const MedicineCabinet = () => {
                 </span>
               </button>
             </div>
-          </div>
+          </div> */}
         </div>
 
 
@@ -547,10 +570,10 @@ const MedicineCabinet = () => {
             Quick Filters
           </h2>
 
-          {/* RESPONSIVE ROW */}
+         
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 
-            {/* LOW STOCK */}
+           
             <div
               onClick={() => {
                 setSelectedFilter("low_stock");
@@ -578,7 +601,7 @@ const MedicineCabinet = () => {
               </span>
             </div>
 
-            {/* EXPIRING */}
+           
             <div
               onClick={() => {
                 setSelectedFilter("expiring");
@@ -606,7 +629,6 @@ const MedicineCabinet = () => {
               </span>
             </div>
 
-            {/* HIGH STOCK */}
             <div
               onClick={() => {
                 setSelectedFilter("prescription");
