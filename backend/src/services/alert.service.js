@@ -24,12 +24,12 @@ class AlertService {
     // ⚠️ ONLY for NEW medicines - not for UPDATED medicines
     const medicineAge = Date.now() - new Date(medicine.createdAt).getTime();
     const updateAge = Date.now() - new Date(medicine.updatedAt).getTime();
-    const twoMinutes = 2 * 60 * 1000; // 2 minutes protection
+    const thirtySeconds = 30 * 1000; // 30 seconds protection
     
     // Skip only if medicine is NEW (createdAt = updatedAt) and just created
     const isNewMedicine = Math.abs(new Date(medicine.createdAt) - new Date(medicine.updatedAt)) < 1000;
     
-    if (isNewMedicine && medicineAge < twoMinutes) {
+    if (isNewMedicine && medicineAge < thirtySeconds) {
       console.log(`⏭️ Medicine ${medicine.name} was just created (${Math.floor(medicineAge/1000)}s ago) - Skipping first reminder`);
       return null;
     }

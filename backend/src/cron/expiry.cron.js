@@ -8,7 +8,7 @@ cron.schedule('0 9 * * *', async () => {
         console.log('📅 Checking medicine expiry dates...');
         
         const today = new Date();
-        const sevenDaysFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+        const sevenDaysFromNow = new Date(today.getTime() + 5 * 24 * 60 * 60 * 1000);
         
         // Find medicines expiring within 7 days
         const expiringSoonMedicines = await Medicine.find({
