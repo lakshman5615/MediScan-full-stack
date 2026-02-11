@@ -101,7 +101,7 @@
 
 
 
-
+import logo from "../../assets/images/logo.png";
 import { getProfile } from "../../services/authApi";
 import { useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
@@ -184,7 +184,7 @@ export default function Sidebar({ open, setOpen }) {
         `}
       >
         {/* Header */}
-        <div className="h-16 flex items-center px-4">
+        {/* <div className="h-16 flex items-center px-4">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-sky-500  rounded-lg flex items-center justify-center">
               <Pill className="text-white" size={20} />
@@ -194,6 +194,24 @@ export default function Sidebar({ open, setOpen }) {
               Mediscan
             </h1>
           </div>
+        </div> */}
+
+        {/* Logo */}
+        <div className="flex items-center pt-2 pl-3 cursor-pointer"
+          onClick={() => {
+            navigate("/");     // 👈 landing page
+            setOpen(false);    // 👈 mobile sidebar close (optional but good UX)
+          }}
+        >
+
+
+          <img
+            src={logo}
+            alt="MediScan Logo"
+            // className="w-10 h-10 md:w-14 md:h-14 object-contain"
+            className="h-9 md:h-11 lg:h-13 w-auto object-contain"
+
+          />
         </div>
 
         {/* <div className="flex items-center gap-3 mb-5">
@@ -208,7 +226,7 @@ export default function Sidebar({ open, setOpen }) {
         </div> */}
 
         {/* MENU */}
-        <nav className=" lexend  p-3 space-y-1 flex-1">
+        <nav className=" lexend  p-3 space-y-1 flex-1 pt-4">
           {[
             { to: "/dashboard", icon: Home, label: "Home" },
             { to: "/dashboard/cabinet", icon: Archive, label: "Cabinet" },
