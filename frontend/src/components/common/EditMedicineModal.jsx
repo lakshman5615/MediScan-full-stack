@@ -288,15 +288,15 @@ const EditMedicineModal = ({
                     value={newMedicine.dosage}
                     onChange={handleInputChange}
                     placeholder="e.g., 500mg or 1 tablet"
-                    className="w-full px-4 py-3.5 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400 transition-all duration-200 text-gray-900 placeholder-gray-400"
+                    className="w-full px-4 py-3.5 bg-white border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400 transition-all duration-200 text-gray-900 placeholder-gray-400"
                   />
                 </div>
 
                 {/* Total Quantity */}
                 <div>
-                  <label className=" text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                  <label className=" text-sm font-semibold text-gray-900 mb-2  gap-2">
                     Total Quantity
-                    <span className="text-red-500 text-lg">*</span>
+                    <span className="text-red-500 text-sm font-normal">*</span>
                   </label>
                   <input
                     type="number"
@@ -305,41 +305,12 @@ const EditMedicineModal = ({
                     onChange={handleInputChange}
                     placeholder="Enter quantity"
                     min="1"
-                    className="w-full px-4 py-3.5 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400 transition-all duration-200 text-gray-900 placeholder-gray-400"
+                    className="w-full px-4 py-3.5 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400 transition-all duration-200 text-gray-900 placeholder-gray-400 "
                     required
                   />
                 </div>
 
-                {/* Lot Number */}
-                {/* <div>
-                  <label className="text-sm font-semibold text-gray-900 mb-2">
-                    Lot Number <span className="text-gray-500 text-sm font-normal">(Optional)</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="lotNumber"
-                    value={newMedicine.lotNumber}
-                    onChange={handleInputChange}
-                    placeholder="Enter lot number"
-                    className="w-full px-4 py-3.5 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400 transition-all duration-200 text-gray-900 placeholder-gray-400"
-                  />
-                </div> */}
 
-                {/* Daily Doses */}
-                <div>
-                  <label className="text-sm font-semibold text-gray-900 mb-2">
-                    Daily Doses <span className="text-gray-500 text-sm font-normal">(Optional)</span>
-                  </label>
-                  <input
-                    type="number"
-                    name="dailyDoses"
-                    value={newMedicine.dailyDoses}
-                    onChange={handleInputChange}
-                    placeholder="e.g., 2"
-                    min="1"
-                    className="w-full px-4 py-3.5 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400 transition-all duration-200 text-gray-900 placeholder-gray-400"
-                  />
-                </div>
               </div>
               
               {/* Expiry Date */}
@@ -409,7 +380,7 @@ const EditMedicineModal = ({
                       <span className="font-semibold">Tip:</span> Enable and set times for each dose. Disabled doses won't trigger reminders.
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
-                      All times are in 24-hour format. Reminders will be sent 15 minutes before each scheduled dose.
+                      All times are in 24-hour format. Reminders will be sent on time scheduled dose.
                     </p>
                   </div>
                 </div>

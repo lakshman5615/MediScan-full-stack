@@ -67,7 +67,7 @@
 
 
 import { Menu, Search, Plus, Bell } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import EditMedicineModal from "../common/EditMedicineModal";
 import { addMedicine } from "../../services/medicine.service";
@@ -78,29 +78,46 @@ export default function Navbar({ onMenuClick, searchQuery, onSearchChange }) {
   const [notificationCount, setNotificationCount] = useState(0);
   const [openEntry, setOpenEntry] = useState(false);
 
+  const loadNotificationCount = useCallback(async () => {
+    try {
+      const res = await getAlerts();
+      const data = res?.data ?? res ?? { reminders: [], expiry: [], lowStock: [] };
+      const reminders = Array.isArray(data.reminders) ? data.reminders : [];
+      const expiry = Array.isArray(data.expiry) ? data.expiry : [];
+      const lowStock = Array.isArray(data.lowStock) ? data.lowStock : [];
+
+      const countPending = (items) =>
+        items.filter((alert) => !alert.status || alert.status === "PENDING").length;
+
+      const count =
+        countPending(reminders) + countPending(expiry) + countPending(lowStock);
+
+      setNotificationCount(count);
+    } catch (error) {
+      console.error("Failed to load notification count", error);
+    }
+  }, []);
+
   useEffect(() => {
-    const loadNotificationCount = async () => {
-      try {
-        const res = await getAlerts();
-        const data = res?.data ?? res ?? { reminders: [], expiry: [], lowStock: [] };
-        const reminders = Array.isArray(data.reminders) ? data.reminders : [];
-        const expiry = Array.isArray(data.expiry) ? data.expiry : [];
-        const lowStock = Array.isArray(data.lowStock) ? data.lowStock : [];
+    loadNotificationCount();
 
-        const countPending = (items) =>
-          items.filter((alert) => !alert.status || alert.status === "PENDING").length;
-
-        const count =
-          countPending(reminders) + countPending(expiry) + countPending(lowStock);
-
-        setNotificationCount(count);
-      } catch (error) {
-        console.error("Failed to load notification count", error);
+    const intervalId = setInterval(loadNotificationCount, 10000);
+    const handleMedicinesUpdated = () => loadNotificationCount();
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        loadNotificationCount();
       }
     };
 
-    loadNotificationCount();
-  }, []);
+    window.addEventListener("medicines:updated", handleMedicinesUpdated);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener("medicines:updated", handleMedicinesUpdated);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [loadNotificationCount]);
 
   const handleSaveMedicine = async (medicineData) => {
     try {
@@ -137,6 +154,8 @@ export default function Navbar({ onMenuClick, searchQuery, onSearchChange }) {
         schedule,
       });
 
+      window.dispatchEvent(new Event("medicines:updated"));
+      await loadNotificationCount();
       setOpenEntry(false);
     } catch (error) {
       console.error("Error saving medicine:", error);

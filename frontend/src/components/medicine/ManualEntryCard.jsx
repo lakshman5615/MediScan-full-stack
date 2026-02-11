@@ -189,7 +189,7 @@ export default function ManualEntryCard({ mode }) {
         className="cursor-pointer rounded-2xl bg-white p-6 hover:shadow-xl transition"
       >
         <Edit3 size={30} className="text-emerald-600 mb-4" />
-        <h3 className="font-semibold text-lg">Add Manually</h3>
+        <h3 className="font-semibold text-lg">Type Medicine</h3>
         <p className="text-sm text-slate-500">Search medicine by name</p>
       </div>
 

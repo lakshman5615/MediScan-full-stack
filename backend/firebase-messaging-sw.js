@@ -13,6 +13,7 @@ const firebaseConfig = {
   appId: "1:1094554203665:web:7b8d495c93d08416e8a3b0"
 };
 
+const API_URL = self.location.origin;
 firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging();
 
@@ -88,7 +89,8 @@ async function handleMedicineAction(medicineId, action) {
       return;
     }
     
-    const response = await fetch(`http://localhost:5000/api/medicine-action/${action}/${medicineId}`, {
+const response = await fetch(`${API_URL}/api/medicine-action/${action}/${medicineId}`, {
+
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
