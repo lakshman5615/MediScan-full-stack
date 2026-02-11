@@ -51,7 +51,7 @@
 //     iconBg: "bg-teal-500",
 //   },
 // ];
-   
+
 
 
 
@@ -128,7 +128,7 @@ import {
 const features = [
   {
     title: "Smart Scanning",
-    desc: "Instantly scan medicine packages using your phone camera with high accuracy.",
+    desc: "Instantly scan medicine packages using your phone camera with  accuracy.",
     icon: <FaCamera />,
     bg: "bg-blue-50",
     iconBg: "bg-blue-500",
