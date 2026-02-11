@@ -108,16 +108,6 @@ const MedicineCabinet = () => {
 
 
   const loadMedicines = useCallback(async () => {
-  useEffect(() => {
-    loadMedicines();
-    
-    const interval = setInterval(() => {
-      loadMedicines();
-    }, 1000);
-    
-    return () => clearInterval(interval);
-  }, []);
-
   // const loadMedicines = async () => {
   //   try {
   //     const res = await getMedicines();
@@ -139,12 +129,19 @@ const MedicineCabinet = () => {
   //     console.error("Failed to load medicines", err);
   //   }
   // };
-  const loadMedicines = async () => {
     try {
       const res = await getMedicines();
 
       // 🔥 SAFE extraction
-      const medicinesArray = res?.data || res?.medicines || [];
+      const medicinesArray = Array.isArray(res?.data)
+        ? res.data
+        : Array.isArray(res?.data?.medicines)
+          ? res.data.medicines
+          : Array.isArray(res?.data?.data)
+            ? res.data.data
+            : Array.isArray(res?.medicines)
+              ? res.medicines
+              : [];
 
       if (!Array.isArray(medicinesArray)) {
         console.error("Medicines is not an array", res);
@@ -162,7 +159,7 @@ const MedicineCabinet = () => {
         };
 
         return {
-          id: med._id,
+          id: med._id || med.id,
           name: med.name || med.medicineName,
           brand: med.brand || "",
           type: med.medicineType || med.type,
