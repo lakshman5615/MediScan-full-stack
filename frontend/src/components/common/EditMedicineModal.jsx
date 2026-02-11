@@ -409,7 +409,7 @@ const EditMedicineModal = ({
                       <span className="font-semibold">Tip:</span> Enable and set times for each dose. Disabled doses won't trigger reminders.
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
-                      All times are in 24-hour format. Reminders will be sent 15 minutes before each scheduled dose.
+                      All times are in 24-hour format. Reminders will be sent on time scheduled dose.
                     </p>
                   </div>
                 </div>
