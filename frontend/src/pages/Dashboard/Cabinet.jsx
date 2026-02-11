@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useOutletContext } from "react-router-dom";
 import { Hourglass } from "lucide-react";
 
@@ -107,16 +107,7 @@ const MedicineCabinet = () => {
   // }, []);
 
 
-  useEffect(() => {
-    loadMedicines();
-    
-    const interval = setInterval(() => {
-      loadMedicines();
-    }, 1000);
-    
-    return () => clearInterval(interval);
-  }, []);
-
+  const loadMedicines = useCallback(async () => {
   // const loadMedicines = async () => {
   //   try {
   //     const res = await getMedicines();
@@ -138,12 +129,19 @@ const MedicineCabinet = () => {
   //     console.error("Failed to load medicines", err);
   //   }
   // };
-  const loadMedicines = async () => {
     try {
       const res = await getMedicines();
 
       // 🔥 SAFE extraction
-      const medicinesArray = res?.data || res?.medicines || [];
+      const medicinesArray = Array.isArray(res?.data)
+        ? res.data
+        : Array.isArray(res?.data?.medicines)
+          ? res.data.medicines
+          : Array.isArray(res?.data?.data)
+            ? res.data.data
+            : Array.isArray(res?.medicines)
+              ? res.medicines
+              : [];
 
       if (!Array.isArray(medicinesArray)) {
         console.error("Medicines is not an array", res);
@@ -161,7 +159,7 @@ const MedicineCabinet = () => {
         };
 
         return {
-          id: med._id,
+          id: med._id || med.id,
           name: med.name || med.medicineName,
           brand: med.brand || "",
           type: med.medicineType || med.type,
@@ -184,12 +182,33 @@ const MedicineCabinet = () => {
         };
       });
 
-    setMedicines(formatted);
-  } catch (err) {
-    console.error("Failed to load medicines", err);
-    setMedicines([]);
-  }
-};
+      setMedicines(formatted);
+    } catch (err) {
+      console.error("Failed to load medicines", err);
+      setMedicines([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadMedicines();
+
+    const intervalId = setInterval(loadMedicines, 10000);
+    const handleMedicinesUpdated = () => loadMedicines();
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        loadMedicines();
+      }
+    };
+
+    window.addEventListener("medicines:updated", handleMedicinesUpdated);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener("medicines:updated", handleMedicinesUpdated);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [loadMedicines]);
 
 
 
@@ -230,6 +249,7 @@ const MedicineCabinet = () => {
 
         console.log('✅ Medicine updated, reloading list...');
         await loadMedicines(); //  DB se update data load
+        window.dispatchEvent(new Event("medicines:updated"));
         
         resetForm();
         alert(`${medicineData.name} updated successfully!`);
@@ -278,6 +298,7 @@ const MedicineCabinet = () => {
 
         console.log('✅ Medicine added, reloading list...');
         await loadMedicines(); // ✅ DB se fresh data load
+        window.dispatchEvent(new Event("medicines:updated"));
         
         resetForm();
         alert(`${medicineData.name} added successfully!`);
@@ -480,6 +501,7 @@ const MedicineCabinet = () => {
     try {
       await deleteMedicine(medicineId);
       await loadMedicines();
+      window.dispatchEvent(new Event("medicines:updated"));
       alert('Medicine deleted successfully!');
     } catch (err) {
       console.error("Delete failed", err);
@@ -797,12 +819,57 @@ const MedicineCabinet = () => {
                 {displayedGridMedicines.map(medicine => {
                   const statusConfig = getStatusConfig(medicine.status);
                   const isExpired = isMedicineExpired(medicine.expiryDate);
+                  const statusKey = String(medicine.status || "").toLowerCase();
+                  const statusTheme = (() => {
+                    if (statusKey === "expired" || statusKey === "out_of_stock") {
+                      return {
+                        card: "border-red-200 bg-gradient-to-br from-red-50 via-white to-red-50/70",
+                        accent: "bg-gradient-to-r from-red-500 via-rose-400 to-red-300",
+                        quantityIcon: "text-red-600",
+                        dateIcon: "text-red-500",
+                        scheduleIcon: "text-rose-600",
+                        row: "border-red-100 bg-white/85"
+                      };
+                    }
+                    if (statusKey === "expiring") {
+                      return {
+                        card: "border-orange-200 bg-gradient-to-br from-orange-50 via-white to-amber-50/70",
+                        accent: "bg-gradient-to-r from-orange-500 via-amber-400 to-yellow-300",
+                        quantityIcon: "text-orange-600",
+                        dateIcon: "text-orange-500",
+                        scheduleIcon: "text-amber-600",
+                        row: "border-orange-100 bg-white/85"
+                      };
+                    }
+                    if (statusKey === "low_stock") {
+                      return {
+                        card: "border-yellow-200 bg-gradient-to-br from-yellow-50 via-white to-lime-50/60",
+                        accent: "bg-gradient-to-r from-yellow-500 via-amber-400 to-lime-400",
+                        quantityIcon: "text-yellow-700",
+                        dateIcon: "text-lime-600",
+                        scheduleIcon: "text-amber-600",
+                        row: "border-yellow-100 bg-white/85"
+                      };
+                    }
+                    return {
+                      card: "border-emerald-200 bg-gradient-to-br from-white via-emerald-50/70 to-cyan-50/60",
+                      accent: "bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400",
+                      quantityIcon: "text-emerald-600",
+                      dateIcon: "text-emerald-600",
+                      scheduleIcon: "text-cyan-600",
+                      row: "border-emerald-100 bg-white/85"
+                    };
+                  })();
 
                   return (
-                    <div key={medicine.id} className={`bg-white rounded-xl border ${isExpired ? 'border-red-200' : 'border-gray-200'} p-4 lg:p-5 hover:shadow-lg transition-all duration-300`}>
+                    <div
+                      key={medicine.id}
+                      className={`relative overflow-hidden rounded-xl border ${statusTheme.card} p-4 lg:p-5 shadow-sm hover:shadow-lg transition-all duration-300`}
+                    >
+                      <div className={`absolute inset-x-0 top-0 h-1 ${statusTheme.accent}`} />
                       <div className="flex justify-between items-start mb-4">
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-bold text-gray-900 text-base lg:text-lg truncate">{medicine.name}</h3>
+                          <h3 className="font-bold text-slate-900 text-base lg:text-lg truncate">{medicine.name}</h3>
                         </div>
                         <span className={`inline-flex items-center gap-1 px-2 lg:px-3 py-1 rounded-full text-xs font-medium ${statusConfig.color} ml-2 flex-shrink-0`}>
                           {statusConfig.text}
@@ -810,22 +877,22 @@ const MedicineCabinet = () => {
                       </div>
 
                       <div className="space-y-2 lg:space-y-3 mb-4 lg:mb-6">
-                        <div className="flex items-center gap-2">
-                          <Package size={14} className="text-gray-400 flex-shrink-0" />
-                          <span className="text-gray-700 text-sm lg:text-base truncate">{medicine.remaining}</span>
+                        <div className={`flex items-center gap-2 rounded-lg border px-2 py-1.5 ${statusTheme.row}`}>
+                          <Package size={14} className={`${statusTheme.quantityIcon} flex-shrink-0`} />
+                          <span className="text-slate-700 text-sm lg:text-base truncate">{medicine.remaining}</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Calendar size={14} className={`${isExpired ? 'text-red-500' : 'text-gray-400'} flex-shrink-0`} />
+                        <div className={`flex items-center gap-2 rounded-lg border px-2 py-1.5 ${statusTheme.row}`}>
+                          <Calendar size={14} className={`${statusTheme.dateIcon} flex-shrink-0`} />
                           <div className="min-w-0">
-                            <span className={`text-gray-700 text-sm lg:text-base ${isExpired ? 'line-through text-red-600' : ''}`}>
+                            <span className={`text-slate-700 text-sm lg:text-base ${isExpired ? 'line-through text-red-600' : ''}`}>
                               {new Date(medicine.expiryDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                             </span>
                           </div>
                         </div>
                         {medicine.schedule && (
-                          <div className="flex items-center gap-2">
-                            <Clock size={14} className="text-gray-400 flex-shrink-0" />
-                            <span className="text-gray-700 text-xs lg:text-sm truncate">
+                          <div className={`flex items-center gap-2 rounded-lg border px-2 py-1.5 ${statusTheme.row}`}>
+                            <Clock size={14} className={`${statusTheme.scheduleIcon} flex-shrink-0`} />
+                            <span className="text-slate-700 text-xs lg:text-sm truncate">
                               {Object.entries(medicine.scheduleEnabled)
                                 .filter(([_, enabled]) => enabled)
                                 .map(([period]) => period.charAt(0).toUpperCase() + period.slice(1))
@@ -834,7 +901,7 @@ const MedicineCabinet = () => {
                           </div>
                         )}
                         {isExpired && (
-                          <div className="p-2 bg-red-50 border border-red-100 rounded-lg">
+                          <div className="p-2 bg-red-50/95 border border-red-200 rounded-lg">
                             <div className="flex items-center gap-2">
                               <AlertTriangle size={12} className="text-red-600 flex-shrink-0" />
                               <p className="text-red-700 text-xs lg:text-sm font-medium">Expired Medicine</p>
@@ -846,13 +913,13 @@ const MedicineCabinet = () => {
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleEditMedicine(medicine)}
-                          className="flex-1 py-2 lg:py-2.5 text-center border border-yellow-300 text-yellow-700 rounded-lg hover:bg-yellow-50 transition-colors duration-200 text-xs lg:text-sm"
+                          className="flex-1 py-2 lg:py-2.5 text-center border border-amber-300 bg-amber-50/70 text-amber-700 rounded-lg hover:bg-amber-100 transition-colors duration-200 text-xs lg:text-sm"
                         >
                           Edit
                         </button>
                         <button
                           onClick={() => handleViewMedicine(medicine)}
-                          className="flex-1 py-2 lg:py-2.5 text-center border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200 text-xs lg:text-sm"
+                          className="flex-1 py-2 lg:py-2.5 text-center border border-sky-200 bg-sky-50/70 text-sky-700 rounded-lg hover:bg-sky-100 transition-colors duration-200 text-xs lg:text-sm"
                         >
                           <span className="hidden sm:inline">View Details</span>
                           <span className="sm:hidden">View</span>
