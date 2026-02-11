@@ -111,6 +111,34 @@ const AlertsPage = () => {
     
     loadAlertsFromBackend();
     
+    // 🔍 Check URL for action from notification
+    const urlParams = new URLSearchParams(window.location.search);
+    const action = urlParams.get('action');
+    const alertId = urlParams.get('alertId');
+    
+    console.log('🔍 Checking URL parameters:');
+    console.log('   action:', action);
+    console.log('   alertId:', alertId);
+    console.log('   Full URL:', window.location.href);
+    
+    if (action && alertId) {
+      console.log(`🔔 Notification action detected: ${action} for alert ${alertId}`);
+      
+      // ⚠️ CRITICAL: Clean URL IMMEDIATELY to prevent re-processing
+      window.history.replaceState({}, '', '/dashboard/alerts');
+      console.log('🧹 URL cleaned immediately');
+      
+      console.log('⏳ Waiting 500ms for alerts to load...');
+      
+      // Process action after alerts are loaded
+      setTimeout(() => {
+        console.log('🚀 Processing action now...');
+        handleDoseAction(alertId, action);
+      }, 500);
+    } else {
+      console.log('ℹ️ No action parameters in URL');
+    }
+    
     // 🔍 Refresh alerts every 1 second for instant sync (notification se action lene par turant update)
     const intervalId = setInterval(loadAlertsFromBackend, 1000);
     
@@ -123,6 +151,14 @@ const AlertsPage = () => {
       console.log(`\n🎯 UI ACTION CLICKED:`);
       console.log(`   Alert ID: ${alertId}`);
       console.log(`   Action: ${action}`);
+      
+      // 🔍 CHECK: Alert already resolved hai?
+      const existingAlert = alerts.find(a => a._id === alertId);
+      if (existingAlert && existingAlert.status !== 'PENDING') {
+        console.log(`⏭️ Alert already resolved with status: ${existingAlert.status}`);
+        console.log(`⚠️ SKIPPING - No action taken\n`);
+        return;
+      }
       
       // 🔍 STEP 1: Backend ko action bhejo - yeh medicine quantity bhi update karega
       console.log(`📤 Calling handleAlertAction API...`);

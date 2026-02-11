@@ -32,6 +32,8 @@ export default function LowStockCard() {
     };
 
     fetchLowStock();
+    const interval = setInterval(fetchLowStock, 1000);
+    return () => clearInterval(interval);
   }, []);
   return (
     // border border-slate-200

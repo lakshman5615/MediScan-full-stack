@@ -44,60 +44,71 @@ messaging.onBackgroundMessage((payload) => {
 self.addEventListener('notificationclick', async (event) => {
   console.log('\n👆 NOTIFICATION CLICKED:');
   console.log('   Action:', event.action);
+  console.log('   Notification data:', event.notification.data);
   console.log('   Alert ID:', event.notification.data?.alertId);
   
   event.notification.close();
   
   const alertId = event.notification.data?.alertId;
   const action = event.action || 'open';
+  const FRONTEND_URL = self.location.origin;
+
+  console.log('🔍 Processing action:', action);
+  console.log('🔍 Alert ID:', alertId);
+  console.log('🔍 Frontend URL:', FRONTEND_URL);
 
   // 🔍 STEP 1: User ne action button click kiya (taken/missed)
   if (action === 'taken' || action === 'missed') {
     console.log(`🎯 User clicked: ${action.toUpperCase()}`);
     
-    const token = localStorage.getItem('token');
-    if (token && alertId) {
-      // Auto-detect backend URL
-      const API_URL = self.location.origin.includes('localhost') 
-        ? 'http://localhost:5000'
-        : self.location.origin.replace('5173', '5000');
-      
-      console.log(`📤 Sending request to: ${API_URL}/api/alerts/action`);
-      console.log(`   Alert ID: ${alertId}`);
-      console.log(`   Action: ${action.toUpperCase()}`);
-      
-      // 🔍 STEP 2: Backend ko action bhejo - /api/alerts/action endpoint
-      fetch(`${API_URL}/api/alerts/action`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ alertId: alertId, action: action.toUpperCase() })
-      }).then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            console.log('✅ Action processed from notification:', action);
-            console.log('   Response:', data);
-            // 🔍 STEP 3: Backend ne alert.showInUI = false kar diya
-            // 🔍 STEP 4: Backend ne quantity -1 kar diya (agar TAKEN tha)
-            // 🔍 STEP 5: Alert UI automatically refresh hoga aur alert hat jayega
-            console.log('✅ Alert will disappear from UI on next refresh\n');
-          } else {
-            console.error('❌ Action failed:', data.error);
-          }
-        })
-        .catch(err => {
-          console.error('❌ Fetch error:', err);
-        });
-    } else {
-      console.log('⚠️ Missing token or alertId');
+    if (!alertId) {
+      console.error('❌ No alertId found in notification data!');
+      console.log('Available data:', event.notification.data);
+      return;
     }
+    
+    // 🔍 STEP 2: Open alerts page with action data in URL
+    const alertsUrl = `${FRONTEND_URL}/dashboard/alerts?action=${action}&alertId=${alertId}`;
+    console.log(`📤 Opening alerts page with action: ${alertsUrl}`);
+    
+    event.waitUntil(
+      clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
+        console.log(`🔍 Found ${windowClients.length} open windows`);
+        
+        // Check if any window is already open
+        for (let client of windowClients) {
+          console.log(`🔍 Checking window: ${client.url}`);
+          if (client.url.includes('/dashboard') && 'focus' in client) {
+            console.log('✅ Focusing existing window and navigating...');
+            client.focus();
+            return client.navigate(alertsUrl);
+          }
+        }
+        
+        // If no window open, open new one
+        console.log('🆕 Opening new window...');
+        if (clients.openWindow) {
+          return clients.openWindow(alertsUrl);
+        }
+      }).catch(err => {
+        console.error('❌ Error opening window:', err);
+      })
+    );
   } else {
     // User ne notification body click kiya (action button nahi)
-    console.log('🏠 Opening app...');
-    const FRONTEND_URL = self.location.origin;
-    event.waitUntil(clients.openWindow(FRONTEND_URL));
+    console.log('🏠 Opening alerts page (body clicked)...');
+    event.waitUntil(
+      clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
+        for (let client of windowClients) {
+          if (client.url.includes('/dashboard/alerts') && 'focus' in client) {
+            return client.focus();
+          }
+        }
+        if (clients.openWindow) {
+          return clients.openWindow(`${FRONTEND_URL}/dashboard/alerts`);
+        }
+      })
+    );
   }
 });
 
