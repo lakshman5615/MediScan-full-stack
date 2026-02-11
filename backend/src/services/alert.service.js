@@ -219,14 +219,21 @@ class AlertService {
         // 🔍 STEP 5: YAHAN QUANTITY -1 HOTI HAI (sirf TAKEN action pe)
         if (action === 'TAKEN') {
           console.log(`🔽 Decreasing medicine quantity by 1...`);
-          const medicine = await Medicine.findByIdAndUpdate(
-            alert.medicineId, 
-            { $inc: { remainingQuantity: -1 } },
-            { new: true }
-          );
-          console.log(`✅ Medicine quantity updated:`);
-          console.log(`   Medicine: ${medicine.name}`);
-          console.log(`   New Quantity: ${medicine.remainingQuantity}`);
+          
+          // ✅ First check current quantity
+          const currentMedicine = await Medicine.findById(alert.medicineId);
+          if (currentMedicine && currentMedicine.remainingQuantity > 0) {
+            const medicine = await Medicine.findByIdAndUpdate(
+              alert.medicineId, 
+              { $inc: { remainingQuantity: -1 } },
+              { new: true }
+            );
+            console.log(`✅ Medicine quantity updated:`);
+            console.log(`   Medicine: ${medicine.name}`);
+            console.log(`   New Quantity: ${medicine.remainingQuantity}`);
+          } else {
+            console.log(`⚠️ Medicine already at 0 quantity - skipping decrement`);
+          }
         } else {
           console.log(`⏭️ Action is MISSED - No quantity change`);
         }

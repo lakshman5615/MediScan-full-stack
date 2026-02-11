@@ -223,10 +223,14 @@ exports.markTaken = async (req, res) => {
             medicine.remainingQuantity -= 1;
             await medicine.save();
             
+            console.log(`✅ Quantity decreased: ${medicine.name} now has ${medicine.remainingQuantity} remaining`);
+            
             // Check if now low stock and create alert
             if (medicine.remainingQuantity <= medicine.lowStockThreshold) {
                 await AlertService.createLowStockAlert(medicine);
             }
+        } else {
+            console.log(`⚠️ ${medicine.name} already at 0 quantity - cannot decrease further`);
         }
 
         // Record in dose history
