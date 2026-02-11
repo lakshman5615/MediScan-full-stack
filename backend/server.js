@@ -38,7 +38,21 @@ app.use(express.urlencoded({ extended: true }));
 
 
 // Connect DB FIRST
-connectDB().then(() => {
+connectDB().then(async () => {
+  // ✅ Fix lowStockThreshold for existing medicines
+  const Medicine = require('./src/models/Medicine');
+  try {
+    const result = await Medicine.updateMany(
+      { $or: [{ lowStockThreshold: { $ne: 2 } }, { lowStockThreshold: { $exists: false } }] },
+      { $set: { lowStockThreshold: 2 } }
+    );
+    if (result.modifiedCount > 0) {
+      console.log(`✅ Fixed lowStockThreshold for ${result.modifiedCount} medicines`);
+    }
+  } catch (err) {
+    console.error('⚠️ Failed to update lowStockThreshold:', err.message);
+  }
+  
   // Cron jobs (start AFTER DB connection)
   require('./src/cron/medicine-reminder.cron');
   require('./src/cron/alerts.cron');

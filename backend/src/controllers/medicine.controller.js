@@ -154,14 +154,13 @@ exports.updateMedicine = async (req, res) => {
         if (totalQuantity !== undefined) {
             const oldTotal = medicine.totalQuantity;
             const oldRemaining = medicine.remainingQuantity;
+            
             medicine.totalQuantity = totalQuantity;
-            // If increasing total, add difference to remaining
-            if (totalQuantity > oldTotal) {
-                medicine.remainingQuantity = oldRemaining + (totalQuantity - oldTotal);
-            } else {
-                // If decreasing, set remaining = new total
-                medicine.remainingQuantity = totalQuantity;
-            }
+            medicine.remainingQuantity = totalQuantity; // ✅ Direct set - user jo dale wahi ho
+            
+            console.log(`📊 Quantity update for ${medicine.name}:`);
+            console.log(`   Old: total=${oldTotal}, remaining=${oldRemaining}`);
+            console.log(`   New: total=${totalQuantity}, remaining=${medicine.remainingQuantity}`);
         }
         if (expiryDate) medicine.expiryDate = new Date(expiryDate);
         if (lowStockThreshold !== undefined) medicine.lowStockThreshold = lowStockThreshold;
