@@ -272,12 +272,9 @@ const MedicineCabinet = () => {
 
         console.log('✅ Medicine added, reloading list...');
         await loadMedicines(); // ✅ DB se fresh data load
-<<<<<<< HEAD
         
         resetForm();
         alert(`${medicineData.name} added successfully!`);
-=======
->>>>>>> 1c78f4dca77f97c3cdbd8b648a5394654eacc055
       }
     } catch (error) {
       console.error('Error saving medicine:', error);
