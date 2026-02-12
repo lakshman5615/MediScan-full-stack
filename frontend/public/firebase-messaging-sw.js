@@ -93,7 +93,10 @@ self.addEventListener('notificationclick', async (event) => {
   
   const alertId = event.notification.data?.alertId;
   const action = event.action || 'open';
-  const FRONTEND_URL = self.location.origin;
+  // const FRONTEND_URL = self.location.origin;
+const FRONTEND_URL = self.location.origin;
+const BACKEND_URL = "https://mediscan-full-stack-backend.onrender.com";
+
 
   console.log('🔍 Processing action:', action);
   console.log('🔍 Alert ID:', alertId);
@@ -131,6 +134,7 @@ self.addEventListener('notificationclick', async (event) => {
           }
           
           // Call backend API to process action
+<<<<<<< HEAD
           // Dynamically detect backend URL
           const BACKEND_URL = self.location.hostname === 'localhost' 
             ? 'http://localhost:5000' 
@@ -142,6 +146,12 @@ self.addEventListener('notificationclick', async (event) => {
           
           const response = await fetch(`${BACKEND_URL}/api/alerts/action`, {
             method: 'POST',
+=======
+          // const response = await fetch(`${FRONTEND_URL}/api/alerts/${alertId}/action`, {
+          const response = await fetch(`${BACKEND_URL}/api/alerts/${alertId}/action`, {
+
+          method: 'POST',
+>>>>>>> 4442d6c5750f7f235df3f06f1f574760fa22b78c
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${token}`
