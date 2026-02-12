@@ -139,10 +139,23 @@ const AlertsPage = () => {
       console.log('ℹ️ No action parameters in URL');
     }
     
-    // 🔍 Refresh alerts every 1 second for instant sync (notification se action lene par turant update)
-    const intervalId = setInterval(loadAlertsFromBackend, 1000);
+    // ✅ Listen for service worker messages (when action is completed in background)
+    const handleServiceWorkerMessage = (event) => {
+      if (event.data?.type === 'ALERT_ACTION_COMPLETED') {
+        console.log('🔔 Service worker action completed, refreshing alerts...');
+        loadAlertsFromBackend();
+      }
+    };
     
-    return () => clearInterval(intervalId);
+    navigator.serviceWorker?.addEventListener('message', handleServiceWorkerMessage);
+    
+    // 🔍 Refresh alerts every 5 seconds for sync
+    const intervalId = setInterval(loadAlertsFromBackend, 5000);
+    
+    return () => {
+      clearInterval(intervalId);
+      navigator.serviceWorker?.removeEventListener('message', handleServiceWorkerMessage);
+    };
   }, []);
 
   // ✅ Handle dose action - Backend API call (TAKEN/MISSED)
@@ -166,12 +179,8 @@ const AlertsPage = () => {
       console.log(`✅ API Response:`, response);
       
       // 🔍 STEP 2: Local state immediately update karo (UI se hat jayega)
-      setAlerts(prev => prev.map(alert => 
-        alert._id === alertId 
-          ? { ...alert, status: action.toUpperCase(), showInUI: false }
-          : alert
-      ));
-      console.log(`✅ Local state updated - alert hidden from UI`);
+      setAlerts(prev => prev.filter(alert => alert._id !== alertId));
+      console.log(`✅ Local state updated - alert removed from UI`);
       
       // Success message
       const message = action === 'taken' 

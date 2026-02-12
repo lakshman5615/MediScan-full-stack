@@ -413,13 +413,13 @@ class ProductionFCMService {
 
   // Send FCM Push Notification (device notification with action buttons)
   async sendFCMNotification(user, data, alertId) {
-    // ✅ Testing: Console log for debugging
     console.log(`\n🔔 FCM NOTIFICATION ATTEMPT:`);
     console.log(`👤 User: ${user.name} (${user.email})`);
     console.log(`📱 FCM Token: ${user.fcmToken ? 'EXISTS (' + user.fcmToken.length + ' chars)' : 'NOT FOUND'}`);
     console.log(`💊 Medicine: ${data.medicineName}`);
     console.log(`📋 Title: ${data.title}`);
     console.log(`💬 Message: ${data.message}`);
+    console.log(`🆔 Alert ID: ${alertId}`);
     
     if (!user.fcmToken || user.fcmToken.length < MIN_FCM_TOKEN_LENGTH) {
       console.log(`⚠️ No valid FCM token for user ${user._id} - Notification saved to DB only`);
@@ -430,23 +430,23 @@ class ProductionFCMService {
     try {
       const message = {
         token: user.fcmToken,
-        // ❌ Remove notification field - only send data
-        // This prevents Chrome's default notification
         data: {
-          title: data.title, // ✅ Move to data
-          body: data.message, // ✅ Move to data
+          title: data.title,
+          body: data.message,
           alertId: String(alertId),
           medicineId: String(data.medicineId || ''),
+          medicineName: String(data.medicineName || ''),
           type: data.alertType || 'REMINDER',
           showActions: data.alertType === 'REMINDER' ? 'true' : 'false',
           actions: data.alertType === 'REMINDER' ? JSON.stringify(['taken', 'missed']) : '[]',
           timestamp: new Date().toISOString()
         }
       };
+      
+      console.log(`📦 FCM Payload data:`, JSON.stringify(message.data, null, 2));
 
       await messaging.send(message);
       
-      // Update alert as sent to device
       await Alert.findByIdAndUpdate(alertId, { sentToDevice: true });
       
       console.log(`✅ FCM notification sent successfully to ${user.name}`);

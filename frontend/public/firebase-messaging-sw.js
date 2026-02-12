@@ -45,11 +45,19 @@ async function getAuthToken() {
 }
 
 messaging.onBackgroundMessage((payload) => {
-  console.log('📩 Background notification:', payload);
+  console.log('📩 Background notification received:', payload);
+  console.log('📦 Payload data:', JSON.stringify(payload.data, null, 2));
   
   const title = payload.data?.title || 'Medicine Alert';
   const body = payload.data?.body || '';
   const showActions = payload.data?.showActions === 'true';
+  const alertId = payload.data?.alertId;
+  
+  console.log('🔔 Showing notification:');
+  console.log('   Title:', title);
+  console.log('   Body:', body);
+  console.log('   Alert ID:', alertId);
+  console.log('   Show Actions:', showActions);
   
   const options = {
     body: body,
@@ -57,7 +65,7 @@ messaging.onBackgroundMessage((payload) => {
     badge: '/icon-192.png',
     data: payload.data,
     requireInteraction: true,
-    tag: payload.data?.alertId || 'alert',
+    tag: alertId || 'alert',
     vibrate: [200, 100, 200, 100, 200],
     silent: false,
     renotify: true
@@ -69,6 +77,7 @@ messaging.onBackgroundMessage((payload) => {
       { action: 'taken', title: '✅ Confirm Taken', icon: '/icon-192.png' },
       { action: 'missed', title: '⏭️ Mark Missed', icon: '/icon-192.png' }
     ];
+    console.log('✅ Action buttons added');
   }
 
   return self.registration.showNotification(title, options);
@@ -109,23 +118,58 @@ self.addEventListener('notificationclick', async (event) => {
           // Get auth token from IndexedDB or localStorage
           const token = await getAuthToken();
           
+          console.log('🔑 Auth token:', token ? `Found (${token.substring(0, 20)}...)` : 'NOT FOUND');
+          
           if (!token) {
-            console.error('❌ No auth token found');
+            console.error('❌ No auth token found - Cannot process action');
+            self.registration.showNotification('❌ Error', {
+              body: 'Please login again to process actions',
+              icon: '/icon-192.png',
+              tag: 'auth-error'
+            });
             return;
           }
           
           // Call backend API to process action
-          const response = await fetch(`${FRONTEND_URL}/api/alerts/${alertId}/action`, {
+          // Dynamically detect backend URL
+          const BACKEND_URL = self.location.hostname === 'localhost' 
+            ? 'http://localhost:5000' 
+            : `http://${self.location.hostname}:5000`;
+          
+          console.log('📡 Backend URL:', BACKEND_URL);
+          console.log('📡 Calling API:', `${BACKEND_URL}/api/alerts/action`);
+          console.log('📦 Request body:', { alertId, action: action.toUpperCase() });
+          
+          const response = await fetch(`${BACKEND_URL}/api/alerts/action`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ action: action.toUpperCase() })
+            body: JSON.stringify({ 
+              alertId: alertId,
+              action: action.toUpperCase() 
+            })
           });
+          
+          console.log('📥 API Response status:', response.status);
+          const responseData = await response.json();
+          console.log('📥 API Response data:', responseData);
           
           if (response.ok) {
             console.log(`✅ Action ${action} processed successfully`);
+            
+            // Notify all clients to refresh alerts
+            const allClients = await clients.matchAll({ includeUncontrolled: true });
+            console.log(`📢 Notifying ${allClients.length} clients to refresh`);
+            allClients.forEach(client => {
+              client.postMessage({ 
+                type: 'ALERT_ACTION_COMPLETED',
+                alertId: alertId,
+                action: action 
+              });
+            });
+            
             // Show success notification with vibration
             self.registration.showNotification('✅ Success', {
               body: `Medicine marked as ${action}`,
@@ -136,10 +180,20 @@ self.addEventListener('notificationclick', async (event) => {
               vibrate: [100, 50, 100]
             });
           } else {
-            console.error('❌ Failed to process action:', response.status);
+            console.error('❌ Failed to process action:', response.status, responseData);
+            self.registration.showNotification('❌ Failed', {
+              body: `Could not mark as ${action}. Please try again.`,
+              icon: '/icon-192.png',
+              tag: 'action-error'
+            });
           }
         } catch (err) {
           console.error('❌ Error processing action:', err);
+          self.registration.showNotification('❌ Error', {
+            body: 'Network error. Please check connection.',
+            icon: '/icon-192.png',
+            tag: 'network-error'
+          });
         }
       })()
     );

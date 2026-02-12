@@ -170,6 +170,7 @@ class AlertService {
     
     console.log(`📋 Alert found:`);
     console.log(`   Medicine: ${alert.medicineName}`);
+    console.log(`   Medicine ID: ${alert.medicineId}`);
     console.log(`   Type: ${alert.type}`);
     console.log(`   Current Status: ${alert.status}`);
     console.log(`   ShowInUI: ${alert.showInUI}`);
@@ -222,6 +223,11 @@ class AlertService {
           
           // ✅ First check current quantity
           const currentMedicine = await Medicine.findById(alert.medicineId);
+          console.log(`💊 Current medicine:`, {
+            name: currentMedicine?.name,
+            remainingQuantity: currentMedicine?.remainingQuantity
+          });
+          
           if (currentMedicine && currentMedicine.remainingQuantity > 0) {
             const medicine = await Medicine.findByIdAndUpdate(
               alert.medicineId, 
@@ -230,6 +236,7 @@ class AlertService {
             );
             console.log(`✅ Medicine quantity updated:`);
             console.log(`   Medicine: ${medicine.name}`);
+            console.log(`   Old Quantity: ${currentMedicine.remainingQuantity}`);
             console.log(`   New Quantity: ${medicine.remainingQuantity}`);
           } else {
             console.log(`⚠️ Medicine already at 0 quantity - skipping decrement`);
