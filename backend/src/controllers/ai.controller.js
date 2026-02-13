@@ -83,35 +83,49 @@ exports.manualSearch = async (req, res) => {
 //SCAN IMAGE SEARCH FUNCTION
 exports.scanSearch = async (req, res) => {
     try {
+        console.log("🔍 scanSearch called");
+        console.log("📦 req.file:", req.file ? "exists" : "missing");
+        console.log("👤 req.user:", req.user ? req.user._id : "missing");
 
         const userID = req.user._id;
         const image = req.file;
 
         if (!image) {
+            console.error("❌ No image file received");
             return res.status(400).json({ message: "Image file is required" })
         }
-        //base64
-        // const base64Image = `data:${image.mimetype};base64,${image.buffer.toString("base64")}`;
+        
+        console.log("📸 Image received:", image.mimetype, image.size, "bytes");
+        
         const imageBase64 = image.buffer.toString("base64");
         const imageUrl = `data:${image.mimetype};base64,${imageBase64}`;
 
-        // CALL GROQ AI 
+        console.log("🤖 Calling Groq AI...");
         const aiData = await getMedicineExplanation("analyze this medicnie image ", imageUrl);
+        console.log("✅ AI Response received:", aiData);
+        
         const aiSnapshot = JSON.parse(JSON.stringify(aiData));
 
         const normalized = normalizeText(aiData.medicineName || "not found ");
-        // CEHCK DB 
+        console.log("🔤 Normalized name:", normalized);
+        
         let scanMed = await ScanMedicine.findOne({
             normalizedName: normalized
         });
+        
         if (!scanMed) {
+            console.log("💾 Creating new ScanMedicine entry");
             scanMed = await ScanMedicine.create({
                 medicineName: aiData.medicineName || "not found",
                 normalizedName: normalized,
                 aiExplanation: aiData,
                 source: "scan"
             });
+        } else {
+            console.log("✅ Found existing ScanMedicine entry");
         }
+        
+        console.log("📝 Creating AI History entry");
         await AIHistory.create({
             userId: userID,
             inputText: "IMAGE-SCAN",
@@ -122,17 +136,19 @@ exports.scanSearch = async (req, res) => {
             imageUrl: "uploaded-via-multer",
             aiSnapshot
         });
+        
+        console.log("✅ Scan completed successfully");
         return res.json({
             source: "AI ",
             data: aiData
         });
 
-
     }
     catch (error) {
-        console.log(error);
-        res.status(500).json({ message: "Scan failed" });
-
+        console.error("❌ scanSearch ERROR:", error);
+        console.error("❌ Error stack:", error.stack);
+        console.error("❌ Error message:", error.message);
+        res.status(500).json({ message: "Scan failed", error: error.message });
     }
 };
 exports.guestManualSearch = async (req, res) => {
