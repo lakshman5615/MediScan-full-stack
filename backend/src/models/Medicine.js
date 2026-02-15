@@ -10,7 +10,7 @@ const medicineSchema = new mongoose.Schema({
   scanMedicineId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "ScanMedicine",
-    required: true
+    required: false
   },
 
   medicineName: {
