@@ -13,12 +13,21 @@ router.post('/signup', signupValidation, signup);
 
 
 // profile 
-router.get("/profile", authMiddleware, (req, res) => {
+router.get("/profile", authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select("name email phone fcmToken age");
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
-    res.json({ 
-        message: "Profile data", user: req.user
-     });
+    res.json({
+      success: true,
+      message: "Profile data",
+      user
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
 });
+
 
 // Update FCM Token
 router.post('/fcm-token', authMiddleware, async (req, res) => {

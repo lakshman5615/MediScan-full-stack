@@ -1,24 +1,25 @@
+const Medicine = require('../models/Medicine');
 
-  const cabinetService = require('../services/cabinet.service');
- const Medicine = require('../models/Medicine');
-
-exports.addMedicine = async (req, res) => {
+exports.addToCabinet = async (req, res) => {
   try {
-    const medicine = await cabinetService.addMedicine({ 
-        userId: req.user.id, ...req.body
-     });
-    res.status(201).json({ 
-        success: true, data: medicine
-     });
+    const medicine = new Medicine({
+      userId: req.user._id,
+      ...req.body
+    });
+    await medicine.save();
+    res.status(201).json({ success: true, data: medicine });
   } catch (err) {
-     res.status(500).json({
-         success: false, error: err.message }); 
-        }
+    res.status(500).json({ success: false, error: err.message });
+  }
 };
 
 exports.getCabinet = async (req, res) => {
-  const meds = await cabinetService.getUserCabinet(req.user.id);
-  res.json({ success: true, data: meds });
+  try {
+    const medicines = await Medicine.find({ userId: req.user._id });
+    res.json({ success: true, data: medicines });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 };
 
 exports.markMedicineTaken = async (req, res) => {

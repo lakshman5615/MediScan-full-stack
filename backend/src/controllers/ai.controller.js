@@ -82,12 +82,18 @@ exports.manualSearch = async (req, res) => {
 //SCAN IMAGE SEARCH FUNCTION
 exports.scanSearch = async (req, res) => {
     try {
-        const { imageUrl } = req.body;
-        const userID = req.user.id;
 
-        if (!imageUrl) {
-            return res.status(400).json({ message: "Image url is required" })
+        const userID = req.user.id;
+        const image = req.file;
+
+        if (!image) {
+            return res.status(400).json({ message: "Image file is required" })
         }
+        //base64
+        // const base64Image = `data:${image.mimetype};base64,${image.buffer.toString("base64")}`;
+        const imageBase64 = image.buffer.toString("base64");
+        const imageUrl = `data:${image.mimetype};base64,${imageBase64}`;
+
         // CALL GROQ AI 
         const aiData = await getMedicineExplanation("analyze this medicnie image ", imageUrl);
         const aiSnapshot = JSON.parse(JSON.stringify(aiData));
@@ -112,7 +118,7 @@ exports.scanSearch = async (req, res) => {
             queryType: "scan",
             status: "success",
             resultRef: scanMed._id,
-            imageUrl,
+            imageUrl: "uploaded-via-multer",
             aiSnapshot
         });
         return res.json({
@@ -126,5 +132,64 @@ exports.scanSearch = async (req, res) => {
         console.log(error);
         res.status(500).json({ message: "Scan failed" });
 
+    }
+};
+exports.guestManualSearch = async (req, res) => {
+    try {
+        const { text } = req.body;
+
+        const normalized = normalizeText(text);
+
+
+        const scanMed = await ScanMedicine.findOne({
+            normalizedName: normalized
+        });
+
+        if (scanMed) {
+            return res.json({
+                source: "database",
+                data: scanMed.aiExplanation
+            });
+        }
+        const aiData = await getMedicineExplanation(text, null);
+
+        return res.json({
+            source: "ai",
+            data: aiData
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+// GUEST SCAN IMAGE SEARCH
+exports.guestScanSearch = async (req, res) => {
+    try {
+        const image = req.file;
+
+        if (!image) {
+            return res.status(400).json({ message: "Image file is required" });
+        }
+
+        // image → base64 data URL
+        const imageBase64 = image.buffer.toString("base64");
+        const imageUrl = `data:${image.mimetype};base64,${imageBase64}`;
+
+        // AI CALL
+        const aiData = await getMedicineExplanation(
+            "analyze this medicine image",
+            imageUrl
+        );
+
+        return res.json({
+            source: "ai",
+            data: aiData
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Scan failed" });
     }
 };

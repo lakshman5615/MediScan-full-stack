@@ -1,25 +1,157 @@
 const express = require('express');
 const authMiddleware = require('../middlewares/auth.jwt');
 const Medicine = require('../models/Medicine');
+const DoseHistory = require('../models/doseHistory');
+const Alert = require('../models/Alert');
 const ProductionFCMService = require('../services/production-fcm.service');
 
 const router = express.Router();
 
-// // Medicine Taken
-// router.post('/taken/:medicineId', authMiddleware, async (req, res) => {
-//     try {
-//         const { _id: userId } = req.user;
-//         const { medicineId } = req.params;
+// ----------------------
+// NEW: YouTube-style Action Handler (Unified)
+// ----------------------
+router.post('/action', authMiddleware, async (req, res) => {
+    try {
+        const { _id: userId } = req.user;
+        const { alertId, medicineId, action, source } = req.body; // source: 'notification' or 'alert'
 
-//         const medicine = await Medicine.findOne({ _id: medicineId, userId });
-//         if (!medicine) return res.status(404).json({ success: false, error: 'Medicine not found' });
+        console.log('🎯 Medicine action request:', { userId, alertId, medicineId, action, source });
 
-//         medicine.quantity -= 1;
-//         await medicine.save();
+        const medicine = await Medicine.findOne({ _id: medicineId, userId });
+        if (!medicine) {
+            return res.status(404).json({ success: false, error: 'Medicine not found' });
+        }
 
-//         await ProductionFCMService.sendNotification(userId, '✅ Medicine Taken',
-//             `${medicine.medicineName} marked as taken. Remaining: ${medicine.quantity} doses`,
-//             { medicineId, userId });
+        // Handle action
+        let result;
+        if (action === 'taken') {
+            result = await handleTakenAction(userId, medicine, source);
+        } else if (action === 'missed') {
+            result = await handleMissedAction(userId, medicine, source);
+        } else {
+            return res.status(400).json({ success: false, error: 'Invalid action' });
+        }
+
+        // Update both Alert and Notification (YouTube-style sync)
+        await ProductionFCMService.handleAction(alertId, action, source);
+
+        res.json({
+            success: true,
+            message: `Medicine ${action} successfully`,
+            data: result,
+            syncedFrom: source
+        });
+
+    } catch (error) {
+        console.error('❌ Medicine action error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Helper: Handle taken action
+async function handleTakenAction(userId, medicine, source) {
+    // Update quantity
+    medicine.quantity -= 1;
+    await medicine.save();
+    console.log('✅ Medicine quantity updated to:', medicine.quantity);
+
+    // Save to DoseHistory
+    const doseRecord = await DoseHistory.create({
+        userId,
+        medicineId: medicine._id,
+        medicineName: medicine.medicineName,
+        scheduledTime: medicine.schedule?.time || 'Unknown',
+        scheduledAt: new Date(),
+        status: 'TAKEN',
+        actionSource: source
+    });
+
+    // Check for low stock
+    if (medicine.quantity <= 2 && medicine.quantity > 0) {
+        await ProductionFCMService.sendNotificationWithAlert(userId, {
+            title: '⚠️ Low Stock Alert',
+            message: `${medicine.medicineName} is running low. Only ${medicine.quantity} doses remaining.`,
+            alertType: 'LOW_STOCK',
+            medicineId: medicine._id,
+            medicineName: medicine.medicineName,
+            severity: 'WARNING'
+        });
+    }
+
+    // Check for out of stock
+    if (medicine.quantity === 0) {
+        await ProductionFCMService.sendNotificationWithAlert(userId, {
+            title: '🚫 Out of Stock',
+            message: `${medicine.medicineName} is out of stock. Please refill your prescription.`,
+            alertType: 'LOW_STOCK',
+            medicineId: medicine._id,
+            medicineName: medicine.medicineName,
+            severity: 'CRITICAL'
+        });
+    }
+
+    return {
+        medicine: {
+            name: medicine.medicineName,
+            remainingQuantity: medicine.quantity,
+            status: medicine.quantity === 0 ? 'Out of Stock' :
+                    medicine.quantity <= 2 ? 'Low Stock' : 'Available'
+        },
+        doseHistoryId: doseRecord._id
+    };
+}
+
+// Helper: Handle missed action
+async function handleMissedAction(userId, medicine, source) {
+    // Save to DoseHistory (no quantity change)
+    const doseRecord = await DoseHistory.create({
+        userId,
+        medicineId: medicine._id,
+        medicineName: medicine.medicineName,
+        scheduledTime: medicine.schedule?.time || 'Unknown',
+        scheduledAt: new Date(),
+        status: 'MISSED',
+        actionSource: source
+    });
+
+    return {
+        medicine: {
+            name: medicine.medicineName,
+            quantity: medicine.quantity,
+            nextReminder: medicine.schedule?.time,
+            note: 'Quantity unchanged - dose was missed'
+        },
+        doseHistoryId: doseRecord._id
+    };
+}
+
+// ----------------------
+// Medicine Taken
+// ----------------------
+router.post('/taken/:medicineId', authMiddleware, async (req, res) => {
+    try {
+        const { _id: userId } = req.user;
+        const { medicineId } = req.params;
+
+        console.log('🎯 Medicine taken request:', { userId, medicineId });
+
+        const medicine = await Medicine.findOne({ _id: medicineId, userId });
+        if (!medicine) {
+            console.log('❌ Medicine not found:', medicineId);
+            return res.status(404).json({ success: false, error: 'Medicine not found' });
+        }
+
+        console.log('💊 Found medicine:', medicine.medicineName, 'Quantity:', medicine.quantity);
+
+        // Update quantity
+        medicine.quantity -= 1;
+        await medicine.save();
+        console.log('✅ Medicine quantity updated to:', medicine.quantity);
+
+        // FCM Notification
+        await ProductionFCMService.sendNotification(userId, '✅ Medicine Taken',
+            `${medicine.medicineName} marked as taken. Remaining: ${medicine.quantity} doses`,
+            { medicineId, userId });
 
 //         // Low stock alert
 //         if (medicine.quantity <= 2 && medicine.quantity > 0) {
@@ -35,52 +167,116 @@ const router = express.Router();
 //                 { medicineId, userId });
 //         }
 
-//         res.json({
-//             success: true,
-//             message: 'Medicine marked as taken',
-//             medicine: {
-//                 name: medicine.medicineName,
-//                 remainingQuantity: medicine.quantity,
-//                 status: medicine.quantity === 0 ? 'Out of Stock' :
-//                         medicine.quantity <= 2 ? 'Low Stock' : 'Available'
-//             }
-//         });
+        // ---- Save to DoseHistory ----
+        console.log('💾 Saving to DoseHistory:', {
+            userId: userId.toString(),
+            medicineId: medicineId.toString(),
+            medicineName: medicine.medicineName,
+            scheduledTime: medicine.schedule.time,
+            status: 'TAKEN'
+        });
+        
+        try {
+            const doseRecord = await DoseHistory.create({
+                userId,
+                medicineId,
+                medicineName: medicine.medicineName,
+                scheduledTime: medicine.schedule.time,
+                scheduledAt: new Date(),
+                status: 'TAKEN'
+            });
+            
+            console.log('✅ DoseHistory saved successfully:', doseRecord._id);
+        } catch (doseError) {
+            console.error('❌ DoseHistory save error:', doseError);
+            // Don't fail the whole request if dose history fails
+        }
 
-//     } catch (error) {
-//         res.status(500).json({ success: false, error: error.message });
-//     }
-// });
+        res.json({
+            success: true,
+            message: 'Medicine marked as taken',
+            medicine: {
+                name: medicine.medicineName,
+                remainingQuantity: medicine.quantity,
+                status: medicine.quantity === 0 ? 'Out of Stock' :
+                        medicine.quantity <= 2 ? 'Low Stock' : 'Available'
+            }
+        });
 
-// // Medicine Missed
-// router.post('/missed/:medicineId', authMiddleware, async (req, res) => {
-//     try {
-//         const { _id: userId } = req.user;
-//         const { medicineId } = req.params;
+    } catch (error) {
+        console.error('❌ Medicine taken error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
 
-//         const medicine = await Medicine.findOne({ _id: medicineId, userId });
-//         if (!medicine) return res.status(404).json({ success: false, error: 'Medicine not found' });
+// ----------------------
+// Medicine Missed
+// ----------------------
+router.post('/missed/:medicineId', authMiddleware, async (req, res) => {
+    try {
+        const { _id: userId } = req.user;
+        const { medicineId } = req.params;
 
-//         await ProductionFCMService.sendNotification(userId, '⏭️ Dose Missed',
-//             `${medicine.medicineName} dose missed. Don't forget next scheduled time: ${medicine.schedule.time}`,
-//             { medicineId, userId });
+        console.log('🎯 Medicine missed request:', { userId, medicineId });
 
-//         res.json({
-//             success: true,
-//             message: 'Medicine marked as missed',
-//             medicine: {
-//                 name: medicine.medicineName,
-//                 quantity: medicine.quantity,
-//                 nextReminder: medicine.schedule.time,
-//                 note: 'Quantity unchanged - dose was missed'
-//             }
-//         });
+        const medicine = await Medicine.findOne({ _id: medicineId, userId });
+        if (!medicine) {
+            console.log('❌ Medicine not found:', medicineId);
+            return res.status(404).json({ success: false, error: 'Medicine not found' });
+        }
 
-//     } catch (error) {
-//         res.status(500).json({ success: false, error: error.message });
-//     }
-// });
+        console.log('💊 Found medicine for missed:', medicine.medicineName);
 
+        // FCM Notification
+        await ProductionFCMService.sendNotification(userId, '⏭️ Dose Missed',
+            `${medicine.medicineName} dose missed. Don't forget next scheduled time: ${medicine.schedule.time}`,
+            { medicineId, userId });
+
+        // ---- Save to DoseHistory ----
+        console.log('💾 Saving MISSED to DoseHistory:', {
+            userId: userId.toString(),
+            medicineId: medicineId.toString(),
+            medicineName: medicine.medicineName,
+            scheduledTime: medicine.schedule.time,
+            status: 'MISSED'
+        });
+        
+        try {
+            const doseRecord = await DoseHistory.create({
+                userId,
+                medicineId,
+                medicineName: medicine.medicineName,
+                scheduledTime: medicine.schedule.time,
+                scheduledAt: new Date(),
+                status: 'MISSED'
+            });
+            
+            console.log('✅ MISSED DoseHistory saved successfully:', doseRecord._id);
+        } catch (doseError) {
+            console.error('❌ MISSED DoseHistory save error:', doseError);
+            // Don't fail the whole request if dose history fails
+        }
+
+        res.json({
+            success: true,
+            message: 'Medicine marked as missed',
+            medicine: {
+                name: medicine.medicineName,
+                quantity: medicine.quantity,
+                nextReminder: medicine.schedule.time,
+                note: 'Quantity unchanged - dose was missed'
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Medicine missed error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ----------------------
 // Get medicine status
+// ----------------------
 router.get('/status/:medicineId', authMiddleware, async (req, res) => {
     try {
         const { _id: userId } = req.user;
@@ -116,6 +312,38 @@ router.get('/status/:medicineId', authMiddleware, async (req, res) => {
         });
 
     } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ----------------------
+// Test DoseHistory (for debugging)
+// ----------------------
+router.post('/test-dose-history', authMiddleware, async (req, res) => {
+    try {
+        const { _id: userId } = req.user;
+        
+        console.log('🧪 Testing DoseHistory creation for user:', userId);
+        
+        const testRecord = await DoseHistory.create({
+            userId,
+            medicineId: new require('mongoose').Types.ObjectId(),
+            medicineName: 'Test Medicine',
+            scheduledTime: '08:00',
+            scheduledAt: new Date(),
+            status: 'TAKEN'
+        });
+        
+        console.log('✅ Test DoseHistory created:', testRecord);
+        
+        res.json({
+            success: true,
+            message: 'Test dose history created',
+            record: testRecord
+        });
+        
+    } catch (error) {
+        console.error('❌ Test DoseHistory error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });

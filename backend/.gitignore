@@ -1,6 +1,16 @@
 .env
 node_modules
 mediscan-notification-firebase-admin.json
+# Node
+node_modules/
+
+# Env
+.env
+
+# Firebase Admin SDK
+backend/mediscan-notifications-firebase-admin.json
+
 node_modules/
 backend/node_modules/
-.env
+*.env
+*.json

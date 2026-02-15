@@ -1,40 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middlewares/auth.jwt');
-const Medicine = require('../models/Medicine');
+const medicineController = require('../controllers/medicine.controller');
 
-// Add medicine
-router.post('/add', authMiddleware, async (req, res) => {
-    try {
-        const { medicineName, quantity, expiryDate, schedule } = req.body;
-        const { _id: userId } = req.user;
+// Core Medicine Cabinet APIs
+router.post('/add', authMiddleware, medicineController.addMedicine);
+router.get('/', authMiddleware, medicineController.getMedicines);
+router.get('/:id', authMiddleware, medicineController.getMedicine);
+router.put('/update/:id', authMiddleware, medicineController.updateMedicine);
+router.delete('/delete/:id', authMiddleware, medicineController.deleteMedicine);
 
-        const medicine = new Medicine({
-            userId,
-            medicineName,
-            quantity,
-            expiryDate: new Date(expiryDate),
-            schedule,
-            status: 'accepted'
-        });
-
-        await medicine.save();
-
-        res.status(201).json({ success: true, message: 'Medicine added successfully', medicine });
-    } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
-
-// Get user medicines
-router.get('/', authMiddleware, async (req, res) => {
-    try {
-        const { _id: userId } = req.user;
-        const medicines = await Medicine.find({ userId });
-        res.json({ success: true, medicines });
-    } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
+// Dose Actions
+router.post('/taken/:id', authMiddleware, medicineController.markTaken);
+router.post('/missed/:id', authMiddleware, medicineController.markMissed);
 
 module.exports = router;

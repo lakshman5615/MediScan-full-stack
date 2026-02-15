@@ -38,7 +38,7 @@ Carefully analyze the medicine image.
 Return ONLY valid JSON in this exact format:
 
 {
-  "medicine_name": "",
+  "medicineName": "",
   "usage": "",
   "dosage": "",
   "warnings": "",
@@ -75,6 +75,17 @@ sideEffects:
 
 expirydate:
 - If visible or known, mention it.
+expirydate:
+- VERY IMPORTANT FIELD.
+- Carefully look for words like:
+  "EXP", "EXPIRY", "EXP DATE", "Use before", "Best before".
+- Numbers may be in format:
+  MM/YYYY, MM/YY, DD/MM/YYYY or similar.
+- If expiry date is CLEARLY visible in the image,
+  YOU MUST RETURN IT EXACTLY as written.
+- Do NOT ignore expiry date if present.
+- Only if expiry date is NOT visible at all, then say:
+  "Check the medicine strip for expiry date."
 - Otherwise say:
   "Check the medicine strip for expiry date."
 
