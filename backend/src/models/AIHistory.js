@@ -27,7 +27,7 @@ const aiHistorySchema = new mongoose.Schema({
     dosage: String,
     warnings: String,
     sideEffects: String,
-    expirydate: String
+    expiryDate: String
 
   },
   queryType:

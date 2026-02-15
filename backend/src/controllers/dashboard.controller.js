@@ -1,8 +1,14 @@
 const AIHistory = require("../models/AIHistory");
+<<<<<<< HEAD
 const Medicine = require("../models/Medicine");
 exports.getRecentSearches = async (req, res) => {
     try {
         const userId = req.user._id;
+=======
+exports.getRecentSearches = async (req, res) => {
+    try {
+        const userId = req.user.id;
+>>>>>>> testingBranch
 
         const history = await AIHistory.find({ userId })
             .sort({ createdAt: -1 })
@@ -20,11 +26,16 @@ exports.getRecentSearches = async (req, res) => {
             source: "Database",
             data: formatted
         });
+<<<<<<< HEAD
     } catch (error) {
+=======
+    } catch (err) {
+>>>>>>> testingBranch
         console.error(error);
         res.status(500).json({ message: "Failed to load recent searches" });
     }
 };
+<<<<<<< HEAD
 
 
 
@@ -128,3 +139,5 @@ exports.getTodaySchedule = async (req, res) => {
   }
 };
 
+=======
+>>>>>>> testingBranch

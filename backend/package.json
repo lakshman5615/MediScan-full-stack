@@ -21,14 +21,22 @@
     "cors": "^2.8.6",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
+<<<<<<< HEAD
     "firebase": "^12.8.0",
     "firebase-admin": "^13.6.1",
+=======
+    "firebase-admin": "^13.6.0",
+>>>>>>> testingBranch
     "groq-sdk": "^0.37.0",
     "helmet": "^8.1.0",
     "joi": "^18.0.2",
     "jsonwebtoken": "^9.0.3",
+<<<<<<< HEAD
     "mongoose": "^9.2.0",
     "multer": "^2.0.2",
+=======
+    "mongoose": "^9.1.5",
+>>>>>>> testingBranch
     "node-cron": "^4.2.1",
     "nodemailer": "^7.0.12",
     "nodemon": "^3.1.11"

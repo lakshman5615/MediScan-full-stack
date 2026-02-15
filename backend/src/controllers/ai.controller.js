@@ -84,7 +84,11 @@ exports.manualSearch = async (req, res) => {
 exports.scanSearch = async (req, res) => {
     try {
 
+<<<<<<< HEAD
         const userID = req.user._id;
+=======
+        const userID = req.user.id;
+>>>>>>> testingBranch
         const image = req.file;
 
         if (!image) {
@@ -194,6 +198,7 @@ exports.guestScanSearch = async (req, res) => {
         res.status(500).json({ message: "Scan failed" });
     }
 };
+<<<<<<< HEAD
 
 exports.getHistory = async (req, res) => {
     try {
@@ -215,3 +220,5 @@ exports.getHistory = async (req, res) => {
         res.status(500).json({ message: "Failed to fetch history" });
     }
 };
+=======
+>>>>>>> testingBranch

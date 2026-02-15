@@ -47,14 +47,31 @@ const authMiddleware = (req, res, next) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         // req.user = decoded; // {_id, email}
         req.user = {
+<<<<<<< HEAD
             _id: decoded._id,
             userId: decoded._id // changes login singup
             // _id: decoded._id,
             // userId: decoded._id // changes login singup
+=======
+<<<<<<< HEAD
+            id: decoded._id,
+            // email: decoded.email
+=======
+            _id: decoded._id
+>>>>>>> 7228e290a23bfacd28777bb3c4a3a1affbbca15a
+>>>>>>> testingBranch
         };
         next();
     } catch (err) {
         return res.status(401).json({ message: "Invalid or expired token" });
     }
 };
+<<<<<<< HEAD
 module.exports = authMiddleware;
+=======
+<<<<<<< HEAD
+
+=======
+>>>>>>> 7228e290a23bfacd28777bb3c4a3a1affbbca15a
+module.exports = authMiddleware;
+>>>>>>> testingBranch

@@ -153,19 +153,19 @@ router.post('/taken/:medicineId', authMiddleware, async (req, res) => {
             `${medicine.medicineName} marked as taken. Remaining: ${medicine.quantity} doses`,
             { medicineId, userId });
 
-        // Low stock alert
-        if (medicine.quantity <= 2 && medicine.quantity > 0) {
-            await ProductionFCMService.sendNotification(userId, '⚠️ Low Stock Alert',
-                `${medicine.medicineName} is running low. Only ${medicine.quantity} doses remaining.`,
-                { medicineId, userId });
-        }
+//         // Low stock alert
+//         if (medicine.quantity <= 2 && medicine.quantity > 0) {
+//             await ProductionFCMService.sendNotification(userId, '⚠️ Low Stock Alert',
+//                 `${medicine.medicineName} is running low. Only ${medicine.quantity} doses remaining.`,
+//                 { medicineId, userId });
+//         }
 
-        // Out of stock
-        if (medicine.quantity === 0) {
-            await ProductionFCMService.sendNotification(userId, '🚫 Out of Stock',
-                `${medicine.medicineName} is out of stock. Please refill your prescription.`,
-                { medicineId, userId });
-        }
+//         // Out of stock
+//         if (medicine.quantity === 0) {
+//             await ProductionFCMService.sendNotification(userId, '🚫 Out of Stock',
+//                 `${medicine.medicineName} is out of stock. Please refill your prescription.`,
+//                 { medicineId, userId });
+//         }
 
         // ---- Save to DoseHistory ----
         console.log('💾 Saving to DoseHistory:', {

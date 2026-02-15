@@ -5,6 +5,71 @@ const cron = require('node-cron');
 const Medicine = require('../models/Medicine');
 const AlertService = require('../services/alert.service'); // ✅ AlertService use kar rahe hain proper alert creation ke liye
 
+<<<<<<< HEAD
+// // Medicine reminder notifications (every minute)
+// cron.schedule('* * * * *', async () => {
+//   try {
+//     const now = new Date();
+//     const currentTime = now.toTimeString().slice(0, 5);
+//     const currentDay = now.getDay();
+//     const currentDate = now.getDate();
+
+//     const medicines = await Medicine.find({
+//       quantity: { $gt: 0 },
+//       'schedule.time': currentTime
+//     }).populate('userId');
+
+//     for (const med of medicines) {
+//       const { schedule, medicineName, userId, _id } = med;
+//       if (!userId) continue;
+
+//       // DAILY
+//       if (schedule.frequency === 'daily') {
+//         await ProductionFCMService.sendNotification(
+//           userId._id,
+//           '💊 Medicine Reminder',
+//           `${medicineName} lene ka time ho gaya`,
+//           { medicineId: _id }
+//         );
+//       }
+
+//       // WEEKLY
+//       if (
+//         schedule.frequency === 'weekly' &&
+//         schedule.day === currentDay
+//       ) {
+//         await ProductionFCMService.sendNotification(
+//           userId._id,
+//           '💊 Weekly Reminder',
+//           `${medicineName} ka weekly dose time`,
+//           { medicineId: _id }
+//         );
+//       }
+
+//       // MONTHLY
+//       if (
+//         schedule.frequency === 'monthly' &&
+//         schedule.date === currentDate
+//       ) {
+//         await ProductionFCMService.sendNotification(
+//           userId._id,
+//           '💊 Monthly Reminder',
+//           `${medicineName} ka monthly dose time`,
+//           { medicineId: _id }
+//         );
+//       }
+//     }
+
+//     console.log('✅ Medicine reminders checked at', currentTime);
+
+//   } catch (err) {
+//     console.error('❌ Medicine reminder cron error:', err);
+//   }
+// });
+
+// Low quantity and expiry alerts (every hour)
+cron.schedule('0 9 * * *', async () => {
+=======
 const reminderInterval = 24 * 60 * 60 * 1000; // 1 day
 
 // ============================================
@@ -81,6 +146,7 @@ cron.schedule('* * * * *', async () => {
 // Low Quantity & Expiry Alerts (every hour check hota hai)
 // ============================================
 cron.schedule('0 * * * *', async () => {
+>>>>>>> 7228e290a23bfacd28777bb3c4a3a1affbbca15a
   try {
     const now = new Date();
     const fiveDaysFromNow = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000); // ✅ 5 din baad

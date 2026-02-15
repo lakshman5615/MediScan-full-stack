@@ -13,8 +13,11 @@ const firebaseConfig = {
   appId: "1:1094554203665:web:7b8d495c93d08416e8a3b0"
 };
 
-const VAPID_KEY =
-  "BCDVAB6Kcn6GyveyDK3XmHbwmkEDmqBhQkl8ko0m14Lh7UxgYOd2hwQJB-bao-JqSYR9q6d5h3sboXkywL--QMA";
+// const VAPID_KEY =
+//   "BCDVAB6Kcn6GyveyDK3XmHbwmkEDmqBhQkl8ko0m14Lh7UxgYOd2hwQJB-bao-JqSYR9q6d5h3sboXkywL--QMA";
+
+const VAPID_KEY = process.env.REACT_APP_FIREBASE_VAPID_KEY;
+
 
 // Init Firphebase
 const app = initializeApp(firebaseConfig);
@@ -76,6 +79,7 @@ class FCMService {
 }
 
 
+<<<<<<< HEAD
   // async requestPermissionAndGetToken() {
   //   try {
   //     const permission = await Notification.requestPermission();
@@ -99,6 +103,41 @@ class FCMService {
   //     return null;
   //   }
   // }
+=======
+  async requestPermissionAndGetToken() {
+  try {
+    const permission = await Notification.requestPermission();
+
+    if (permission !== "granted") {
+      console.log("❌ Notification permission denied");
+      return null;
+    }
+
+    // 🔥 IMPORTANT PART
+    const registration = await navigator.serviceWorker.register(
+      "/firebase-messaging-sw.js"
+    );
+
+    const token = await getToken(messaging, {
+      vapidKey: VAPID_KEY,
+      serviceWorkerRegistration: registration
+    });
+
+    if (!token) {
+      console.log("❌ No FCM token received");
+      return null;
+    }
+
+    console.log("✅ FCM Token:", token);
+    return token;
+  } catch (error) {
+    console.error("❌ FCM error:", error);
+    return null;
+  }
+}
+
+
+>>>>>>> testingBranch
 
   async registerTokenWithBackend(token) {
     try {

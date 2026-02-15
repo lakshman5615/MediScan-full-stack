@@ -25,7 +25,14 @@ const serviceAccount = JSON.parse(jsonString);
 
 if (!admin.apps.length) {
   admin.initializeApp({
+<<<<<<< HEAD
     credential: admin.credential.cert(serviceAccount),
+=======
+    credential: admin.credential.cert(
+    path.join(__dirname, '../../mediscan-notifications-firebase-admin.json')
+     //JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
+    )
+>>>>>>> testingBranch
   });
 }
 
