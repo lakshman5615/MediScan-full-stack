@@ -84,7 +84,7 @@ export default function UploadCard({ mode }) {
 
   const handleAnalyze = async () => {
     if (!selectedFile) {
-      alert("Please select an image");
+      console.warn("No image selected for upload analysis.");
       return;
     }
 
@@ -111,7 +111,6 @@ export default function UploadCard({ mode }) {
 
     } catch (error) {
       console.error("❌ Upload analyze failed:", error.response?.data || error);
-      alert(error.response?.data?.message || "Upload failed");
     }
   };
 

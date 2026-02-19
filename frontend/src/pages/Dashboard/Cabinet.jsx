@@ -252,7 +252,6 @@ const MedicineCabinet = () => {
         window.dispatchEvent(new Event("medicines:updated"));
         
         resetForm();
-        alert(`${medicineData.name} updated successfully!`);
 
       } else {
         // ✅ ADD NEW MEDICINE
@@ -301,11 +300,9 @@ const MedicineCabinet = () => {
         window.dispatchEvent(new Event("medicines:updated"));
         
         resetForm();
-        alert(`${medicineData.name} added successfully!`);
       }
     } catch (error) {
       console.error('Error saving medicine:', error);
-      alert('Failed to save medicine. Check console for details.');
     }
   };
 
@@ -485,27 +482,13 @@ const MedicineCabinet = () => {
   }, [medicines]);
 
 
-
-  // const handleDiscard = (medicineId) => {
-  //   if (window.confirm('Are you sure you want to discard this medicine?')) {
-  //     const updatedMedicines = medicines.filter(m => m.id !== medicineId);
-  //     setMedicines(updatedMedicines);
-  //     localStorage.setItem('medicines', JSON.stringify(updatedMedicines));
-  //     calculateNotificationCount(updatedMedicines);
-  //     alert('Medicine discarded successfully');
-  //   }
-  // };
   const handleDiscard = async (medicineId) => {
-    if (!window.confirm("Are you sure you want to delete this medicine?")) return;
-
     try {
       await deleteMedicine(medicineId);
       await loadMedicines();
       window.dispatchEvent(new Event("medicines:updated"));
-      alert('Medicine deleted successfully!');
     } catch (err) {
       console.error("Delete failed", err);
-      alert('Failed to delete medicine. Please try again.');
     }
   };
 
@@ -518,7 +501,7 @@ const MedicineCabinet = () => {
             <div>
               <h1 className="text-xl lg:text-2xl font-bold text-gray-900">Medicine Cabinet</h1>
               <p className="text-gray-600 mt-1 text-sm lg:text-base">
-                Showing {filteredMedicines.length} items. {medicinesRequiringAttention} require your attention.
+                Showing {filteredMedicines.length} items. {expiringSoonCount} require your attention.
               </p>
               <p className="text-xs lg:text-sm text-gray-500 mt-1">
                 Today's Date: {new Date().toLocaleDateString('en-US', { 

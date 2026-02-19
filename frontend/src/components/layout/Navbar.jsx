@@ -159,7 +159,6 @@ export default function Navbar({ onMenuClick, searchQuery, onSearchChange }) {
       setOpenEntry(false);
     } catch (error) {
       console.error("Error saving medicine:", error);
-      alert("Failed to save medicine. Check console for details.");
     }
   };
 
