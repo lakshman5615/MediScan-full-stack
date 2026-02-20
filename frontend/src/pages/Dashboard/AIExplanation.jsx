@@ -16,7 +16,7 @@ export default function AIExplanation() {
 
   const from = location.state?.from;
 
-  /* 🔙 BACK LOGIC */
+  /*  BACK LOGIC */
   const handleBack = () => {
     if (from === "landing") {
       navigate("/", { replace: true });
