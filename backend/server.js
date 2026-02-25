@@ -128,19 +128,32 @@ const doseRoutes = require('./src/routes/dose.routes');
 const notificationRoutes = require('./src/routes/notification.routes');
 const phoneUserRoutes = require('./src/routes/phone-user.routes');
 const reminderRoutes = require('./src/routes/reminder.routes');
-
+const alertRoutes = require('./src/routes/alert.routes'); // ✅ Alert routes
 // ✅ INIT APP FIRST
 const app = express();
 
-// ✅ MIDDLEWARES AFTER APP INIT
-app.use(cors());
+// ✅ MIDDLEWARES - Allow any device on same network
+app.use(cors({
+  origin: true, // Allow all origins (same network devices)
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+}));
+
 app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Cron jobs (side-effects only)
-require('./src/cron/medicine-reminder.cron');
-require('./src/cron/alerts.cron');
+
+
+
+// Connect DB FIRST
+connectDB().then(() => {
+  // Cron jobs (start AFTER DB connection)
+  require('./src/cron/medicine-reminder.cron');
+  require('./src/cron/alerts.cron');
+  console.log('✅ Cron jobs initialized');
+});
 
 // Root route
 app.get("/", (req, res) => {
@@ -152,11 +165,18 @@ app.use("/auth", authRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use('/api/reminder', reminderRoutes);
+app.use("/api/medicine", medicineRoutes);
+app.use('/api/medicine-action', medicineActionRoutes);
+app.use('/api/dose', doseRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/alerts', alertRoutes); // ✅ Alert API endpoint
 
-// Connect DB
-connectDB();
+console.log('✅ All routes registered including /api/alerts');
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🔥 Server running on port ${PORT}`);
+const HOST = '0.0.0.0'; // ✅ Listen on all network interfaces
+
+app.listen(PORT, HOST, () => {
+  console.log(`🔥 Server running on ${HOST}:${PORT}`);
+  console.log(`🌐 Access from other devices: http://YOUR_IP:${PORT}`);
 });
