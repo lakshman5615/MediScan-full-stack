@@ -152,7 +152,6 @@ export default function ManualEntryCard({ mode }) {
       });
     } catch (error) {
       console.error("Manual search failed:", error);
-      alert("Failed to get medicine info. Check backend.");
     }
   };
 

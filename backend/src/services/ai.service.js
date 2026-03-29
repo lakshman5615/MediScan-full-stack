@@ -7,6 +7,11 @@ const groq = new Groq({
 async function getMedicineExplanation(text, imageUrl = null) {
 
     try {
+        console.log("🤖 getMedicineExplanation called");
+        console.log("📝 Text:", text);
+        console.log("📸 Image URL:", imageUrl ? "provided" : "not provided");
+        console.log("🔑 GROQ_API_KEY:", process.env.GROQ_API_KEY ? "exists" : "MISSING!");
+
         const messages = [
             {
                 role: "user",
@@ -102,12 +107,14 @@ Medicine name or query: ${text}
 
         //  If image is provided (scan case)
         if (imageUrl) {
+            console.log("📸 Adding image to request");
             messages[0].content.push({
                 type: "image_url",
                 image_url: { url: imageUrl }
             });
         }
 
+        console.log("🚀 Calling Groq API...");
         const completion = await groq.chat.completions.create({
             model: "meta-llama/llama-4-scout-17b-16e-instruct",
             messages,
@@ -115,18 +122,26 @@ Medicine name or query: ${text}
             max_completion_tokens: 512
         });
 
+        console.log("✅ Groq API response received");
         const rawResponse = completion.choices[0].message.content;
+        console.log("📝 Raw response:", rawResponse);
 
         //  IMPORTANT: Parse JSON safely
         const jsonStart = rawResponse.indexOf("{");
         const jsonEnd = rawResponse.lastIndexOf("}");
         const cleanJson = rawResponse.substring(jsonStart, jsonEnd + 1);
+        console.log("🧹 Clean JSON:", cleanJson);
 
-        return JSON.parse(cleanJson);
+        const parsedData = JSON.parse(cleanJson);
+        console.log("✅ JSON parsed successfully");
+        return parsedData;
 
     } catch (error) {
-        console.error("Groq AI Error:", error);
-        throw new Error("AI response failed");
+        console.error("❌ Groq AI Error:", error);
+        console.error("❌ Error name:", error.name);
+        console.error("❌ Error message:", error.message);
+        console.error("❌ Error stack:", error.stack);
+        throw new Error("AI response failed: " + error.message);
     }
 }
 

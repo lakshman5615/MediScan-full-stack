@@ -36,7 +36,6 @@ export default function ScanCard({ mode }) {
       }
     } catch (err) {
       console.error("Camera error:", err);
-      alert("Camera access denied. Please allow camera permission.");
     }
   };
 
@@ -160,7 +159,6 @@ export default function ScanCard({ mode }) {
 
     } catch (error) {
       console.error("❌ Scan analyze failed:", error);
-      alert("Failed to analyze image. Check backend.");
     }
   };
 

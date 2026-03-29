@@ -182,6 +182,24 @@ class AlertService {
       return alert;
     }
 
+    // Guard: expired medicine ke reminder ko TAKEN/MISSED allow mat karo
+    if (alert.type === 'REMINDER' && (action === 'TAKEN' || action === 'MISSED')) {
+      const medicineForValidation = await Medicine.findById(alert.medicineId).select('expiryDate');
+      if (!medicineForValidation) {
+        throw new Error('Medicine not found for this alert');
+      }
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const expiryDate = new Date(medicineForValidation.expiryDate);
+      expiryDate.setHours(0, 0, 0, 0);
+
+      if (expiryDate < today) {
+        throw new Error('Cannot mark dose as TAKEN or MISSED for expired medicine');
+      }
+    }
+
     // 🔍 STEP 3: Update alert status and hide from UI
     console.log(`🔄 Updating alert status to: ${action}`);
     alert.status = action;

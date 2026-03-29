@@ -162,6 +162,7 @@ app.get("/", (req, res) => {
 
 // Routes
 app.use("/auth", authRoutes);
+app.use("/api/auth", authRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use('/api/reminder', reminderRoutes);

@@ -126,7 +126,7 @@ const EditMedicineModal = ({
 
   const handleSubmit = () => {
     if (!newMedicine.name || !newMedicine.expiryDate || !newMedicine.totalQuantity) {
-      alert('Please fill in all required fields');
+      console.warn("Required fields are missing while saving medicine.");
       return;
     }
 
@@ -280,7 +280,7 @@ const EditMedicineModal = ({
                 {/* Dosage */}
                 <div>
                   <label className=" text-sm font-semibold text-gray-900 mb-2">
-                    Dosage <span className="text-gray-500 text-sm font-normal">(Optional)</span>
+                    Power <span className="text-gray-500 text-sm font-normal">(Optional)</span>
                   </label>
                   <input
                     type="text"

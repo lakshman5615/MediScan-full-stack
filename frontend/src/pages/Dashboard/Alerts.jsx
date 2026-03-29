@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useOutletContext } from 'react-router-dom';
 import { 
   Bell, 
   Clock, 
@@ -71,6 +71,7 @@ const AlertsPage = () => {
   const [expandedLowStock, setExpandedLowStock] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedMedicine, setSelectedMedicine] = useState(null);
+  const { searchQuery = "" } = useOutletContext() || {};
   
   const normalizeAlertsPayload = (res) => {
     const data = res?.data ?? res ?? {};
@@ -80,6 +81,19 @@ const AlertsPage = () => {
       expiry: Array.isArray(payload.expiry) ? payload.expiry : [],
       lowStock: Array.isArray(payload.lowStock) ? payload.lowStock : []
     };
+  };
+
+  const isAlertMedicineExpired = (alert) => {
+    const rawExpiry = alert?.medicine?.expiryDate || alert?.expiryDate;
+    if (!rawExpiry) return false;
+
+    const expiry = new Date(rawExpiry);
+    if (Number.isNaN(expiry.getTime())) return false;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    expiry.setHours(0, 0, 0, 0);
+    return expiry < today;
   };
 
   // ✅ Load alerts from BACKEND API (not localStorage)
@@ -172,6 +186,11 @@ const AlertsPage = () => {
         console.log(`⚠️ SKIPPING - No action taken\n`);
         return;
       }
+
+      if (existingAlert && isAlertMedicineExpired(existingAlert)) {
+        console.log(`⏭️ SKIPPING - medicine is expired, action blocked\n`);
+        return;
+      }
       
       // 🔍 STEP 1: Backend ko action bhejo - yeh medicine quantity bhi update karega
       console.log(`📤 Calling handleAlertAction API...`);
@@ -249,8 +268,6 @@ const AlertsPage = () => {
     
     setSelectedMedicine(null);
     setShowEditModal(false);
-    
-    alert('Medicine updated successfully!');
   };
 
   // ✅ Handle dismiss action - Expiry aur Low Stock alerts ke liye
@@ -280,10 +297,35 @@ const AlertsPage = () => {
     }
   };
 
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const matchesSearchQuery = (alert) => {
+    if (!normalizedQuery) return true;
+
+    const searchableValues = [
+      alert?.medicineName,
+      alert?.dosage,
+      alert?.scheduledTime,
+      alert?.severity,
+      alert?.status,
+      alert?.medicine?.name,
+      alert?.medicine?.dosage,
+    ];
+
+    return searchableValues
+      .filter(Boolean)
+      .some((value) => String(value).toLowerCase().includes(normalizedQuery));
+  };
+
   // Filter alerts - Only show PENDING alerts
-  const scheduleAlerts = alerts.filter(a => a.type === 'schedule' && a.status === 'PENDING');
-  const expiryAlerts = alerts.filter(a => a.type === 'expiry' && a.status === 'PENDING');
-  const lowStockAlerts = alerts.filter(a => a.type === 'low_stock' && a.status === 'PENDING');
+  const scheduleAlerts = alerts.filter(
+    (a) => a.type === 'schedule' && a.status === 'PENDING' && matchesSearchQuery(a)
+  );
+  const expiryAlerts = alerts.filter(
+    (a) => a.type === 'expiry' && a.status === 'PENDING' && matchesSearchQuery(a)
+  );
+  const lowStockAlerts = alerts.filter(
+    (a) => a.type === 'low_stock' && a.status === 'PENDING' && matchesSearchQuery(a)
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-2 lg:p-4">
@@ -339,6 +381,7 @@ const AlertsPage = () => {
                     const alertDate = new Date(alert.createdAt);
                     const today = new Date();
                     const isToday = alertDate.toDateString() === today.toDateString();
+                    const isExpiredMedicine = isAlertMedicineExpired(alert);
                     
                     return (
                       <div key={alert._id} className="p-3 lg:p-5 rounded-xl border border-blue-200 bg-blue-50 hover:shadow-md transition-all duration-300">
@@ -396,7 +439,7 @@ const AlertsPage = () => {
                         </div>
                         
                         <div className="flex gap-2 mt-3 lg:mt-4 pt-3 lg:pt-4 border-t border-blue-200">
-                          {alert.status === 'PENDING' ? (
+                          {alert.status === 'PENDING' && !isExpiredMedicine ? (
                             <>
                               <button
                                 onClick={() => handleDoseAction(alert._id, 'taken')}
@@ -417,9 +460,15 @@ const AlertsPage = () => {
                             </>
                           ) : (
                             <div className="w-full text-center">
-                              <div className={`text-xs lg:text-sm font-medium ${alert.status === 'TAKEN' ? 'text-green-600' : 'text-red-600'}`}>
-                                {alert.status === 'TAKEN' ? '✓ Confirmed' : '✗ Missed'}
-                              </div>
+                              {isExpiredMedicine && alert.status === 'PENDING' ? (
+                                <div className="text-xs lg:text-sm font-medium text-red-600">
+                                  Expired medicine - action disabled
+                                </div>
+                              ) : (
+                                <div className={`text-xs lg:text-sm font-medium ${alert.status === 'TAKEN' ? 'text-green-600' : 'text-red-600'}`}>
+                                  {alert.status === 'TAKEN' ? '✓ Confirmed' : '✗ Missed'}
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>

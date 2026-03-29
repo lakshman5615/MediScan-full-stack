@@ -37,7 +37,8 @@ exports.getAlerts = async (req, res) => {
                     _id: a.medicineId._id,
                     name: a.medicineId.name,
                     dosage: a.medicineId.dosage,
-                    remainingQuantity: a.medicineId.remainingQuantity
+                    remainingQuantity: a.medicineId.remainingQuantity,
+                    expiryDate: a.medicineId.expiryDate
                 } : null
             }));
         
@@ -129,6 +130,9 @@ exports.handleAction = async (req, res) => {
         });
     } catch (error) {
         console.error('❌ handleAction error:', error);
+        if (error.message && error.message.includes('expired medicine')) {
+            return res.status(400).json({ success: false, error: error.message });
+        }
         res.status(500).json({ success: false, error: error.message });
     }
 };

@@ -426,15 +426,19 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
 
-    if (!email || !password) {
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedPassword = password.trim();
+
+    if (!normalizedEmail || !normalizedPassword) {
       setError("All fields are required");
       return;
     }
 
     try {
       setLoading(true);
-      const res = await loginUser(email, password);
+      const res = await loginUser(normalizedEmail, normalizedPassword);
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
       

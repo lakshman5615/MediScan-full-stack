@@ -112,6 +112,25 @@ import { messaging } from '../firebase-config';
 import axiosInstance from './axios';
 
 const VAPID_KEY = 'BCDVAB6Kcn6GyveyDK3XmHbwmkEDmqBhQkl8ko0m14Lh7UxgYOd2hwQJB-bao-JqSYR9q6d5h3sboXkywL--QMA';
+const FCM_AUTH_PATHS = ['/auth/fcm-token', '/api/auth/fcm-token'];
+
+const saveFcmTokenWithFallback = async (fcmToken) => {
+  let lastError;
+
+  for (const path of FCM_AUTH_PATHS) {
+    try {
+      await axiosInstance.post(path, { fcmToken });
+      return;
+    } catch (error) {
+      if (error?.response?.status !== 404) {
+        throw error;
+      }
+      lastError = error;
+    }
+  }
+
+  throw lastError || new Error('FCM auth endpoint not found');
+};
 
 export const requestFCMToken = async () => {
   try {
@@ -163,7 +182,7 @@ export const requestFCMToken = async () => {
       console.log('✅ FCM Token received:', token.substring(0, 20) + '...');
       
       console.log('🔔 Step 4: Saving token to backend...');
-      await axiosInstance.post('/auth/fcm-token', { fcmToken: token });
+      await saveFcmTokenWithFallback(token);
       console.log('✅ FCM Token saved to backend');
       
       return token;

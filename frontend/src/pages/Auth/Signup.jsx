@@ -313,12 +313,18 @@ export default function Signup() {
     e.preventDefault();
     setError("");
 
-    if (!name || !email || !age || !mobile || !password || !confirmPassword) {
+    const normalizedName = name.trim();
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedMobile = mobile.trim();
+    const normalizedPassword = password.trim();
+    const normalizedConfirmPassword = confirmPassword.trim();
+
+    if (!normalizedName || !normalizedEmail || !age || !normalizedMobile || !normalizedPassword || !normalizedConfirmPassword) {
       setError("All fields are required");
       return;
     }
 
-    if (password !== confirmPassword) {
+    if (normalizedPassword !== normalizedConfirmPassword) {
       setError("Passwords do not match");
       return;
     }
@@ -327,11 +333,11 @@ export default function Signup() {
       setLoading(true);
 
       const res = await signupUser(
-        name,
-        email,
-        mobile.trim(),
+        normalizedName,
+        normalizedEmail,
+        normalizedMobile,
         Number(age),
-        password,
+        normalizedPassword,
         
       );
 

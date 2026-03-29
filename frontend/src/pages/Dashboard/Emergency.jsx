@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -22,6 +22,12 @@ export default function Emergency() {
   const [loadingLocation, setLoadingLocation] = useState(false);
   const [locationUpdated, setLocationUpdated] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [locationError, setLocationError] = useState("");
+  const [addressError, setAddressError] = useState("");
+  const [mapError, setMapError] = useState(false);
+  const watchIdRef = useRef(null);
+  const lastKnownLocationRef = useRef(null);
+  const lastAddressFetchTimeRef = useRef(0);
 
   // Format time function
   const formatTime = (date) => {
@@ -32,32 +38,92 @@ export default function Emergency() {
     });
   };
 
+  const hasMeaningfulLocationChange = (prev, next) => {
+    if (!prev) return true;
+    const latDiff = Math.abs(prev.lat - next.lat);
+    const lngDiff = Math.abs(prev.lng - next.lng);
+    return latDiff > 0.0001 || lngDiff > 0.0001;
+  };
+
+  const getGeoErrorMessage = (error) => {
+    if (!error || typeof error.code === "undefined") {
+      return "Unable to detect location right now.";
+    }
+
+    if (error.code === 1) {
+      return "Location permission denied. Please allow location access.";
+    }
+
+    if (error.code === 2) {
+      return "Location unavailable. Please check GPS or internet.";
+    }
+
+    if (error.code === 3) {
+      return "Location request timed out. Try refresh.";
+    }
+
+    return "Unable to detect location right now.";
+  };
+
+  const applyLocationUpdate = async (location, options = {}) => {
+    const { showLoader = false, forceAddressFetch = false } = options;
+    const hasMoved = hasMeaningfulLocationChange(lastKnownLocationRef.current, location);
+
+    if (!hasMoved && !forceAddressFetch) {
+      if (showLoader) {
+        setLoadingLocation(false);
+        setIsRefreshing(false);
+      }
+      return;
+    }
+
+    lastKnownLocationRef.current = location;
+    setUserLocation(location);
+    setLocationUpdated(formatTime(new Date()));
+    setLocationError("");
+    setMapError(false);
+
+    const now = Date.now();
+    const shouldFetchAddress =
+      forceAddressFetch || now - lastAddressFetchTimeRef.current > 15000;
+
+    if (shouldFetchAddress) {
+      lastAddressFetchTimeRef.current = now;
+      await getAddressFromCoordinates(location.lat, location.lng);
+    }
+
+    if (showLoader) {
+      setLoadingLocation(false);
+      setIsRefreshing(false);
+    }
+  };
+
   // User ki current location get karega
   const getUserLocation = () => {
     if (navigator.geolocation) {
       setIsRefreshing(true);
       setLoadingLocation(true);
+      setLocationError("");
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           const location = {
             lat: position.coords.latitude,
             lng: position.coords.longitude,
           };
-          setUserLocation(location);
-          setLocationUpdated(formatTime(new Date()));
-          
-          // Address fetch karna
-          await getAddressFromCoordinates(location.lat, location.lng);
-          setLoadingLocation(false);
-          setIsRefreshing(false);
+          await applyLocationUpdate(location, {
+            showLoader: true,
+            forceAddressFetch: true,
+          });
         },
         (error) => {
           console.error("Error getting location:", error);
+          setLocationError(getGeoErrorMessage(error));
           setLoadingLocation(false);
           setIsRefreshing(false);
           
           // Agar location access na mile to default location set karein (Indore)
           const defaultLocation = { lat: 22.5634, lng: 76.9620 };
+          lastKnownLocationRef.current = defaultLocation;
           setUserLocation(defaultLocation);
           setLocationUpdated(formatTime(new Date()));
           getAddressFromCoordinates(defaultLocation.lat, defaultLocation.lng);
@@ -69,8 +135,9 @@ export default function Emergency() {
         }
       );
     } else {
-      alert("Geolocation is not supported by this browser.");
+      setLocationError("Geolocation is not supported in this browser.");
       const defaultLocation = { lat: 22.5634, lng: 76.9620 };
+      lastKnownLocationRef.current = defaultLocation;
       setUserLocation(defaultLocation);
       setLocationUpdated(formatTime(new Date()));
       getAddressFromCoordinates(defaultLocation.lat, defaultLocation.lng);
@@ -83,6 +150,9 @@ export default function Emergency() {
       const response = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`
       );
+      if (!response.ok) {
+        throw new Error(`Reverse geocode failed with status ${response.status}`);
+      }
       const data = await response.json();
       
       if (data.display_name) {
@@ -103,18 +173,48 @@ export default function Emergency() {
         }
         
         setAddress(shortAddress);
+        setAddressError("");
       } else {
         setAddress("Vijay Nagar, Indore, Madhya Pradesh");
+        setAddressError("Could not resolve full address for this location.");
       }
     } catch (error) {
       console.error("Address fetch error:", error);
       setAddress("Vijay Nagar, Indore, Madhya Pradesh");
+      setAddressError("Unable to fetch address. Showing fallback location.");
     }
   };
 
-  // Component load pe hi location fetch karega
+  // Component load pe location fetch + location watcher start karega
   useEffect(() => {
     getUserLocation();
+
+    if (!navigator.geolocation) return;
+
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      async (position) => {
+        const location = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        };
+        await applyLocationUpdate(location);
+      },
+      (error) => {
+        console.error("Location watch error:", error);
+        setLocationError(getGeoErrorMessage(error));
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      }
+    );
+
+    return () => {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+      }
+    };
   }, []);
 
   // Google Maps open in new tab with nearest hospital search
@@ -135,9 +235,11 @@ export default function Emergency() {
     if (!userLocation) {
       return "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d235013.70717879913!2d75.80375049514768!3d22.72420443064635!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3962fcad1b410ddb%3A0x96ec4da356240f4!2sIndore%2C%20Madhya%20Pradesh!5e0!3m2!1sen!2sin!4v1700000000000";
     }
-    
-    return `https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d5000!2d${userLocation.lng}!3d${userLocation.lat}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sin`;
+
+    return `https://maps.google.com/maps?q=hospitals+near+${userLocation.lat},${userLocation.lng}&z=14&output=embed`;
   };
+
+  const hasAnyError = Boolean(locationError || addressError || mapError);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50/30 to-white flex flex-col">
@@ -220,6 +322,21 @@ export default function Emergency() {
               </div>
               
               <div className="p-5">
+                {hasAnyError && (
+                  <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+                    {locationError && (
+                      <p className="text-sm font-medium text-red-700">{locationError}</p>
+                    )}
+                    {addressError && (
+                      <p className="text-sm text-red-600 mt-1">{addressError}</p>
+                    )}
+                    {mapError && (
+                      <p className="text-sm text-red-600 mt-1">
+                        Map failed to load. Please refresh location or open Google Maps.
+                      </p>
+                    )}
+                  </div>
+                )}
                 <div className="grid md:grid-cols-2 gap-6">
                   {/* Address Section */}
                   <div className="space-y-4">
@@ -345,6 +462,8 @@ export default function Emergency() {
                   loading="lazy"
                   allowFullScreen
                   referrerPolicy="no-referrer-when-downgrade"
+                  onLoad={() => setMapError(false)}
+                  onError={() => setMapError(true)}
                 />
                 
                 {/* Custom Location Marker */}
